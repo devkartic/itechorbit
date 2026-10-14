@@ -1,0 +1,24 @@
+# Replace host, release root and PHP socket for the verified staging environment.
+server {
+    listen 80;
+    server_name staging.example.com;
+    root /srv/itechorbit/current/public;
+    index index.php;
+    charset utf-8;
+    client_max_body_size 12m;
+    location / { try_files $uri $uri/ /index.php?$query_string; }
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location ~ ^/build/ { expires 1y; add_header Cache-Control "public, immutable"; }
+    # Uploaded files must never execute PHP. Keep this before the PHP location.
+    location ~* ^/(uploads|storage)/.*\.(php|phtml|phar)$ { deny all; }
+    location ~ \.php$ {
+        try_files $uri =404;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_pass unix:/run/php/php8.5-fpm.sock;
+    }
+    location ~ /\.(?!well-known).* { deny all; }
+    gzip on;
+    gzip_types text/css application/javascript application/json application/xml image/svg+xml;
+    # Configure HTTPS and certificates through the existing infrastructure before release.
+}

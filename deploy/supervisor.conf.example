@@ -1,0 +1,22 @@
+[program:itechorbit-ssr]
+directory=/srv/itechorbit/current
+command=/usr/bin/php artisan inertia:start-ssr
+user=www-data
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+redirect_stderr=true
+stdout_logfile=/var/log/itechorbit-ssr.log
+
+[program:itechorbit-queue]
+directory=/srv/itechorbit/current
+command=/usr/bin/php artisan queue:work --sleep=3 --tries=3 --timeout=60 --max-time=3600
+user=www-data
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stopwaitsecs=90
+redirect_stderr=true
+stdout_logfile=/var/log/itechorbit-queue.log

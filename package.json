@@ -1,0 +1,46 @@
+{
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr",
+    "build:client": "vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint resources/js tests/browser",
+    "test": "vitest run resources/js",
+    "test:browser": "playwright test",
+    "production": "npm run build"
+  },
+  "dependencies": {
+    "@inertiajs/react": "^3.9.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "lucide-react": "^1.56.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.0",
+    "class-variance-authority": "^0.7.1",
+    "@radix-ui/react-slot": "^1.0.0",
+    "highlight.js": "^11.11.1",
+    "@fontsource/inter": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.4",
+    "laravel-vite-plugin": "^3.2.0",
+    "typescript": "~6.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.12.0",
+    "@eslint/js": "^10.0.0",
+    "typescript-eslint": "^8.0.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "vitest": "^5.0.4",
+    "@playwright/test": "^1.64.0"
+  }
+}

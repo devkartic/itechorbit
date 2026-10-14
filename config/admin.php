@@ -1,0 +1,247 @@
+<?php
+
+use App\Models\Admin\AboutInfo;
+use App\Models\Admin\Basic;
+use App\Models\Admin\Category;
+use App\Models\Admin\ContactInfo;
+use App\Models\Admin\Experience;
+use App\Models\Admin\Link;
+use App\Models\Admin\Menu;
+use App\Models\Admin\Module;
+use App\Models\Admin\Post;
+use App\Models\Admin\PrivacyPolicy;
+use App\Models\Admin\Project;
+use App\Models\Admin\Role;
+use App\Models\Admin\Service;
+use App\Models\Admin\ServiceInfo;
+use App\Models\Admin\Skill;
+use App\Models\Admin\SocialLink;
+use App\Models\Admin\Tag;
+use App\Models\Admin\Testimonial;
+use App\Models\Contact;
+use App\Models\User;
+
+// Presentation configuration only. Existing server validation, permissions and write actions are authoritative.
+return [
+    'posts' => [
+        'model' => Post::class, 'title' => 'Articles', 'owner' => true,
+        'fields' => [
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'category_id', 'label' => 'Category id', 'type' => 'select', 'required' => true, 'options' => 'categories'],
+            ['name' => 'tags', 'label' => 'Article tags', 'type' => 'multiselect', 'required' => false, 'options' => 'tags'],
+            ['name' => 'body', 'label' => 'Body', 'type' => 'textarea', 'required' => true],
+            ['name' => 'codebase', 'label' => 'Codebase', 'type' => 'textarea', 'required' => false],
+            ['name' => 'uploaded_image', 'label' => 'Project / article image', 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
+            ['name' => 'is_private', 'label' => 'Private article', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'categories' => [
+        'model' => Category::class, 'title' => 'Categories', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'tags' => [
+        'model' => Tag::class, 'title' => 'Tags', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'projects' => [
+        'model' => Project::class, 'title' => 'Projects', 'owner' => true,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'client_name', 'label' => 'Client name', 'type' => 'text', 'required' => true],
+            ['name' => 'skill_id', 'label' => 'Skill id', 'type' => 'select', 'required' => true, 'options' => 'skills'],
+            ['name' => 'played_role', 'label' => 'Played role', 'type' => 'text', 'required' => false],
+            ['name' => 'project_category', 'label' => 'Project category', 'type' => 'text', 'required' => false],
+            ['name' => 'jobs', 'label' => 'Jobs', 'type' => 'textarea', 'required' => false],
+            ['name' => 'technology_used', 'label' => 'Technologies used', 'type' => 'multiselect', 'required' => false, 'options' => 'skills'],
+            ['name' => 'project_url', 'label' => 'Project url', 'type' => 'url', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'about_project', 'label' => 'About project', 'type' => 'textarea', 'required' => true],
+            ['name' => 'uploaded_image', 'label' => 'Project / article image', 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'users' => [
+        'model' => User::class, 'title' => 'Users', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => true],
+            ['name' => 'role_id', 'label' => 'Role id', 'type' => 'select', 'required' => false, 'options' => 'roles'],
+            ['name' => 'password', 'label' => 'Password', 'type' => 'password', 'required' => false],
+            ['name' => 'password_confirmation', 'label' => 'Password confirmation', 'type' => 'password', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'contacts' => [
+        'model' => Contact::class, 'title' => 'Contact inquiries', 'owner' => true,
+        'fields' => [
+        ],
+    ],
+    'basics' => [
+        'model' => Basic::class, 'title' => 'Profile information', 'owner' => true,
+        'fields' => [
+            ['name' => 'first_name', 'label' => 'First name', 'type' => 'text', 'required' => true],
+            ['name' => 'last_name', 'label' => 'Last name', 'type' => 'text', 'required' => true],
+            ['name' => 'designation', 'label' => 'Designation', 'type' => 'text', 'required' => true],
+            ['name' => 'mobile', 'label' => 'Mobile', 'type' => 'text', 'required' => true],
+            ['name' => 'service_offering_title', 'label' => 'Service offering title', 'type' => 'text', 'required' => true],
+            ['name' => 'self_introduction', 'label' => 'Self introduction', 'type' => 'textarea', 'required' => true],
+            ['name' => 'career_objective', 'label' => 'Career objective', 'type' => 'textarea', 'required' => true],
+            ['name' => 'additional_information', 'label' => 'Additional information', 'type' => 'textarea', 'required' => true],
+            ['name' => 'address', 'label' => 'Address', 'type' => 'text', 'required' => true],
+            ['name' => 'gender', 'label' => 'Gender', 'type' => 'text', 'required' => true],
+            ['name' => 'marital_status', 'label' => 'Marital status', 'type' => 'text', 'required' => true],
+            ['name' => 'birth_date', 'label' => 'Birth date', 'type' => 'date', 'required' => true],
+            ['name' => 'experience_year', 'label' => 'Experience year', 'type' => 'number', 'required' => true],
+            ['name' => 'uploaded_banner_image', 'label' => 'Uploaded banner image', 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
+            ['name' => 'uploaded_profile_image', 'label' => 'Uploaded profile image', 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
+            ['name' => 'uploaded_cv', 'label' => 'Uploaded cv', 'type' => 'file', 'required' => false, 'accept' => '.pdf'],
+            ['name' => 'cv_public_status', 'label' => 'Make CV publicly downloadable', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'social-links' => [
+        'model' => SocialLink::class, 'title' => 'Social links', 'owner' => true,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'social_url', 'label' => 'Social url', 'type' => 'url', 'required' => true],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'skills' => [
+        'model' => Skill::class, 'title' => 'Skills', 'owner' => true,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'services' => [
+        'model' => Service::class, 'title' => 'Profile services', 'owner' => true,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'service_url', 'label' => 'Service url', 'type' => 'url', 'required' => false],
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'about_service', 'label' => 'About service', 'type' => 'textarea', 'required' => true],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'experiences' => [
+        'model' => Experience::class, 'title' => 'Experience', 'owner' => true,
+        'fields' => [
+            ['name' => 'designation', 'label' => 'Designation', 'type' => 'text', 'required' => true],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'organization', 'label' => 'Organization', 'type' => 'text', 'required' => true],
+            ['name' => 'responsibilities', 'label' => 'Responsibilities', 'type' => 'textarea', 'required' => false],
+            ['name' => 'join_date', 'label' => 'Join date', 'type' => 'date', 'required' => true],
+            ['name' => 'is_continuing', 'label' => 'Current position', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'resign_date', 'label' => 'Resign date', 'type' => 'date', 'required' => false],
+            ['name' => 'descriptions', 'label' => 'Descriptions', 'type' => 'textarea', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'testimonials' => [
+        'model' => Testimonial::class, 'title' => 'Testimonials', 'owner' => true,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'designation', 'label' => 'Designation', 'type' => 'text', 'required' => true],
+            ['name' => 'organization', 'label' => 'Organization', 'type' => 'text', 'required' => true],
+            ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => true],
+            ['name' => 'mobile', 'label' => 'Mobile', 'type' => 'text', 'required' => true],
+            ['name' => 'ratings', 'label' => 'Ratings', 'type' => 'number', 'required' => true],
+            ['name' => 'comment', 'label' => 'Comment', 'type' => 'textarea', 'required' => true],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'about-info' => [
+        'model' => AboutInfo::class, 'title' => 'About content', 'owner' => false,
+        'fields' => [
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'subtitle', 'label' => 'Subtitle', 'type' => 'text', 'required' => true],
+            ['name' => 'descriptions', 'label' => 'Descriptions', 'type' => 'textarea', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'service-info' => [
+        'model' => ServiceInfo::class, 'title' => 'Service content', 'owner' => false,
+        'fields' => [
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'subtitle', 'label' => 'Subtitle', 'type' => 'text', 'required' => true],
+            ['name' => 'descriptions', 'label' => 'Descriptions', 'type' => 'textarea', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'contact-info' => [
+        'model' => ContactInfo::class, 'title' => 'Contact content', 'owner' => false,
+        'fields' => [
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'subtitle', 'label' => 'Subtitle', 'type' => 'text', 'required' => true],
+            ['name' => 'descriptions', 'label' => 'Descriptions', 'type' => 'textarea', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'privacy-policies' => [
+        'model' => PrivacyPolicy::class, 'title' => 'Privacy policy', 'owner' => false,
+        'fields' => [
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'subtitle', 'label' => 'Subtitle', 'type' => 'text', 'required' => true],
+            ['name' => 'descriptions', 'label' => 'Descriptions', 'type' => 'textarea', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'roles' => [
+        'model' => Role::class, 'title' => 'Roles', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'menus' => [
+        'model' => Menu::class, 'title' => 'Navigation groups', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'modules' => [
+        'model' => Module::class, 'title' => 'Navigation modules', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'menu_id', 'label' => 'Menu id', 'type' => 'select', 'required' => true, 'options' => 'menus'],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'links' => [
+        'model' => Link::class, 'title' => 'Navigation links', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'link_url', 'label' => 'Resource path', 'type' => 'text', 'required' => true],
+            ['name' => 'module_id', 'label' => 'Module id', 'type' => 'select', 'required' => true, 'options' => 'modules'],
+            ['name' => 'fa_icon', 'label' => 'Legacy icon HTML (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+];
