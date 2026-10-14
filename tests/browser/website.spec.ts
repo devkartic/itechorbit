@@ -32,6 +32,29 @@ test('SSR renders auth pages and escapes untrusted article titles', async ({ pag
   await expect(page).toHaveTitle(/<script id="title-injection">/);
   await expect(page.locator('#title-injection')).toHaveCount(0);
 });
+test('logo stays loaded and aligned between the homepage and authentication pages', async ({ page }, testInfo) => {
+  await page.goto('/');
+  const header = page.getByRole('banner');
+  const logo = header.getByRole('img', { name: 'iTechOrbit — Engineering with AI', exact: true });
+  await expect(logo).toBeVisible();
+  const initialHeader = await header.boundingBox();
+  const initialLogo = await logo.boundingBox();
+  await header.getByRole('link', { name: 'Sign in', exact: true }).click();
+  for (const path of ['/login', '/register', '/password/reset', '/password/reset/test-token']) {
+    if (path !== '/login') await page.goto(path);
+    await expect(logo).toBeVisible();
+    await expect.poll(() => logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBeTruthy();
+    const authHeader = await header.boundingBox();
+    const authLogo = await logo.boundingBox();
+    expect(authHeader?.height).toBe(initialHeader?.height);
+    for (const key of ['x', 'y', 'width', 'height'] as const) expect(authLogo?.[key]).toBeCloseTo(initialLogo?.[key] ?? 0, 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    if (path === '/login') await page.screenshot({ path: testInfo.outputPath('login-branding.png'), fullPage: true });
+  }
+  await header.getByRole('link', { name: 'iTechOrbit home', exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Build, Modernize');
+});
 test('blog search, article TOC, code and pagination preserve existing URLs', async ({ page, request }) => {
   await page.goto('/blogs'); await expect(page.getByText('13 articles', { exact: true })).toBeVisible();
   await page.getByRole('searchbox', { name: 'Search articles' }).fill('maintainable'); await page.getByRole('button', { name: 'Search articles' }).click();
@@ -47,6 +70,11 @@ test('contact validation and successful inquiry', async ({ page }) => {
 test('authentication, admin CRUD, inbox and permission interface', async ({ page, isMobile }) => {
   await page.goto('/posts'); await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/(home|posts)$/);
+  if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  const workspaceLogo = page.getByRole('link', { name: 'iTechOrbit workspace', exact: true }).getByRole('img');
+  await expect(workspaceLogo).toBeVisible();
+  await expect.poll(() => workspaceLogo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBeTruthy();
+  if (isMobile) await page.getByRole('button', { name: 'Close workspace navigation', exact: true }).click();
   await page.goto('/posts/create'); await page.getByLabel('Title *', { exact: true }).fill(`Browser CRUD ${isMobile ? 'mobile' : 'desktop'}`); await page.getByLabel('Category id').selectOption({ label: 'Laravel' }); await page.getByLabel('Body *', { exact: true }).fill('<p>Browser regression article.</p>'); await page.getByRole('button', { name: 'Save changes' }).click(); await expect(page).toHaveURL(/\/posts$/);
   const title = `Browser CRUD ${isMobile ? 'mobile' : 'desktop'}`; await page.getByRole('link', { name: `Edit ${title}`, exact: true }).click(); await page.getByLabel('Title *', { exact: true }).fill(title + ' revised'); await page.getByRole('button', { name: 'Save changes' }).click(); await expect(page).toHaveURL(/\/posts$/); await page.getByRole('button', { name: `Delete ${title} revised`, exact: true }).click(); await expect(page.getByRole('dialog')).toBeVisible(); await page.getByRole('button', { name: 'Delete record', exact: true }).click(); await expect(page.getByText(title + ' revised', { exact: true })).toHaveCount(0);
   await page.goto('/contacts'); await expect(page.getByRole('heading', { level: 1 })).toHaveText('Contact inquiries'); await page.goto('/permissions'); await expect(page.getByLabel('Select role')).toBeVisible(); await page.getByLabel('Select role').selectOption('4'); await expect(page.getByRole('heading', { level: 1 })).toHaveText('Roles & permissions');

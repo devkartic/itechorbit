@@ -141,3 +141,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Compile retained Blade templates; verify types/lint and client/SSR builds. PHP regression suite passes (34 tests / 693 assertions).
 - [x] Verify the final single-image wordmark with 22 browser checks and review dedicated desktop/mobile header captures and the dark-background preview.
 - [x] Replace the faint watermark and font O with a clear orbital O icon; regenerate the matching email image, browser icon and mobile shortcut icon. Verify 8 affected desktop/mobile browser checks, types, lint and client/SSR builds; review header and light/dark captures.
+
+## Authentication header consistency — 2026-10-14
+- [x] Confirm the local login logo loads; address the clarified issue of different header height and responsive logo sizing during navigation from the homepage.
+- [x] Use the same site-header/header-inner sizing and logo alignment on the shared authentication page; add a native home link.
+- [x] Review public, auth, workspace and retained Blade logo references. Constrain the workspace logo beside mobile controls and preserve image proportions under legacy CSS.
+- [x] Add browser regression coverage comparing homepage/login/register/password-reset logo geometry and testing image decoding, home navigation and workspace branding.
+- [x] Verify all 24 browser checks; after the final empty-email normalization, recheck all 4 affected branding/admin scenarios. Types, lint and client/SSR builds pass; mobile login capture reviewed.
