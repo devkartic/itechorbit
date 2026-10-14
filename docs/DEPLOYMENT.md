@@ -38,7 +38,7 @@ Switch to the prior release and its locked dependency/assets/SSR bundle, restart
 
 ## CI layout
 
-The actual Git root is `/Users/karticgharami/Workspace`. The installed workflow is `.github/workflows/itechorbit-modernization.yml` at that root and runs only this project's checks, using `projects/itechorbit` paths. A copy lives in this application's `.github/workflows/modernization.yml`. When extracting a standalone repository, update working-directory/cache/artifact paths. CI has no deployment credentials or deployment step; PHP 8.5 CI execution remains unverified until GitHub runs it.
+The application now has a standalone Git repository at `/Users/karticgharami/Workspace/projects/itechorbit`. Its `.github/workflows/modernization.yml` uses repository-root working-directory, dependency-cache and artifact paths. CI has no deployment credentials or deployment step; PHP 8.5 CI execution remains unverified until GitHub runs it.
 
 ## Browser history encryption and local HTTP
 

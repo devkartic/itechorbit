@@ -116,3 +116,12 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Verify 8 affected desktop/mobile layout, navigation, studio interaction and AI inquiry checks, plus types/lint/builds; review the overall page rhythm.
 
 - [x] Remove decorative dot from public header/footer, authentication and admin branding (user-requested brand correction).
+
+## Header and account experience — 2026-10-14
+- [x] Refine the sticky header with pill navigation, elevated active links, a two-line brand treatment, theme accents and responsive actions.
+- [x] Add guest Sign in and an authenticated avatar dropdown with profile, settings, workspace, optional public portfolio and secure POST logout.
+- [x] Support keyboard navigation, Escape/focus restoration and outside-click dismissal; retain mobile navigation.
+- [x] Implement protected self-service profile/email/password settings with validation, independent rate limits and current-password checks for sensitive changes.
+- [x] Exclude account pages from indexing and clear Inertia history after logout. Password changes refresh the session/CSRF state.
+- [x] Verify 34 PHP tests / 693 assertions, 3 frontend tests, 22 desktop/mobile browser checks, types, lint, Pint and client/SSR builds. Review account-menu screenshots on both viewports.
+- [x] Update CI paths for the application's standalone Git repository. No production deployment or existing-data migration performed.

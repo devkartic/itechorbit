@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Support\SessionKey;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
 use Tests\TestCase;
@@ -60,7 +61,7 @@ class AccountTest extends TestCase
     public function test_logout_ends_the_session_and_clears_inertia_history(): void
     {
         $user = $this->user();
-        $this->actingAs($user)->post('/logout')->assertRedirect('/');
+        $this->actingAs($user)->post('/logout')->assertRedirect('/')->assertSessionHas(SessionKey::CLEAR_HISTORY, true);
         $this->assertGuest();
         $this->get('/account/profile')->assertRedirect('/login');
     }
