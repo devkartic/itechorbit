@@ -125,3 +125,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Exclude account pages from indexing and clear Inertia history after logout. Password changes refresh the session/CSRF state.
 - [x] Verify 34 PHP tests / 693 assertions, 3 frontend tests, 22 desktop/mobile browser checks, types, lint, Pint and client/SSR builds. Review account-menu screenshots on both viewports.
 - [x] Update CI paths for the application's standalone Git repository. No production deployment or existing-data migration performed.
+
+## Open navigation and engineering/AI logo — 2026-10-14
+- [x] Remove boxed/pill navigation and item backgrounds; use open spacing, fine animated underlines and a small AI accent.
+- [x] Simplify Sign in and the mobile menu control while preserving sticky behavior and account functionality.
+- [x] Create a custom SVG engineering-core/orbit/AI-node symbol with light/dark wordmark exports and a favicon.
+- [x] Apply the shared symbol to public, authentication and workspace branding; document meaning, colors and assets in BRAND.md.
+- [x] Review the light/dark logo preview; verify 8 affected desktop/mobile navigation, sticky-header and account checks, TypeScript, ESLint and client/SSR builds.
