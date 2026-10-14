@@ -1,6 +1,6 @@
 # iTechOrbit visual identity
 
-The final identity is a single wordmark image with a subtle orbit around the O in Orbit and the tagline ENGINEERING WITH AI. The standalone planet illustration has been removed at the user's request. The business name remains the primary focus at header size.
+The final identity is a single wordmark image with an orbital icon replacing the O in Orbit and the tagline ENGINEERING WITH AI. The icon preserves the O's hollow letterform, with a visible foreground ring and small satellite node. The separate left illustration and faint watermark have been removed at the user's request. The business name remains the primary focus at header size.
 
 Palette: deep navy `#211A35`, violet `#7040CF`, pale violet `#A98BE8` and a small mint `#AFE1D0` orbital node. Keep the logo stationary and preserve its 300:84 aspect ratio. Public and workspace logos use the same master image. On dark backgrounds, invert/hue-rotate styling preserves the artwork and creates a readable pale violet treatment without another design file.
 

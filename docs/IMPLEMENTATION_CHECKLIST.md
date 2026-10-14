@@ -140,3 +140,4 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Update browser and mobile icons to the orbital O; remove superseded logo variants and the former symbol component.
 - [x] Compile retained Blade templates; verify types/lint and client/SSR builds. PHP regression suite passes (34 tests / 693 assertions).
 - [x] Verify the final single-image wordmark with 22 browser checks and review dedicated desktop/mobile header captures and the dark-background preview.
+- [x] Replace the faint watermark and font O with a clear orbital O icon; regenerate the matching email image, browser icon and mobile shortcut icon. Verify 8 affected desktop/mobile browser checks, types, lint and client/SSR builds; review header and light/dark captures.
