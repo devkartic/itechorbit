@@ -8,8 +8,8 @@
     <meta content="" name="keywords">
 
     <!-- Favicons -->
-    <link href="{{ asset('portfolio/img/favicon_io/apple-touch-icon.png') }}" rel="icon">
-    <link href="{{ asset('portfolio/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
+    <link href="{{ asset('favicon.svg') }}" rel="icon" type="image/svg+xml">
+    <link href="{{ asset('apple-touch-icon.png') }}" rel="apple-touch-icon">
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">

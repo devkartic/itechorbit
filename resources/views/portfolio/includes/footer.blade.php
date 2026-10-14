@@ -6,7 +6,7 @@
                 <div class="col-lg-12 col-md-12 footer-info text-center">
                     <div href="index.html" class="logo align-items-center">
                         @if($user->id===1)
-                            <span class="p-1"><i class="fa-brands fa-dev"></i></span>
+                            <x-brand-logo :width="200" />
                         @endif
                         <span class="text-capitalize">{{ $user->name }}</span>
                     </div>

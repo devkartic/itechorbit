@@ -2,8 +2,7 @@
     <div class="container-fluid container-xl d-flex align-items-center justify-content-between">
 
         <a href="{{ url('/') }}" class="logo d-flex align-items-center">
-            <span class="p-2"><i class="fas fa-code"></i></span>
-            <span class="">{{ config('app.name', 'itechorbit') }}</span>
+            <x-brand-logo />
         </a>
 
         <nav id="navbar" class="navbar">

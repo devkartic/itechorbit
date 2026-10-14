@@ -7,6 +7,7 @@ test('public pages render crawlable HTML and responsive navigation', async ({ pa
   await page.evaluate(() => document.fonts.ready);
   expect(await page.evaluate(() => document.fonts.check('600 16px Inter'))).toBeTruthy();
   await page.screenshot({ path: testInfo.outputPath('homepage.png'), fullPage: true });
+  await page.locator('.site-header').screenshot({ path: testInfo.outputPath('header.png') });
   const panel = await page.locator('.studio-window').boundingBox();
   const viewportWidth = await page.evaluate(() => window.innerWidth);
   expect(panel?.x).toBeGreaterThanOrEqual(0);

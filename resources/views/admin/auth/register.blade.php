@@ -4,7 +4,7 @@
     <div class="register-box">
         <div class="card card-outline card-primary">
             <div class="card-header text-center">
-                <a href="{{ url('/') }}" class="h1"><b>{{ config('app.name', 'itechorbit') }}</b></a>
+                <a href="{{ url('/') }}" class="h1"><x-brand-logo :width="220" /></a>
             </div>
             <div class="card-body">
                 <blockquote class="blockquote mb-3 m-0">

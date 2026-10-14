@@ -1,5 +1,7 @@
 <head>
     <meta charset="utf-8">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin - @yield('page_title', 'Panel')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>

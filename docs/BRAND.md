@@ -1,15 +1,15 @@
 # iTechOrbit visual identity
 
-The symbol combines a code core inside a hexagonal engineering module, a tilted orbit reflecting the business name, and connected mint/lime nodes representing AI-enabled systems. This is a visual metaphor, not a certification or a claim of project outcomes.
+The final identity is a single wordmark image with a subtle orbit around the O in Orbit and the tagline ENGINEERING WITH AI. The standalone planet illustration has been removed at the user's request. The business name remains the primary focus at header size.
 
-Palette: deep navy `#211A35`, violet `#7040CF`, mint `#AFE1D0`, lime `#D6F576`, pale lavender `#F5F0FF`. Keep the symbol stationary for readability, with clear space of at least one node diameter. Use the full wordmark at larger sizes and the symbol alone for compact placements.
+Palette: deep navy `#211A35`, violet `#7040CF`, pale violet `#A98BE8` and a small mint `#AFE1D0` orbital node. Keep the logo stationary and preserve its 300:84 aspect ratio. Public and workspace logos use the same master image. On dark backgrounds, invert/hue-rotate styling preserves the artwork and creates a readable pale violet treatment without another design file.
 
 Assets:
 
-- `public/brand/itechorbit-symbol.svg`: transparent, scalable symbol; no font dependency.
-- `public/brand/itechorbit-wordmark-light.svg`: transparent wordmark for light backgrounds.
-- `public/brand/itechorbit-wordmark-dark.svg`: transparent wordmark for dark backgrounds.
-- `public/favicon.svg`: compact symbol used by the browser.
+- `public/brand/itechorbit-logo.svg`: single transparent master image containing the name, orbit and tagline.
+- `public/brand/itechorbit-logo.png`: a raster export of the same artwork for the existing email template (SVG support varies by email client).
+- `public/favicon.svg`: compact orbital O for browser tabs.
+- `public/apple-touch-icon.png`: compact orbital O for saved mobile shortcuts.
 - `docs/assets/itechorbit-brand-preview.png`: light/dark presentation preview.
 
-Wordmark SVGs retain editable text and use Inter with Arial/sans-serif fallbacks; install Inter when editing/exporting these assets. The application keeps its wordmark as accessible HTML using its existing self-hosted Inter font and uses the shared BrandSymbol component for the SVG symbol. Public, authentication and workspace branding share the same symbol. No image-generation service, remote font or additional dependency is required.
+The master SVG embeds the existing self-hosted Inter bold font, so it renders as a complete image without fetching a separate font. BrandLogo in React and the brand-logo Blade component share this asset. The full image replaces public header/footer, authentication, admin/workspace, retained legacy template and email branding. Legacy personal portfolio names remain intact. Browser/tab icons use the compact O because a full wordmark is unreadable at those sizes. No remote font or new application dependency is required.

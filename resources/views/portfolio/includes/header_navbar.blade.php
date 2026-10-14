@@ -3,7 +3,7 @@
 
         <a href="#" class="logo d-flex align-items-center">
             @if($user->id===1)
-                <span class="p-1"><i class="fa-brands fa-dev"></i></span>
+                <x-brand-logo :width="200" />
             @endif
             <span class="text-capitalize">{{ $user->name }}</span>
         </a>

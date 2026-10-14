@@ -4,8 +4,7 @@
             <div class="row gy-4">
                 <div class="col-lg-5 col-md-12 footer-info">
                     <a href="{{ url('/') }}" class="logo d-flex align-items-center">
-                        <span class="p-2"><i class="fas fa-code"></i></span>
-                        <span class="">{{ config('app.name', 'itechorbit') }}</span>
+                        <x-brand-logo />
                     </a>
                     <p>This blog is for sharing programming skills and knowledge.</p>
                     <p class="text-success">Thank you for being here <i class="fa-solid fa-face-smile"></i>.</p>

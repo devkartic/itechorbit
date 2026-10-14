@@ -3,7 +3,7 @@
 @section('content')
 <div class="container m-2">
     <div class="card card-info">
-        <div class="h3 card-header text-bold text-center">{{ config('app.name', 'itechorbit') }}</div>
+        <div class="h3 card-header text-bold text-center"><x-brand-logo :width="220" /></div>
         <div class="card-body">
             <div class="row justify-content-center">
                 <div class="col-md-8">

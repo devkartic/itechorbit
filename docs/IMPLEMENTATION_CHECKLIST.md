@@ -132,3 +132,11 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Create a custom SVG engineering-core/orbit/AI-node symbol with light/dark wordmark exports and a favicon.
 - [x] Apply the shared symbol to public, authentication and workspace branding; document meaning, colors and assets in BRAND.md.
 - [x] Review the light/dark logo preview; verify 8 affected desktop/mobile navigation, sticky-header and account checks, TypeScript, ESLint and client/SSR builds.
+
+## Unified wordmark refinement — 2026-10-14
+- [x] Follow the supplied logo references and subsequent direction: remove the left illustration, integrate a subtle orbit around the O and use ENGINEERING WITH AI.
+- [x] Consolidate the name, orbit and tagline in one SVG image with embedded Inter; apply background-specific coloring to the same asset.
+- [x] Replace branding in public, auth, admin and retained legacy views; use a PNG export of the same artwork for email. Preserve personal portfolio names.
+- [x] Update browser and mobile icons to the orbital O; remove superseded logo variants and the former symbol component.
+- [x] Compile retained Blade templates; verify types/lint and client/SSR builds. PHP regression suite passes (34 tests / 693 assertions).
+- [x] Verify the final single-image wordmark with 22 browser checks and review dedicated desktop/mobile header captures and the dark-background preview.
