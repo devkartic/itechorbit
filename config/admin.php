@@ -67,7 +67,7 @@ return [
             ['name' => 'project_url', 'label' => 'Project URL', 'type' => 'url', 'required' => false],
             ['name' => 'order_number', 'label' => 'Order number', 'type' => 'number', 'required' => false],
             ['name' => 'about_project', 'label' => 'About project', 'type' => 'richtext', 'required' => true],
-            ['name' => 'uploaded_image', 'label' => 'Cover image', 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
+            ['name' => 'uploaded_image', 'label' => 'Project screenshot', 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
             ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
         ],
     ],

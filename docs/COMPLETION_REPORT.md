@@ -171,3 +171,11 @@ Final browser result for this correction: 30 passed. Updated full-content and sp
 Implemented inline portfolio-owner forms and standalone personal contact pages, with legacy-link redirects. Personal submissions resolve the active/public owner from the URL, save under that user and queue email only to them. Personal emails identify the portfolio owner; business emails retain iTechOrbit branding. Both templates now include a sender/subject card, full escaped message, reply/inbox actions, visitor Reply-To and plain-text alternative. No `.env` changes, migration or dependencies were needed.
 
 Verified 48 PHP tests / 1,089 assertions, 3 frontend tests, types/lint, Pint, client/SSR builds, Blade compilation and all 32 browser checks. Reviewed synthetic desktop/mobile contact and email captures. No external emails were sent; configured SMTP delivery was not tested. Details and rollback: [CONTACT_AND_EMAIL.md](CONTACT_AND_EMAIL.md).
+
+## Project card hierarchy and uploaded screenshots — 2026-10-16
+
+Removed duplicated generated mockup content from screenshot-less portfolio cards. The fallback is now a compact text-free accent, with clearer typography and a single project-content hierarchy. Real uploaded screenshots remain visible as small uncropped previews linked to the full project page. Renamed the existing admin image field to Project screenshot and added usage guidance; existing upload validation and storage remain authoritative. No environment, schema or media-record changes were required.
+
+PHP (48 tests / 1,089 assertions), 3 frontend tests, TypeScript, lint, Pint and production client/SSR builds pass. New browser coverage performs an actual admin screenshot upload and verifies thumbnail loading, dimensions, contain sizing and detail navigation with synthetic-data cleanup. Card regression coverage checks title uniqueness, compact accents, centered rows and contrast across five templates.
+
+Final full browser regression result for the project card/upload correction: 34 passed. Desktop/mobile card and upload captures reviewed and saved.

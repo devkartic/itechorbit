@@ -12,7 +12,7 @@ The existing `/portfolios` and `/portfolios/{key}` pages now render a saved user
 | Editorial | Ivory engineering journal, oversized serif type, orange annotations, arch identity and alternating project stories. |
 | Spotlight | Electric-blue identity stage, lime details, oversized outline typography and a visual work mosaic. |
 
-Missing images use an initial-based identity card or neutral engineering artwork rendered in CSS/SVG; no client logos, claims, testimonials or achievements are fabricated. Empty sections are omitted. The first project occupies a complete showcase row. Symbolic project artwork displays the actual project name and technology tags; it is decorative artwork, not a fabricated product screenshot. Existing active content appears in all five templates, including introduction, objective, additional information, skills, experience, services, projects, social links and public CVs.
+Missing images use an initial-based identity card or neutral engineering artwork rendered in CSS/SVG; no client logos, claims, testimonials or achievements are fabricated. Empty sections are omitted. Project cards form centered rows. When no screenshot is uploaded, a compact text-free visual accent replaces the former large generated mockup, so the title/category/technologies are shown only in the content section. Uploaded screenshots remain genuine, uncropped previews and link to the full project detail page. Existing active content appears in all five templates, including introduction, objective, additional information, skills, experience, services, projects, social links and public CVs.
 
 ## User workflow
 
@@ -60,7 +60,7 @@ For rollback, revert the feature's code/build and restart SSR. The nullable colu
 - PHP: 44 tests / 1,040 assertions passed, including five template tests and the missing-column regression.
 - Frontend: 3 unit tests, TypeScript, ESLint, Pint and client/SSR builds passed.
 - All 30 desktop/mobile browser regressions passed, including private preview/save/reload and public SSR checks for every template.
-- No Lighthouse scores measured for this change. Portfolio view JS is about 17.2 KB / 5 KB gzip and template CSS about 36.6 KB / 7.6 KB gzip in the production build; these assets are shared between the public portfolio and private chooser.
+- No Lighthouse scores measured for this change. Portfolio view JS is about 16.8 KB / 5 KB gzip and shared portfolio CSS about 39.3 KB / 7.9 KB gzip in the production build; these assets are shared between the public portfolio and private chooser.
 - The 2026-10-16 art-direction refresh passed all 30 browser regressions, including keyboard/category filtering and all five saved layouts. Reduced-motion preferences disable gallery transitions/animations, and container sizing keeps private previews responsive. No new dependencies or schema changes were introduced by this refresh.
 - Visual review uses synthetic profiles only. Screenshots below contain no application user data.
 
@@ -85,3 +85,15 @@ Browser coverage now includes five sparse synthetic profiles, incomplete gallery
 Follow-up verification: all 30 browser tests passed, including the added checks on each template. PHP: 44 tests / 1,040 assertions; frontend: 3 tests; TypeScript, lint, Pint and client/SSR builds pass. Additional captures: [sparse desktop](assets/portfolio-sparse-desktop.png), [sparse mobile](assets/portfolio-sparse-mobile.png).
 
 Portfolio contact now uses an inline personal form and a dedicated owner page, with owner-only notification delivery. The two inquiry email templates include full HTML/text message bodies. See [CONTACT_AND_EMAIL.md](CONTACT_AND_EMAIL.md) for updated routes, recipient rules, previews and verification.
+
+## Project screenshot and card hierarchy — 2026-10-16
+
+The supplied screenshot exposed a duplicated title and tags inside a generated mockup above the actual project content. That fallback has been replaced by a small decorative strip: 76px desktop, 64px mobile, without repeating any project text. Description and contribution text are larger, and card content follows one clear category → title → contribution → description → technology → action hierarchy.
+
+Real screenshots are preserved. Upload a JPG, PNG or WebP (up to 2 MB) through **Admin → Projects → Create/Edit → Project screenshot**, then save the active project. The existing validated image storage path feeds the portfolio. Image previews use `object-fit: contain`, at 190px desktop / 160px mobile, and remain clickable to project details where the full screenshot is available. No existing media files or database records were removed by this presentation change.
+
+Browser coverage now exercises a real screenshot upload through the admin form, verifies the image loads uncropped at the compact height, follows the project link, and cleans up only its own synthetic upload. Card checks also verify a single displayed title, compact empty-image accents, centered rows, contrast, and template selection on desktop/mobile.
+
+Final browser result: 34 passed. Review: [card desktop](assets/project-card-desktop.png), [card mobile](assets/project-card-mobile.png), [uploaded thumbnail desktop](assets/project-screenshot-desktop.png), [uploaded thumbnail mobile](assets/project-screenshot-mobile.png). Upload verification uses a synthetic email preview image, not a claimed client project screenshot.
+
+Entrance motion keeps text fully opaque from the first frame; only its position changes. This avoids the low-contrast text seen during an opacity fade.

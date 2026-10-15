@@ -311,8 +311,17 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect(page.locator('.pf-project')).toHaveCount(4);
     await expect(page.getByRole('navigation', { name: 'Portfolio sections' }).getByRole('link', { name: 'Work', exact: true })).toHaveAttribute('href', '#projects');
     const gallery = await page.locator('.pf-projects').boundingBox();
-    const finalCard = await page.locator('.pf-project').last().boundingBox();
-    expect(Math.abs((gallery!.x + gallery!.width / 2) - (finalCard!.x + finalCard!.width / 2))).toBeLessThan(2);
+    const finalRow = await page.locator('.pf-projects').evaluate(grid => {
+      const boxes = [...grid.querySelectorAll<HTMLElement>('.pf-project')].map(card => ({ y: card.offsetTop, left: card.getBoundingClientRect().left, right: card.getBoundingClientRect().right }));
+      const finalY = Math.max(...boxes.map(box => box.y));
+      const row = boxes.filter(box => Math.abs(box.y - finalY) < 2);
+      return { left: Math.min(...row.map(box => box.left)), right: Math.max(...row.map(box => box.right)) };
+    });
+    expect(Math.abs((gallery!.x + gallery!.width / 2) - (finalRow.left + finalRow.right) / 2)).toBeLessThan(2);
+    const projectCard = page.locator('.pf-project').first();
+    expect((await projectCard.innerText()).split('Synthetic project for testing')).toHaveLength(2);
+    expect(await projectCard.locator('.pf-project-accent').evaluate(element => element.getBoundingClientRect().height)).toBeLessThanOrEqual(80);
+    await projectCard.screenshot({ path: testInfo.outputPath(`project-card-${name.toLowerCase()}.png`) });
     if (!isMobile) {
       const card = page.locator('.pf-project').first();
       const restingShadow = await card.evaluate(element => getComputedStyle(element).boxShadow);
@@ -378,4 +387,29 @@ test('portfolio contact belongs to its owner and supports personal inquiries', a
   await expect(page.getByRole('link', { name: 'iTechOrbit home' })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
   await page.screenshot({ path: testInfo.outputPath('portfolio-personal-contact.png'), fullPage: true });
+});
+
+test('uploaded project screenshots appear as compact uncropped portfolio thumbnails', async ({ page, isMobile }, testInfo) => {
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  try {
+    await page.goto('/projects/1/edit');
+    await page.getByLabel('Project screenshot', { exact: true }).setInputFiles('docs/assets/business-inquiry-email-desktop.png');
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(page).toHaveURL(/\/projects$/);
+    await page.goto('/portfolios/TESTPROFILE');
+    const card = page.locator('.pf-project').filter({ hasText: 'Synthetic project for testing' });
+    const image = card.getByRole('img');
+    await expect(image).toBeVisible();
+    await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBeTruthy();
+    await expect(image).toHaveCSS('object-fit', 'contain');
+    expect(await card.locator('.pf-project-image').evaluate(node => node.getBoundingClientRect().height)).toBeLessThanOrEqual(isMobile ? 160 : 190);
+    await expect(card.locator('.pf-project-accent')).toHaveCount(0);
+    await card.screenshot({ path: testInfo.outputPath('uploaded-project-thumbnail.png') });
+    await card.getByRole('link', { name: 'View Synthetic project for testing', exact: true }).click();
+    await expect(page).toHaveURL(/\/work\/1$/);
+  } finally {
+    const token = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+    const cleanup = await page.request.post('/project-file-delete', { headers: { 'X-CSRF-TOKEN': token ?? '', Accept: 'application/json' }, data: { id: 1, field_name: 'image_path' } });
+    expect(cleanup.ok()).toBeTruthy();
+  }
 });

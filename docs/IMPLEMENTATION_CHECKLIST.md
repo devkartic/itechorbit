@@ -212,3 +212,13 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Modernize personal and business notification emails with complete escaped message bodies, Reply-To, reply/inbox actions and plain-text alternatives.
 - [x] Verify 48 PHP tests / 1,089 assertions, 3 frontend tests, types, lint, Pint, client/SSR builds and Blade compilation. All 32 browser checks pass.
 - [x] Review/save desktop/mobile personal contact and both email renders using synthetic content; document behavior, deployment and rollback in CONTACT_AND_EMAIL.md. No real email sent, database migration or environment change.
+
+## Project card hierarchy correction — 2026-10-16
+- [x] Inspect supplied screenshot: the apparent duplication comes from a generated mockup repeating the project title/category/technologies above the real content.
+- [x] Replace missing-image mockups with a compact, text-free visual accent (76px desktop / 64px mobile); preserve actual screenshot previews.
+- [x] Give project content one clear hierarchy, larger descriptive text and balanced text-led rows across all templates.
+- [x] Preserve real screenshot upload/display with compact, uncropped thumbnails; clarify the admin Project screenshot field.
+- [x] Verify all 34 browser checks, including real upload/save/display/detail navigation and test-image cleanup, plus title uniqueness, accent height, row balance, contrast and five-template selection.
+- [x] Verify 48 PHP tests / 1,089 assertions, 3 frontend tests, TypeScript, lint, Pint and builds. Review/save compact card and actual-upload captures on desktop/mobile.
+
+- [x] Keep text fully opaque during entrance motion; rebuild and recheck all 4 affected desktop/mobile template and uploaded-thumbnail scenarios after this final readability correction.
