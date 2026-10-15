@@ -255,3 +255,14 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Remove personal header/navigation from all five portfolio templates and their previews; add a discreet Back to iTechOrbit link above the hero.
 - [x] Replace footer branding and registration links with the current-year creator copyright only; preserve candidate content and direct contact.
 - [x] Verify all 6 affected desktop/mobile scenarios: five-theme layouts, working return links, copyright-only footers, template persistence, contact and uploads. Initial mobile upload-height assertion differed by 0.00012 CSS pixels; allow 0.5px layout rounding and rerun both upload scenarios successfully. TypeScript, lint and client/SSR builds pass. Review and refresh captures.
+
+
+## Restore personal portfolio header — 2026-10-16
+- [x] Correct prior interpretation: restore the creator’s initials and personal section navigation, placing a Main site link beside those links. Keep the corporate header absent and the footer copyright-only.
+- [x] Use a compact two-row header on mobile so navigation and return link do not crowd or overflow.
+- [x] Refine the header with a theme-aware initials tile, creator name, understated role label, open navigation with hover underlines and a Main site link.
+- [x] Verify modern header layouts, section anchors, main-site navigation, responsive alignment and existing inquiry/upload flows: all 6 affected browser scenarios pass.
+- [x] Make the personal header sticky with a theme-matched translucent surface, restrained shadow and section offsets for desktop/mobile.
+- [x] Verify sticky behavior, visible creator name and unobscured section headings in all five themes on desktop/mobile.
+- [x] Extend the sticky masthead surface, divider and shadow to the full viewport width while retaining the shared content shell.
+- [x] Verify full-width masthead geometry and contained content alignment at mobile, tablet, desktop and wide desktop sizes across all five themes. Both desktop/mobile template scenarios pass with working anchors, sticky positioning, visible creator names and copyright-only footers. Types, lint and client/SSR builds pass. Review and refresh captures.

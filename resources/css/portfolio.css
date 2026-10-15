@@ -376,9 +376,47 @@
 @container(max-width:1023px) { .pf-profile-row .pf-skills { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @container(max-width:680px) { .pf-profile-row .pf-skills { grid-template-columns:repeat(2,minmax(0,1fr)); } .pf-candidate-role { font-size:21px; } }
 
-/* A discreet exit replaces portfolio navigation; the creator owns the canvas. */
-.pf-return-row { padding:22px 0 0; }
+/* Personal section navigation with a discreet return to the main site. */
+.pf-header-with-return nav { margin-left:auto; }
+.pf-header-with-return>.pf-return-link { border-left:1px solid var(--pf-line); padding-left:22px; flex-shrink:0; }
 .pf-return-link { display:inline-flex; align-items:center; gap:8px; color:var(--pf-muted); font-size:12px; line-height:1.6; transition:color .2s; }
 .pf-return-link:hover { color:var(--pf-accent); }
 .pf-copyright { justify-content:center; margin-top:8px; padding:20px 0 28px; font-size:11px; line-height:1.7; text-align:center; }
-@container(max-width:680px) { .pf-return-row { padding-top:18px; } .pf-copyright { font-size:10px; } }
+@container(max-width:680px) {
+  .pf-header-with-return { display:grid; grid-template-columns:1fr auto; gap:16px; }
+  .pf-header-with-return nav { grid-column:1 / -1; grid-row:2; margin-left:0; justify-content:flex-start; gap:24px; }
+  .pf-header-with-return nav a { font-size:11px; }
+  .pf-header-with-return>.pf-return-link { grid-column:2; grid-row:1; padding-left:0; border:0; font-size:11px; }
+  .pf-copyright { font-size:10px; }
+}
+
+/* Modern personal masthead: clear identity, open navigation and quiet host link. */
+.pf-header-with-return { padding:22px 0; gap:28px; }
+.pf-header-with-return .pf-personal-brand { min-width:0; gap:11px; }
+.pf-header-with-return .pf-personal-brand>span:first-child { width:42px; height:42px; border-radius:14px; color:var(--pf-accent); border-color:color-mix(in srgb,var(--pf-accent) 20%,var(--pf-line)); background:linear-gradient(145deg,var(--pf-card),var(--pf-soft)); box-shadow:0 4px 12px color-mix(in srgb,var(--pf-accent) 8%,transparent); font-size:17px; letter-spacing:-.05em; }
+.pf-header-with-return .pf-personal-brand>.pf-brand-copy { display:flex; flex-direction:column; min-width:0; gap:4px; letter-spacing:normal; line-height:1.3; }
+.pf-brand-copy strong { font-size:14px; font-weight:600; letter-spacing:-.025em; overflow-wrap:anywhere; }
+.pf-brand-copy small { font-size:10px; color:var(--pf-muted); font-weight:400; }
+.pf-header-with-return nav { gap:26px; }
+.pf-header-with-return nav a { position:relative; padding:8px 0; font-size:12px; font-weight:500; }
+.pf-header-with-return nav a::after { content:''; position:absolute; left:0; right:0; bottom:1px; height:2px; border-radius:2px; background:var(--pf-accent); transform:scaleX(0); transform-origin:left; transition:transform .2s; }
+.pf-header-with-return nav a:hover::after,.pf-header-with-return nav a:focus-visible::after { transform:scaleX(1); }
+.pf-header-with-return>.pf-return-link { font-size:12px; gap:6px; padding-block:5px; }
+.pf-return-link svg { transition:transform .2s; }
+.pf-return-link:hover svg { transform:translate(2px,-2px); }
+@container(max-width:900px) and (min-width:681px) { .pf-header-with-return { gap:18px; } .pf-header-with-return nav { gap:17px; } .pf-brand-copy strong { font-size:12px; } .pf-brand-copy small { font-size:9px; } }
+@container(max-width:680px) {
+  .pf-header-with-return { gap:14px; padding:18px 0 12px; }
+  .pf-header-with-return nav { justify-content:space-between; gap:12px; }
+  .pf-header-with-return nav a { font-size:12px; }
+  .pf-header-with-return .pf-personal-brand>span:first-child { width:36px; height:36px; border-radius:11px; font-size:15px; }
+  .pf-brand-copy strong { font-size:12px; } .pf-brand-copy small { font-size:9px; }
+  .pf-header-with-return>.pf-return-link { padding-left:0; font-size:11px; }
+}
+
+/* Keep personal navigation within reach while reading a long career profile. */
+.pf-masthead { position:sticky; top:0; z-index:30; border-bottom:1px solid var(--pf-line); background:color-mix(in srgb,var(--pf-bg) 96%,transparent); backdrop-filter:blur(12px); box-shadow:0 8px 18px color-mix(in srgb,var(--pf-ink) 4%,transparent); }
+.portfolio-view:has(.pf-header-with-return) :is(.pf-section,.pf-contact) { scroll-margin-top:120px; }
+@container(max-width:680px) { .portfolio-view:has(.pf-header-with-return) :is(.pf-section,.pf-contact) { scroll-margin-top:145px; } }
+
+.pf-masthead .pf-local-header { border-bottom:0; }

@@ -275,6 +275,7 @@ test('rich text forms validate save formatted content and retain success feedbac
 });
 
 test('portfolio template studio previews five layouts and persists the public selection', async ({ page, request, isMobile }, testInfo) => {
+  test.setTimeout(60000); // Five themes, twenty section-anchor checks and public return navigation.
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
   if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
@@ -304,9 +305,12 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
     await expect(page.locator('.pf-candidate-role')).toHaveText('Full-stack software engineer');
     await expect(page.getByRole('link', { name: 'Discuss an opportunity', exact: true })).toHaveAttribute('href', '#connect');
-    await expect(page.getByRole('navigation', { name: 'Portfolio sections' })).toHaveCount(0);
-    await expect(page.locator('.pf-local-header')).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Back to iTechOrbit', exact: true })).toHaveAttribute('href', '/');
+    await expect(page.getByRole('navigation', { name: 'Portfolio sections' })).toBeVisible();
+    await expect(page.locator('.pf-local-header')).toBeVisible();
+    await expect(page.locator('.pf-brand-copy strong')).toBeVisible();
+    await expect(page.locator('.pf-brand-copy strong')).toHaveText('Test Engineer');
+    await expect(page.locator('.pf-local-header').getByRole('link', { name: 'Main site', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Main site', exact: true })).toHaveAttribute('href', '/');
     await expect(page.locator('.pf-signature')).toHaveText(`© ${new Date().getFullYear()} Test Engineer. All rights reserved.`);
     await expect(page.locator('.pf-signature a')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Built with purpose.' })).toBeVisible();
@@ -328,13 +332,16 @@ test('portfolio template studio previews five layouts and persists the public se
       await page.setViewportSize(viewport);
       const skillColumns = await page.locator('.pf-skills').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length);
       expect(skillColumns).toBe(viewport.width <= 680 ? 2 : viewport.width <= 1023 ? 3 : 6);
+      const masthead = await page.locator('.pf-masthead').boundingBox();
+      expect(Math.abs(masthead!.x)).toBeLessThan(1);
+      expect(Math.abs(masthead!.width - viewport.width)).toBeLessThan(1);
       const edges = await page.evaluate(() => {
         const contentEdges = (selector: string) => {
           const element = document.querySelector<HTMLElement>(selector)!;
           const box = element.getBoundingClientRect(); const css = getComputedStyle(element);
           return [box.left + parseFloat(css.paddingLeft), box.right - parseFloat(css.paddingRight)];
         };
-        return { header: contentEdges('.pf-return-row'), portfolio: contentEdges('.pf-profile-sections'), footer: contentEdges('.pf-signature') };
+        return { header: contentEdges('.pf-local-header'), portfolio: contentEdges('.pf-profile-sections'), footer: contentEdges('.pf-signature') };
       });
       for (const edge of [0, 1]) {
         expect(Math.abs(edges.portfolio[edge] - edges.header[edge])).toBeLessThan(1);
@@ -350,6 +357,18 @@ test('portfolio template studio previews five layouts and persists the public se
     const allWork = filters.getByRole('button', { name: /All work/ });
     await allWork.focus(); await page.keyboard.press('Enter');
     await expect(page.locator('.pf-project')).toHaveCount(4);
+    const portfolioNav = page.getByRole('navigation', { name: 'Portfolio sections' });
+    for (const [label, id] of [['Skills', 'expertise'], ['Experience', 'experience'], ['Work', 'projects'], ['Connect', 'connect']]) {
+      await portfolioNav.getByRole('link', { name: label, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      await expect(page.locator(`#${id}`)).toBeInViewport();
+      await expect(page.locator('.pf-local-header')).toBeInViewport();
+      await expect.poll(() => page.evaluate((sectionId: string) => {
+        const header = document.querySelector('.pf-local-header')!.getBoundingClientRect();
+        const target = document.getElementById(sectionId)!.getBoundingClientRect();
+        return header.top >= -1 && header.top <= 1 && target.top >= header.bottom - 1;
+      }, id)).toBeTruthy();
+    }
     await expect(page.getByRole('link', { name: 'Explore the work', exact: true })).toHaveAttribute('href', '#projects');
     const gallery = await page.locator('.pf-projects').boundingBox();
     const finalRow = await page.locator('.pf-projects').evaluate(grid => {
@@ -397,9 +416,9 @@ test('portfolio template studio previews five layouts and persists the public se
     expect(html).toContain(`data-template="${name.toLowerCase()}"`); expect(html).toContain('Synthetic project for testing');
     await page.evaluate(() => { (document.activeElement as HTMLElement)?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await expect(page.getByRole('link', { name: 'Back to iTechOrbit', exact: true })).toBeInViewport();
+    await expect(page.getByRole('link', { name: 'Main site', exact: true })).toBeInViewport();
     await page.screenshot({ path: testInfo.outputPath(`portfolio-${name.toLowerCase()}.png`), fullPage: true });
-    await page.getByRole('link', { name: 'Back to iTechOrbit', exact: true }).click();
+    await page.getByRole('link', { name: 'Main site', exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Build, Modernize');
     await page.goto(`/portfolios/SPARSE-${name.toUpperCase()}`);
