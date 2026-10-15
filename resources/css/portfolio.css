@@ -375,3 +375,10 @@
 .pf-candidate-role { margin:-10px 0 20px; color:var(--pf-ink); font-size:clamp(20px,2.4cqw,28px); font-weight:500; line-height:1.4; letter-spacing:-.025em; overflow-wrap:anywhere; }
 @container(max-width:1023px) { .pf-profile-row .pf-skills { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @container(max-width:680px) { .pf-profile-row .pf-skills { grid-template-columns:repeat(2,minmax(0,1fr)); } .pf-candidate-role { font-size:21px; } }
+
+/* A discreet exit replaces portfolio navigation; the creator owns the canvas. */
+.pf-return-row { padding:22px 0 0; }
+.pf-return-link { display:inline-flex; align-items:center; gap:8px; color:var(--pf-muted); font-size:12px; line-height:1.6; transition:color .2s; }
+.pf-return-link:hover { color:var(--pf-accent); }
+.pf-copyright { justify-content:center; margin-top:8px; padding:20px 0 28px; font-size:11px; line-height:1.7; text-align:center; }
+@container(max-width:680px) { .pf-return-row { padding-top:18px; } .pf-copyright { font-size:10px; } }

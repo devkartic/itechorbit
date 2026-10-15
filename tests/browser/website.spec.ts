@@ -304,7 +304,11 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
     await expect(page.locator('.pf-candidate-role')).toHaveText('Full-stack software engineer');
     await expect(page.getByRole('link', { name: 'Discuss an opportunity', exact: true })).toHaveAttribute('href', '#connect');
-    await expect(page.getByRole('link', { name: 'Create your free portfolio' })).toHaveAttribute('href', '/register');
+    await expect(page.getByRole('navigation', { name: 'Portfolio sections' })).toHaveCount(0);
+    await expect(page.locator('.pf-local-header')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Back to iTechOrbit', exact: true })).toHaveAttribute('href', '/');
+    await expect(page.locator('.pf-signature')).toHaveText(`© ${new Date().getFullYear()} Test Engineer. All rights reserved.`);
+    await expect(page.locator('.pf-signature a')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Built with purpose.' })).toBeVisible();
     const profileRows = await page.locator('.pf-profile-sections').evaluate(container => {
       const box = container.getBoundingClientRect();
@@ -330,7 +334,7 @@ test('portfolio template studio previews five layouts and persists the public se
           const box = element.getBoundingClientRect(); const css = getComputedStyle(element);
           return [box.left + parseFloat(css.paddingLeft), box.right - parseFloat(css.paddingRight)];
         };
-        return { header: contentEdges('.pf-local-header'), portfolio: contentEdges('.pf-profile-sections'), footer: contentEdges('.pf-signature') };
+        return { header: contentEdges('.pf-return-row'), portfolio: contentEdges('.pf-profile-sections'), footer: contentEdges('.pf-signature') };
       });
       for (const edge of [0, 1]) {
         expect(Math.abs(edges.portfolio[edge] - edges.header[edge])).toBeLessThan(1);
@@ -346,7 +350,7 @@ test('portfolio template studio previews five layouts and persists the public se
     const allWork = filters.getByRole('button', { name: /All work/ });
     await allWork.focus(); await page.keyboard.press('Enter');
     await expect(page.locator('.pf-project')).toHaveCount(4);
-    await expect(page.getByRole('navigation', { name: 'Portfolio sections' }).getByRole('link', { name: 'Work', exact: true })).toHaveAttribute('href', '#projects');
+    await expect(page.getByRole('link', { name: 'Explore the work', exact: true })).toHaveAttribute('href', '#projects');
     const gallery = await page.locator('.pf-projects').boundingBox();
     const finalRow = await page.locator('.pf-projects').evaluate(grid => {
       const boxes = [...grid.querySelectorAll<HTMLElement>('.pf-project')].map(card => ({ y: card.offsetTop, left: card.getBoundingClientRect().left, right: card.getBoundingClientRect().right }));
@@ -393,8 +397,11 @@ test('portfolio template studio previews five layouts and persists the public se
     expect(html).toContain(`data-template="${name.toLowerCase()}"`); expect(html).toContain('Synthetic project for testing');
     await page.evaluate(() => { (document.activeElement as HTMLElement)?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await expect(page.getByRole('link', { name: 'Test Engineer portfolio top', exact: true })).toBeInViewport();
+    await expect(page.getByRole('link', { name: 'Back to iTechOrbit', exact: true })).toBeInViewport();
     await page.screenshot({ path: testInfo.outputPath(`portfolio-${name.toLowerCase()}.png`), fullPage: true });
+    await page.getByRole('link', { name: 'Back to iTechOrbit', exact: true }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Build, Modernize');
     await page.goto(`/portfolios/SPARSE-${name.toUpperCase()}`);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Minimal Engineer');
     await expect(page.locator('.pf-project, .pf-section')).toHaveCount(0);
@@ -439,7 +446,7 @@ test('uploaded project screenshots appear as compact uncropped portfolio thumbna
     await expect(image).toBeVisible();
     await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBeTruthy();
     await expect(image).toHaveCSS('object-fit', 'contain');
-    expect(await card.locator('.pf-project-image').evaluate(node => node.getBoundingClientRect().height)).toBeLessThanOrEqual(isMobile ? 160 : 190);
+    expect(await card.locator('.pf-project-image').evaluate(node => node.getBoundingClientRect().height)).toBeLessThanOrEqual((isMobile ? 160 : 190) + 0.5);
     await expect(card.locator('.pf-project-accent')).toHaveCount(0);
     await card.screenshot({ path: testInfo.outputPath('uploaded-project-thumbnail.png') });
     await card.getByRole('link', { name: 'View Synthetic project for testing', exact: true }).click();

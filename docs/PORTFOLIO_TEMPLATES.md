@@ -120,9 +120,9 @@ TypeScript, lint, Pint and production client/SSR builds pass. Browser coverage e
 
 
 ### Candidate-first presentation (2026-10-16)
-Public portfolios now use their own personal navigation and footer rather than the corporate header and service footer. The real professional title sits directly beneath the candidate name, replacing generic marketing slogans. A public CV is the first action when available; otherwise the opportunity contact action leads. Contact messages still belong to the candidate. The footer links to registration for the free portfolio service.
+Public portfolios have no navigation header. A discreet Back to iTechOrbit link sits above the candidate hero; the footer contains only the current-year copyright in the creator’s name. The real professional title sits directly beneath the candidate name, replacing generic marketing slogans. A public CV is the first action when available; otherwise the opportunity contact action leads. Contact messages still belong to the candidate. There are no promotional, registration or navigation links in the footer.
 
-The Technology & expertise grid uses six equal columns above 1,023px, three from 681–1,023px and two at 680px or below. Container queries also apply inside private mobile previews. Long skill names wrap instead of overflowing. Section order remains skills, experience, projects, services, About, then contact.
+The Technology & expertise grid uses six equal columns above 1,023px, three from 681–1,023px and two at 680px or below. Container queries also apply inside private mobile previews. Long skill names wrap instead of overflowing. Section order remains skills, experience, projects, services, About, then contact. This applies across all five templates and their private previews; the main business site and separate personal inquiry page retain their own layouts.
 
 The template chooser includes an expandable content-preparation guide using existing public preview data. It checks presence of role, objective, skills, projects and a publicly visible CV; this is not a quality score or a promise of interviews. Existing registration, email verification, permission configuration and administrator-controlled publication still apply. Self-service automatic publication is not implemented by this presentation change.
 

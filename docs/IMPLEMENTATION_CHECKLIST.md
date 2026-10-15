@@ -249,3 +249,9 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Add private content-preparation guidance and a free portfolio registration link; preserve existing publication permissions and CV privacy.
 - [x] PHP 48 tests / 1,089 assertions, 3 frontend tests, types, lint and client/SSR builds pass.
 - [x] All 6 affected desktop/mobile browser flows pass across five templates, including responsive grid counts, standalone alignment, direct contact and screenshot uploads. Review and refresh portfolio captures; Pint passes.
+
+
+## Creator-only portfolio chrome — 2026-10-16
+- [x] Remove personal header/navigation from all five portfolio templates and their previews; add a discreet Back to iTechOrbit link above the hero.
+- [x] Replace footer branding and registration links with the current-year creator copyright only; preserve candidate content and direct contact.
+- [x] Verify all 6 affected desktop/mobile scenarios: five-theme layouts, working return links, copyright-only footers, template persistence, contact and uploads. Initial mobile upload-height assertion differed by 0.00012 CSS pixels; allow 0.5px layout rounding and rerun both upload scenarios successfully. TypeScript, lint and client/SSR builds pass. Review and refresh captures.

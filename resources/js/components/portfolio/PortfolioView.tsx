@@ -1,5 +1,5 @@
 import '../../../css/portfolio.css';
-import { ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ContactForm } from '@/components/ContactForm';
 import type { Project } from '@/lib/types';
@@ -22,10 +22,6 @@ function Actions({ profile }: { profile: Profile }) {
 }
 function Socials({ profile }: { profile: Profile }) {
   return profile.socials.length ? <div className="pf-socials">{profile.socials.map(social => <a key={social.url} href={social.url} target="_blank" rel="noopener noreferrer">{social.name}<MoveUpRight size={13} /></a>)}</div> : null;
-}
-function SectionNav({ profile, projects }: { profile: Profile; projects: Project[] }) {
-  const links = [profile.skills.length > 0 && ['expertise', 'Skills'], profile.experiences.length > 0 && ['experience', 'Experience'], projects.length > 0 && ['projects', 'Work'], ['connect', 'Connect']].filter(Boolean) as string[][];
-  return <div className="pf-local-header"><a href="#portfolio-top" className="pf-personal-brand" aria-label={`${profile.name} portfolio top`}><span>{initials(profile.name)}</span><span>PERSONAL<br />PORTFOLIO</span></a><nav aria-label="Portfolio sections">{links.map(([id, label]) => <a key={id} href={`#${id}`}>{label}{id === 'connect' && <ArrowUpRight size={13} />}</a>)}</nav></div>;
 }
 function Identity({ profile, projects, technical = false }: { profile: Profile; projects: Project[]; technical?: boolean }) {
   return <div className={`pf-identity-stage ${technical ? 'is-technical' : ''}`}>
@@ -90,7 +86,7 @@ export function PortfolioView({ profile, projects, template, preview = false }: 
   const about = <About profile={profile} />; const experience = <Experience profile={profile} />; const work = <Projects projects={projects} />; const skills = <Skills profile={profile} />; const services = <Services profile={profile} />;
   const hero = <Hero profile={profile} projects={projects} variant={style}>{projects.length > 0 && <a href="#projects" className="pf-scroll-link"><span><ArrowDown size={15} /></span>Explore the work</a>}</Hero>;
   return <div ref={canvas} id="portfolio-top" className={`portfolio-view pf-${style}`} data-template={style} onClick={preview ? event => { if ((event.target as Element).closest('a')) event.preventDefault(); } : undefined}>
-    <div className="shell pf-shell"><SectionNav profile={profile} projects={projects} />
+    <div className="shell pf-shell"><div className="pf-return-row"><a href="/" className="pf-return-link"><ArrowLeft size={14} aria-hidden="true" />Back to iTechOrbit</a></div>
       {style === 'executive' ? <div className="pf-executive-stage">{hero}<div className="pf-executive-signoff"><span>ENGINEERING / PERSPECTIVE / EXECUTION</span><Fingerprint size={22} strokeWidth={1} /></div></div>
         : style === 'blueprint' ? <><div className="pf-terminal-bar"><span><span className="pf-terminal-dot" /> engineer.profile</span><span>HUMAN AT THE CORE / ENGINEERING AT THE EDGES</span></div>{hero}</>
         : style === 'editorial' ? <><div className="pf-editorial-masthead"><span>THE ENGINEERING EDITION</span><span>INDEPENDENT THINKING. INTENTIONAL CRAFT.</span></div>{hero}</>
@@ -98,7 +94,7 @@ export function PortfolioView({ profile, projects, template, preview = false }: 
         : hero}
       {(style === 'studio' || style === 'executive') && <Facts profile={profile} projects={projects} />}
       <div className="pf-profile-sections">{skills}{experience}{work}{services}{about}</div>
-      <Contact profile={profile} preview={preview} /><footer className="pf-signature"><span><Fingerprint size={15} />{profile.name} / Professional portfolio</span><a href="/register">Create your free portfolio <ArrowUpRight size={12} /></a></footer>
+      <Contact profile={profile} preview={preview} /><footer className="pf-signature pf-copyright"><span>© {new Date().getFullYear()} {profile.name}. All rights reserved.</span></footer>
     </div>
   </div>;
 }
