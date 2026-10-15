@@ -286,3 +286,15 @@
 .miniature-spotlight .mini-title { left:12px; top:37px; width:44%; height:11px; }
 .miniature-spotlight .mini-subtitle { left:12px; top:56px; width:36%; }
 .miniature-spotlight .mini-button { left:12px; top:72px; width:24%; height:10px; }
+
+.portfolio-preparation { margin:0 0 24px; border:1px solid #e5dfed; border-radius:14px; background:#fff; padding:18px 20px; }
+.portfolio-preparation summary { cursor:pointer; font-size:14px; font-weight:600; color:#29213c; }
+.portfolio-preparation summary>span { display:inline-block; margin-left:12px; font-size:11px; font-weight:400; color:#655875; }
+.portfolio-preparation>p { font-size:12px; line-height:1.7; margin:15px 0; color:#655875; }
+.portfolio-preparation ul { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:20px; margin:20px 0 4px; }
+.portfolio-preparation li { display:flex; gap:10px; }
+.portfolio-preparation li>span { display:grid; place-items:center; width:24px; height:24px; flex-shrink:0; border-radius:50%; background:#f3eef9; color:#72548c; }
+.portfolio-preparation li>span.is-ready { background:#e5f4ec; color:#28684b; }
+.portfolio-preparation strong { font-size:12px; color:#29213c; }
+.portfolio-preparation li p { font-size:12px; color:#655875; line-height:1.7; margin:6px 0; }
+.portfolio-preparation small { font-size:10px; color:#655875; }

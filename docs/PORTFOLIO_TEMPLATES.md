@@ -117,3 +117,13 @@ The final section order is consistent across all five templates: introduction â†
 The previous boxed profile rows and side-by-side heading/content columns were removed. Skills now use compact wrapping tiles with actual technology names and neutral code icons; decorative indices and link-like arrows were removed. Personal content is a simple readable About me section, with a quiet divider and natural reading width. There is no dedicated hobby field in the current schema; existing introduction/additional information is preserved without inventing hobbies or relabeling technical content as hobby facts.
 
 TypeScript, lint, Pint and production client/SSR builds pass. Browser coverage explicitly checks the section order, Skills-first position, full-width content alignment, contact forms and uploaded screenshots on desktop/mobile.
+
+
+### Candidate-first presentation (2026-10-16)
+Public portfolios now use their own personal navigation and footer rather than the corporate header and service footer. The real professional title sits directly beneath the candidate name, replacing generic marketing slogans. A public CV is the first action when available; otherwise the opportunity contact action leads. Contact messages still belong to the candidate. The footer links to registration for the free portfolio service.
+
+The Technology & expertise grid uses six equal columns above 1,023px, three from 681â€“1,023px and two at 680px or below. Container queries also apply inside private mobile previews. Long skill names wrap instead of overflowing. Section order remains skills, experience, projects, services, About, then contact.
+
+The template chooser includes an expandable content-preparation guide using existing public preview data. It checks presence of role, objective, skills, projects and a publicly visible CV; this is not a quality score or a promise of interviews. Existing registration, email verification, permission configuration and administrator-controlled publication still apply. Self-service automatic publication is not implemented by this presentation change.
+
+No database, dependency or environment changes are required. Build client and SSR assets and restart the existing SSR process as part of the documented deployment workflow. Revert this presentation commit and rebuild to roll back; no data rollback is needed.

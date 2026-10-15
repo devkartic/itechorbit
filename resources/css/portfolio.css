@@ -6,7 +6,7 @@
   overflow:clip; isolation:isolate;
 }
 .portfolio-view * { box-sizing:border-box; }
-/* The shared .shell aligns public portfolios with the site header and footer. */
+/* One shared shell aligns the candidate header, content and footer. */
 .portfolio-view a { text-decoration:none; }
 .portfolio-view :is(a,button):focus-visible { outline:3px solid var(--pf-accent); outline-offset:5px; border-radius:5px; }
 .pf-local-header { display:flex; justify-content:space-between; align-items:center; gap:24px; padding:27px 0; border-bottom:1px solid var(--pf-line); }
@@ -353,8 +353,8 @@
 .pf-profile-row .pf-section-glyph { display:none; }
 .pf-profile-content { min-width:0; padding:0; border:0; }
 .pf-profile-content .pf-rich:last-child>:last-child { margin-bottom:0; }
-.pf-profile-row .pf-skills { display:flex; justify-content:flex-start; flex-wrap:wrap; gap:12px; }
-.pf-profile-row .pf-skills>span,.pf-profile-row .pf-skills>span:last-child:nth-child(odd) { display:flex; align-items:center; flex:1 1 135px; min-width:0; width:auto; max-width:210px; grid-column:auto; padding:15px 18px; gap:12px; font-size:14px; font-weight:500; background:var(--pf-card); color:var(--pf-ink); border:1px solid var(--pf-line); border-radius:10px; box-shadow:0 3px 10px #21143a06; }
+.pf-profile-row .pf-skills { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; }
+.pf-profile-row .pf-skills>span,.pf-profile-row .pf-skills>span:last-child:nth-child(odd) { display:flex; align-items:center; min-width:0; width:100%; max-width:none; overflow-wrap:anywhere; grid-column:auto; padding:15px 18px; gap:12px; font-size:14px; font-weight:500; background:var(--pf-card); color:var(--pf-ink); border:1px solid var(--pf-line); border-radius:10px; box-shadow:0 3px 10px #21143a06; }
 .pf-profile-row .pf-skills svg { color:var(--pf-accent); margin:0; flex-shrink:0; }
 .pf-profile-row .pf-skills>span:hover { box-shadow:0 7px 18px #21143a12; }
 .pf-about-row .pf-profile-content { max-width:85ch; }
@@ -366,7 +366,12 @@
   .pf-profile-row { padding:23px 0; }
   .pf-profile-row .pf-section-heading h2 { font-size:29px; }
   .pf-profile-row .pf-skills { gap:10px; }
-  .pf-profile-row .pf-skills>span,.pf-profile-row .pf-skills>span:last-child:nth-child(odd) { flex-basis:125px; max-width:calc(50% - 5px); padding:13px 14px; font-size:13px; gap:10px; }
+  .pf-profile-row .pf-skills>span,.pf-profile-row .pf-skills>span:last-child:nth-child(odd) { max-width:none; padding:13px 14px; font-size:13px; gap:10px; }
   .pf-profile-row .pf-skills>span:only-child { max-width:100%; }
   .pf-about-row .pf-rich { font-size:14px; }
 }
+
+/* Candidate identity leads; the employer can scan the actual role immediately. */
+.pf-candidate-role { margin:-10px 0 20px; color:var(--pf-ink); font-size:clamp(20px,2.4cqw,28px); font-weight:500; line-height:1.4; letter-spacing:-.025em; overflow-wrap:anywhere; }
+@container(max-width:1023px) { .pf-profile-row .pf-skills { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@container(max-width:680px) { .pf-profile-row .pf-skills { grid-template-columns:repeat(2,minmax(0,1fr)); } .pf-candidate-role { font-size:21px; } }

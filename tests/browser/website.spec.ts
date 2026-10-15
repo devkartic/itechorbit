@@ -301,6 +301,10 @@ test('portfolio template studio previews five layouts and persists the public se
     await page.goto('/portfolios/TESTPROFILE');
     await expect(page.locator('.portfolio-view')).toHaveAttribute('data-template', name.toLowerCase());
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Test Engineer/);
+    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+    await expect(page.locator('.pf-candidate-role')).toHaveText('Full-stack software engineer');
+    await expect(page.getByRole('link', { name: 'Discuss an opportunity', exact: true })).toHaveAttribute('href', '#connect');
+    await expect(page.getByRole('link', { name: 'Create your free portfolio' })).toHaveAttribute('href', '/register');
     await expect(page.getByRole('heading', { name: 'Built with purpose.' })).toBeVisible();
     const profileRows = await page.locator('.pf-profile-sections').evaluate(container => {
       const box = container.getBoundingClientRect();
@@ -318,13 +322,15 @@ test('portfolio template studio previews five layouts and persists the public se
     const alignmentSizes = [originalViewport, ...(!isMobile ? [{ width: 768, height: 900 }, { width: 1440, height: 900 }] : [])];
     for (const viewport of alignmentSizes) {
       await page.setViewportSize(viewport);
+      const skillColumns = await page.locator('.pf-skills').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length);
+      expect(skillColumns).toBe(viewport.width <= 680 ? 2 : viewport.width <= 1023 ? 3 : 6);
       const edges = await page.evaluate(() => {
         const contentEdges = (selector: string) => {
           const element = document.querySelector<HTMLElement>(selector)!;
           const box = element.getBoundingClientRect(); const css = getComputedStyle(element);
           return [box.left + parseFloat(css.paddingLeft), box.right - parseFloat(css.paddingRight)];
         };
-        return { header: contentEdges('.header-inner'), portfolio: contentEdges('.pf-local-header'), footer: contentEdges('.site-footer > .shell') };
+        return { header: contentEdges('.pf-local-header'), portfolio: contentEdges('.pf-profile-sections'), footer: contentEdges('.pf-signature') };
       });
       for (const edge of [0, 1]) {
         expect(Math.abs(edges.portfolio[edge] - edges.header[edge])).toBeLessThan(1);
@@ -387,7 +393,7 @@ test('portfolio template studio previews five layouts and persists the public se
     expect(html).toContain(`data-template="${name.toLowerCase()}"`); expect(html).toContain('Synthetic project for testing');
     await page.evaluate(() => { (document.activeElement as HTMLElement)?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await expect(page.getByRole('link', { name: 'iTechOrbit home', exact: true })).toBeInViewport();
+    await expect(page.getByRole('link', { name: 'Test Engineer portfolio top', exact: true })).toBeInViewport();
     await page.screenshot({ path: testInfo.outputPath(`portfolio-${name.toLowerCase()}.png`), fullPage: true });
     await page.goto(`/portfolios/SPARSE-${name.toUpperCase()}`);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Minimal Engineer');

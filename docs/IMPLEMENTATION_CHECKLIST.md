@@ -239,3 +239,13 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Verify the final section order, Skills-first position, spacing, responsive alignment, all template previews and contact/upload behavior: all 6 affected browser scenarios pass. Types/lint, Pint and client/SSR builds pass; review and refresh captures.
 
 - [x] Standardize the career section order in every template: introduction → skills → experience → projects → services → personal/About → contact. Align local navigation with this order.
+
+
+## Recruiter-focused portfolios and fixed expertise grid — 2026-10-16
+- [x] Use standalone candidate pages with personal navigation, matching content/footer alignment and an accessible skip link; remove corporate navigation and agency sales footer from portfolios.
+- [x] Lead with the actual name, professional role and objective; prioritize a public CV when available and direct opportunity inquiries to the candidate.
+- [x] Retain five visual themes, real project screenshots and career section order; introduce no claims about employment availability or interview outcomes.
+- [x] Set expertise to six equal columns on desktop, three on tablet and two on mobile, including private previews.
+- [x] Add private content-preparation guidance and a free portfolio registration link; preserve existing publication permissions and CV privacy.
+- [x] PHP 48 tests / 1,089 assertions, 3 frontend tests, types, lint and client/SSR builds pass.
+- [x] All 6 affected desktop/mobile browser flows pass across five templates, including responsive grid counts, standalone alignment, direct contact and screenshot uploads. Review and refresh portfolio captures; Pint passes.

@@ -18,7 +18,7 @@ function Section({ id, title, label, children, className = '' }: { id: string; t
   return <section className={`pf-section ${className}`} id={id}><div className="pf-section-heading"><div><p className="pf-kicker"><span />{label}</p><h2>{title}</h2></div><span className="pf-section-glyph" aria-hidden="true"><ArrowUpRight size={25} strokeWidth={1} /></span></div>{children}</section>;
 }
 function Actions({ profile }: { profile: Profile }) {
-  return <div className="pf-actions"><a href="#connect" className="pf-button"><span>Let’s connect</span><ArrowUpRight size={17} /></a>{profile.cv && <a href={profile.cv} download className="pf-button pf-button-secondary"><span>Download CV</span><Download size={16} /></a>}</div>;
+  return <div className="pf-actions">{profile.cv && <a href={profile.cv} download className="pf-button"><span>Download CV</span><Download size={16} /></a>}<a href="#connect" className={`pf-button ${profile.cv ? 'pf-button-secondary' : ''}`}><span>Discuss an opportunity</span><ArrowUpRight size={17} /></a></div>;
 }
 function Socials({ profile }: { profile: Profile }) {
   return profile.socials.length ? <div className="pf-socials">{profile.socials.map(social => <a key={social.url} href={social.url} target="_blank" rel="noopener noreferrer">{social.name}<MoveUpRight size={13} /></a>)}</div> : null;
@@ -40,7 +40,7 @@ function Identity({ profile, projects, technical = false }: { profile: Profile; 
   </div>;
 }
 function Hero({ profile, projects, variant, children }: { profile: Profile; projects: Project[]; variant: PortfolioTemplate; children?: ReactNode }) {
-  return <header className="pf-hero"><div className="pf-hero-copy"><div className="pf-hero-label"><span className="pf-label-line" /><span>{profile.designation || 'Engineering portfolio'}</span></div><p className="pf-hero-prelude">{variant === 'blueprint' ? 'Human thinking. System-level craft.' : variant === 'editorial' ? 'A different perspective on engineering.' : variant === 'executive' ? 'Engineering ideas into impact.' : variant === 'spotlight' ? 'The craft behind the experience.' : 'A little curiosity. A lot of craft.'}</p><h1>{profile.name}<span className="pf-name-dot">.</span></h1><Rich html={profile.objective} className="pf-objective" /><Actions profile={profile} /><Socials profile={profile} />{children}</div><Identity profile={profile} projects={projects} technical={variant === 'blueprint'} /></header>;
+  return <header className="pf-hero"><div className="pf-hero-copy"><div className="pf-hero-label"><span className="pf-label-line" /><span>Professional portfolio</span></div><h1>{profile.name}<span className="pf-name-dot">.</span></h1>{profile.designation && <p className="pf-candidate-role">{profile.designation}</p>}<Rich html={profile.objective} className="pf-objective" /><Actions profile={profile} /><Socials profile={profile} />{children}</div><Identity profile={profile} projects={projects} technical={variant === 'blueprint'} /></header>;
 }
 function Skills({ profile }: { profile: Profile }) {
   return profile.skills.length ? <Section id="expertise" label="The toolkit" title="Technology & expertise" className="pf-profile-row pf-expertise-row"><div className="pf-profile-content"><div className="pf-skills">{profile.skills.map(skill => <span key={skill}><Code2 size={16} strokeWidth={1.5} aria-hidden="true" />{skill}</span>)}</div></div></Section> : null;
@@ -72,7 +72,7 @@ function Facts({ profile, projects }: { profile: Profile; projects: Project[] })
   return facts.length ? <div className="pf-facts" aria-label="Portfolio overview"><div className="pf-facts-label"><Workflow size={24} strokeWidth={1.3} /><span>THE PROFILE<br /><strong>AT A GLANCE</strong></span></div>{facts.map(([count, label]) => <div key={label}><strong>{String(count).padStart(2, '0')}</strong><span>{label}</span></div>)}<ArrowUpRight className="pf-facts-arrow" size={28} strokeWidth={1.2} aria-hidden="true" /></div> : null;
 }
 function Contact({ profile, preview }: { profile: Profile; preview: boolean }) {
-  return <section className="pf-contact pf-personal-contact" id="connect"><div className="pf-contact-copy"><p className="pf-kicker">Contact {profile.name}</p><h2>A conversation.<br /><span>A new possibility.</span></h2><p>Have a role, project or technical challenge in mind? Send a personal message to {profile.name}.</p><Socials profile={profile} />{preview && <p>Form preview — messages cannot be sent from this preview.</p>}</div><div className="pf-contact-form">{profile.portfolioId ? <ContactForm recipient={{ name: profile.name, portfolio_id: profile.portfolioId }} preview={preview} /> : <p>Contact details are not available for this profile.</p>}</div></section>;
+  return <section className="pf-contact pf-personal-contact" id="connect"><div className="pf-contact-copy"><p className="pf-kicker">Contact {profile.name}</p><h2>Let’s discuss<br /><span>your opportunity.</span></h2><p>Hiring for your team? Share the role, what you’re building and the next steps directly with {profile.name}.</p><Socials profile={profile} />{preview && <p>Form preview — messages cannot be sent from this preview.</p>}</div><div className="pf-contact-form">{profile.portfolioId ? <ContactForm recipient={{ name: profile.name, portfolio_id: profile.portfolioId }} preview={preview} /> : <p>Contact details are not available for this profile.</p>}</div></section>;
 }
 export function PortfolioView({ profile, projects, template, preview = false }: PortfolioData & { preview?: boolean }) {
   const style = names[template] ? template : 'studio';
@@ -98,7 +98,7 @@ export function PortfolioView({ profile, projects, template, preview = false }: 
         : hero}
       {(style === 'studio' || style === 'executive') && <Facts profile={profile} projects={projects} />}
       <div className="pf-profile-sections">{skills}{experience}{work}{services}{about}</div>
-      <Contact profile={profile} preview={preview} /><footer className="pf-signature"><span><Fingerprint size={15} />{profile.name} / Engineering portfolio</span><a href="/">Built on iTechOrbit <ArrowUpRight size={12} /></a></footer>
+      <Contact profile={profile} preview={preview} /><footer className="pf-signature"><span><Fingerprint size={15} />{profile.name} / Professional portfolio</span><a href="/register">Create your free portfolio <ArrowUpRight size={12} /></a></footer>
     </div>
   </div>;
 }
