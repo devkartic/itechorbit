@@ -6,7 +6,7 @@
   overflow:clip; isolation:isolate;
 }
 .portfolio-view * { box-sizing:border-box; }
-.pf-shell { width:min(1120px,calc(100% - 64px)); margin:auto; }
+/* The shared .shell aligns public portfolios with the site header and footer. */
 .portfolio-view a { text-decoration:none; }
 .portfolio-view :is(a,button):focus-visible { outline:3px solid var(--pf-accent); outline-offset:5px; border-radius:5px; }
 .pf-local-header { display:flex; justify-content:space-between; align-items:center; gap:24px; padding:27px 0; border-bottom:1px solid var(--pf-line); }
@@ -240,7 +240,6 @@
 .pf-blueprint .pf-project:is(:hover,:focus-within),.pf-blueprint .pf-services>article:hover,.pf-blueprint .pf-experience-body:hover { box-shadow:0 18px 36px #00000055,0 0 22px #a2efc91c; }
 /* Container sizing makes private previews match the public viewport at the same width. */
 @container(max-width:1000px) {
-  .pf-shell { width:calc(100% - 48px); }
   .pf-hero { gap:28px; min-height:0; padding:34px 0; }
   .pf-identity-stage { padding:30px 20px; } .pf-floating-chip { padding:12px; gap:9px; } .pf-floating-work { right:0; }
   .pf-floating-chip strong { font-size:10px; }
@@ -256,7 +255,6 @@
   .pf-editorial-intro { gap:40px; } .pf-editorial .pf-hero { gap:20px; } .pf-editorial .pf-project-content { padding:25px; } .pf-editorial .pf-project h3 { font-size:29px; }
 }
 @container(max-width:680px) {
-  .pf-shell { width:calc(100% - 36px); }
   .pf-local-header { gap:12px; padding:20px 0; } .pf-personal-brand>span:last-child { display:none; } .pf-local-header nav { gap:15px; } .pf-local-header nav a { font-size:9px; }
   .pf-hero,.pf-blueprint .pf-hero,.pf-editorial .pf-hero,.pf-executive-stage .pf-hero,.pf-spotlight-stage .pf-hero { display:flex; flex-direction:column; align-items:stretch; gap:24px; padding:28px 0; }
   .pf-hero-label { margin-bottom:20px; font-size:9px; } .pf-hero-prelude { font-size:12px; } .pf-hero h1 { font-size:clamp(42px,12cqw,70px); margin-bottom:20px; }
@@ -339,3 +337,7 @@
 
 .pf-project.has-project-image h3,.pf-project.has-project-image:first-child h3 { font-size:25px; line-height:1.25; color:var(--pf-ink); }
 .pf-project.has-project-image .pf-project-excerpt { font-size:14px; line-height:1.8; }
+
+/* Match the shared site's gutters at the preview container's width as well. */
+@container(max-width:1023px) { .pf-shell { padding-inline:1.5rem; } }
+@container(max-width:380px) { .pf-shell { padding-inline:1.25rem; } }

@@ -76,7 +76,7 @@ For rollback, revert the feature's code/build and restart SSR. The nullable colu
 
 ## Layout and visual quality corrections — 2026-10-16
 
-The canvas now uses a centered 1,120px maximum width, content-driven heroes and shorter section spacing. Gallery rows wrap around a centered axis; an unmatched final card is centered, while a two-project gallery uses two complete showcase rows. Service columns fit the available content, and empty paired sections collapse. Executive experience occupies a complete row rather than leaving a short timeline beside a tall sidebar. Larger content labels and explicit theme-scoped heading/contact colors improve readability across public pages and private previews.
+The canvas uses content-driven heroes and shorter section spacing. The later alignment correction uses the shared site shell, as described below. Gallery rows wrap around a centered axis; an unmatched final card is centered, while a two-project gallery uses two complete showcase rows. Service columns fit the available content, and empty paired sections collapse. Executive experience occupies a complete row rather than leaving a short timeline beside a tall sidebar. Larger content labels and explicit theme-scoped heading/contact colors improve readability across public pages and private previews.
 
 Cards have visible resting shadows and stronger hover/focus depth, with a colored edge light on Blueprint's dark surfaces. Floating identity chips and signal accents animate gently. IntersectionObserver triggers section reveals once as they enter view. Content remains visible when JavaScript or IntersectionObserver is unavailable. Reduced-motion preferences disable animations and transitions.
 
@@ -97,3 +97,9 @@ Browser coverage now exercises a real screenshot upload through the admin form, 
 Final browser result: 34 passed. Review: [card desktop](assets/project-card-desktop.png), [card mobile](assets/project-card-mobile.png), [uploaded thumbnail desktop](assets/project-screenshot-desktop.png), [uploaded thumbnail mobile](assets/project-screenshot-mobile.png). Upload verification uses a synthetic email preview image, not a claimed client project screenshot.
 
 Entrance motion keeps text fully opaque from the first frame; only its position changes. This avoids the low-contrast text seen during an opacity fade.
+
+## Header/footer alignment — 2026-10-16
+
+Public portfolio content now reuses the exact shared `.shell` used by the header and footer: 80rem maximum outer width with 1.5rem gutters below the desktop breakpoint and 2.5rem on desktop (1.25rem on very narrow screens). Removed the competing portfolio-only maximum width and width-minus-gutter calculations. The personal contact page uses the same shell. Admin previews use matching container-width gutter rules without nesting another padded container.
+
+Browser coverage measures both left/right portfolio content edges against the header and footer for each template at the standard mobile viewport and 768px, 1280px and 1440px desktop/tablet widths. Existing template content, cards, uploads and contact behavior are unchanged.

@@ -222,3 +222,8 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Verify 48 PHP tests / 1,089 assertions, 3 frontend tests, TypeScript, lint, Pint and builds. Review/save compact card and actual-upload captures on desktop/mobile.
 
 - [x] Keep text fully opaque during entrance motion; rebuild and recheck all 4 affected desktop/mobile template and uploaded-thumbnail scenarios after this final readability correction.
+
+## Portfolio/header/footer alignment — 2026-10-16
+- [x] Identify independent 1,120px portfolio width and mismatched 18/24/32px gutters versus the shared site shell.
+- [x] Reuse `.shell` in public portfolios and personal contact pages; remove competing portfolio width rules and match preview gutters by container width.
+- [x] Verify both content edges against the header/footer for all five templates on mobile, tablet, desktop and wide desktop: all 6 affected browser scenarios pass, including uploads and personal contact. Types/lint and client/SSR builds pass. Review and refresh captures.

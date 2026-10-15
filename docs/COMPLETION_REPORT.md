@@ -179,3 +179,9 @@ Removed duplicated generated mockup content from screenshot-less portfolio cards
 PHP (48 tests / 1,089 assertions), 3 frontend tests, TypeScript, lint, Pint and production client/SSR builds pass. New browser coverage performs an actual admin screenshot upload and verifies thumbnail loading, dimensions, contain sizing and detail navigation with synthetic-data cleanup. Card regression coverage checks title uniqueness, compact accents, centered rows and contrast across five templates.
 
 Final full browser regression result for the project card/upload correction: 34 passed. Desktop/mobile card and upload captures reviewed and saved.
+
+## Portfolio alignment correction — 2026-10-16
+
+Replaced the independent portfolio width/gutters with the shared site `.shell`, aligning both edges with the header/footer. Personal contact pages use the same shell; preview sizing remains container-responsive. TypeScript, lint and client/SSR builds pass. Added geometric edge checks to each template's desktop/mobile browser flow, including tablet and wide desktop widths. No environment, dependency, database or content changes were required.
+
+Alignment verification: all 6 affected desktop/mobile browser checks passed, including geometric checks for all five templates at tablet/desktop widths. Refreshed the saved portfolio captures.

@@ -302,6 +302,25 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect(page.locator('.portfolio-view')).toHaveAttribute('data-template', name.toLowerCase());
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Test Engineer/);
     await expect(page.getByRole('heading', { name: 'Built with purpose.' })).toBeVisible();
+    const originalViewport = page.viewportSize()!;
+    const alignmentSizes = [originalViewport, ...(!isMobile ? [{ width: 768, height: 900 }, { width: 1440, height: 900 }] : [])];
+    for (const viewport of alignmentSizes) {
+      await page.setViewportSize(viewport);
+      const edges = await page.evaluate(() => {
+        const contentEdges = (selector: string) => {
+          const element = document.querySelector<HTMLElement>(selector)!;
+          const box = element.getBoundingClientRect(); const css = getComputedStyle(element);
+          return [box.left + parseFloat(css.paddingLeft), box.right - parseFloat(css.paddingRight)];
+        };
+        return { header: contentEdges('.header-inner'), portfolio: contentEdges('.pf-local-header'), footer: contentEdges('.site-footer > .shell') };
+      });
+      for (const edge of [0, 1]) {
+        expect(Math.abs(edges.portfolio[edge] - edges.header[edge])).toBeLessThan(1);
+        expect(Math.abs(edges.portfolio[edge] - edges.footer[edge])).toBeLessThan(1);
+      }
+    }
+    await page.setViewportSize(originalViewport);
+
     const filters = page.getByRole('group', { name: 'Filter portfolio projects' });
     await filters.getByRole('button', { name: 'Developer tooling', exact: true }).click();
     await expect(page.locator('.pf-project')).toHaveCount(1);
