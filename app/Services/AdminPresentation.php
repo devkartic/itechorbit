@@ -16,10 +16,16 @@ class AdminPresentation
 {
     public function navigation(): array
     {
-        $links = Link::pluck('id', 'url');
+        $links = Link::with('module.menu')->orderBy('order_number')->get()->keyBy('url');
+        $modules = [...config('admin'), 'permissions' => ['title' => 'Roles & permissions']];
 
-        return collect(config('admin'))->filter(fn ($module, $resource) => Permission::has_permission($links[$resource] ?? null, 'index'))
-            ->map(fn ($module, $resource) => ['label' => $module['title'], 'url' => '/'.$resource])->values()->all();
+        return collect($modules)->filter(fn ($module, $resource) => Permission::has_permission($links[$resource]->id ?? null, 'index'))
+            ->map(function ($module, $resource) use ($links) {
+                $link = $links[$resource] ?? null;
+                $fallback = in_array($resource, ['posts', 'categories', 'tags', 'about-info', 'service-info', 'contact-info', 'privacy-policies']) ? 'Content' : (in_array($resource, ['menus', 'modules', 'links', 'roles', 'users', 'permissions']) ? 'Administration' : 'Portfolio & inquiries');
+
+                return ['label' => $module['title'], 'url' => '/'.$resource, 'group' => $link?->module?->menu?->name ?? $fallback, 'module' => $link?->module?->name ?? 'Manage', 'order' => $link?->order_number ?? 0];
+            })->sortBy('order')->values()->all();
     }
 
     private function abilities(string $resource): array
@@ -49,31 +55,17 @@ class AdminPresentation
     {
         $module = config('admin.'.$resource);
         abort_unless($module, 404);
-        $filters = request()->validate(['key' => ['nullable', 'string', 'max:200'], 'page' => ['nullable', 'integer', 'min:1']]);
+        $table = app(AdminTable::class);
+        $filters = $table->filters(request(), $resource);
         $model = new $module['model'];
         $record = collect($data)->first(fn ($item) => $item instanceof $module['model']);
         $fields = $module['fields'];
         if ($resource === 'users' && ! User::verify_default_admin()) {
             $fields = array_values(array_filter($fields, fn ($field) => ! in_array($field['name'], ['role_id', 'is_checked'])));
         }
-        $query = $model->newQuery();
-        if ($module['owner'] && ! User::verify_default_admin()) {
-            $query->where('user_id', request()->user()->id);
-        }
-        if ($resource === 'users' && ! User::verify_default_admin()) {
-            $query->where('id', request()->user()->id);
-        }
-        if (! empty($filters['key'])) {
-            $search = array_intersect($model->getFillable(), ['name', 'title', 'subject', 'email', 'designation', 'organization']);
-            $query->where(function ($q) use ($search, $filters) {
-                foreach ($search as $field) {
-                    $q->orWhere($field, 'like', '%'.$filters['key'].'%');
-                }
-            });
-        }
-        $records = $action === 'index' ? $query->latest('id')->paginate(20)->withQueryString()->through(fn ($item) => $this->attributes($item)) : null;
+        $records = $action === 'index' ? $table->records($resource, $filters) : null;
         $options = [];
-        foreach ($fields as $field) {
+        foreach (in_array($action, ['create', 'edit']) ? $fields : [] as $field) {
             if (empty($field['options'])) {
                 continue;
             }
@@ -107,7 +99,8 @@ class AdminPresentation
         return Inertia::render('Admin/Resource', [
             'resource' => $resource, 'title' => $module['title'], 'action' => $action,
             'fields' => $fields, 'options' => $options, 'record' => $values,
-            'records' => $records, 'filters' => ['key' => $filters['key'] ?? ''],
+            'previews' => $action === 'show' ? collect($fields)->where('type', 'richtext')->mapWithKeys(fn ($field) => [$field['name'] => app(PublicContent::class)->html($values[$field['name']] ?? '')])->all() : [],
+            'records' => $records, 'filters' => $filters, 'columns' => $table->columns($resource),
             'abilities' => $this->abilities($resource), 'navigation' => $this->navigation(),
             'isAdmin' => User::verify_default_admin(),
         ]);
@@ -116,9 +109,13 @@ class AdminPresentation
     public function dashboard()
     {
         $admin = User::verify_default_admin();
+        $navigation = $this->navigation();
+        $paths = array_column($navigation, 'url');
 
         return Inertia::render('Admin/Dashboard', [
-            'navigation' => $this->navigation(),
+            'navigation' => $navigation,
+            'canCreateArticle' => $this->abilities('posts')['create'],
+            'recentArticles' => in_array('/posts', $paths) ? Post::when(! $admin, fn ($q) => $q->where('user_id', request()->user()->id))->latest('updated_at')->limit(5)->get(['id', 'title', 'status', 'updated_at']) : [],
             'stats' => [
                 'Articles' => Post::when(! $admin, fn ($q) => $q->where('user_id', request()->user()->id))->count(),
                 'Published articles' => Post::public_posts()->when(! $admin, fn ($q) => $q->where('user_id', request()->user()->id))->count(),

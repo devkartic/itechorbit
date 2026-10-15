@@ -158,3 +158,15 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Verify identical inventories for all 210 routes and matching SHA-256 hashes for all 147 legacy media files. Refresh Composer autoload metadata.
 - [x] Verify 34 PHP tests / 716 assertions, Pint, 3 frontend tests, types/lint, Blade compilation and client/SSR builds. Full 24 browser checks pass; 8 affected checks pass after the last unused CSS removal.
 - [x] Record removals, preserved files, limits and rollback in CLEANUP.md. No admin cleanup, existing-data migration or production deployment performed.
+
+## Admin workspace modernization — 2026-10-15
+- [x] Commit the verified website cleanup separately (`cdd75bf`) and create `feat/admin-workspace-modernization`.
+- [x] Implement a scoped workspace theme, responsive dashboard, real counters/recent articles, breadcrumbs, account links and mobile navigation with keyboard/focus handling.
+- [x] Group authorized sidebar resources by existing menus and modules; add collapsible sections, active states and module search.
+- [x] Add the protected resource JSON endpoint and shared server query service: bounded page sizes, search/status/sort validation, ownership scoping and compact non-sensitive row DTOs.
+- [x] Replace native listing navigation with AJAX search, sorting, pagination, filtering, refresh, abort handling, empty/loading/error states and retry.
+- [x] Modularize forms into content/settings/media panels with field validation, focused errors, saving/disabled states, accurate checkboxes and success after navigation. Refresh list data after mutations.
+- [x] Verify/install React-compatible Tiptap 3.32.0; add lazy visual/HTML editing with formatting, lists, headings, quotes, code blocks, links and undo/redo. Preserve advanced HTML source and plain/code fields.
+- [x] Sanitize admin rich previews and rich portfolio output; preserve existing CRUD handlers, uploads, records and public URLs. Improve permission-matrix feedback.
+- [x] Verify 37 PHP tests / 805 assertions, 3 frontend tests, Pint, types/lint, client/SSR builds and Blade compilation. Final full browser suite: 28 passed. Review/save four synthetic-data UI captures.
+- [x] Verify all 210 original route definitions retain their semantics; add only the authenticated JSON table route. Document implementation, limits, staging and rollback in ADMIN_MODERNIZATION.md.

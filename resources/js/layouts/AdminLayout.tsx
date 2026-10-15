@@ -1,11 +1,51 @@
+import '../../css/admin.css';
 import { BrandLogo } from '@/components/BrandLogo';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowUpRight, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { ArrowUpRight, Bell, BriefcaseBusiness, ChevronDown, ChevronRight, FileText, FolderKanban, Globe, Home, Inbox, LayoutDashboard, ListTree, LogOut, Menu, Search, Settings2, ShieldCheck, Tags, UserRound, Users, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { SiteLink } from '@/components/SiteLink';
 import type { Shared } from '@/lib/types';
-export type Navigation = { label: string; url: string }[];
+export type Navigation = { label: string; url: string; group?: string; module?: string }[];
+const icons: Record<string, typeof FileText> = { posts: FileText, categories: ListTree, tags: Tags, projects: FolderKanban, users: Users, contacts: Inbox, basics: UserRound, roles: ShieldCheck, permissions: ShieldCheck, experiences: BriefcaseBusiness, menus: Menu, modules: ListTree, links: Globe };
 export default function AdminLayout({ children, title, navigation }: { children: ReactNode; title: string; navigation: Navigation }) {
-  const { auth } = usePage<Shared>().props; const { url } = usePage(); const [open, setOpen] = useState(false);
-  return <div className="min-h-screen bg-slate-50"><Head title={`${title} | iTechOrbit workspace`}><meta name="robots" content="noindex,nofollow" /></Head><a className="skip-link" href="#main">Skip to content</a><aside className={`${open ? 'flex' : 'hidden'} fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-slate-200 bg-white lg:flex`}><div className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-6"><Link href="/home" className="brand workspace-brand" aria-label="iTechOrbit workspace"><BrandLogo /></Link><button className="lg:hidden" aria-label="Close workspace navigation" onClick={() => setOpen(false)}><X size={18} /></button></div><nav aria-label="Workspace navigation" className="flex-1 overflow-y-auto p-4"><Link href="/home" className={`mb-3 flex items-center gap-3 rounded-lg p-3 text-sm font-semibold ${url === '/home' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}><LayoutDashboard size={17} />Overview</Link><p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Manage your workspace</p>{navigation.map(item => <Link key={item.url} href={item.url} onClick={() => setOpen(false)} className={`mb-1 block rounded-lg px-3 py-2.5 text-sm ${url.split('?')[0].split('/')[1] === item.url.slice(1) ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`} aria-current={url.split('/')[1] === item.url.slice(1) ? 'page' : undefined}>{item.label}</Link>)}<Link href="/permissions" className="mt-3 block rounded-lg px-3 py-2.5 text-sm text-slate-600">Roles & permissions</Link></nav><div className="border-t border-slate-200 p-5"><Link href="/" className="flex items-center gap-2 text-xs font-medium text-slate-600">Visit public website <ArrowUpRight size={14} /></Link></div></aside><div className="lg:pl-64"><header className="flex min-h-20 items-center justify-between gap-5 border-b border-slate-200 bg-white px-6 md:px-10"><div className="flex items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open workspace navigation" aria-expanded={open} onClick={() => setOpen(!open)}><Menu size={20} /></Button><p className="text-xs font-medium text-slate-500">iTechOrbit / Workspace</p></div><div className="flex items-center gap-5"><span className="hidden text-sm text-slate-600 sm:block">{auth.user?.name}</span><Button variant="ghost" size="sm" onClick={() => router.post('/logout')}><LogOut size={16} />Sign out</Button></div></header><main id="main" className="mx-auto max-w-7xl p-6 md:p-10">{children}</main></div></div>;
+  const { auth } = usePage<Shared>().props; const { url } = usePage();
+  const [open, setOpen] = useState(false); const [search, setSearch] = useState('');
+  const aside = useRef<HTMLElement>(null); const trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow; document.body.style.overflow = 'hidden';
+    aside.current?.querySelector<HTMLButtonElement>('[aria-label="Close workspace navigation"]')?.focus();
+    const keys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setOpen(false); trigger.current?.focus(); }
+      if (event.key !== 'Tab') return;
+      const focusable = [...(aside.current?.querySelectorAll<HTMLElement>('a, button, input, summary') ?? [])].filter(node => node.getClientRects().length);
+      const first = focusable[0]; const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const resize = () => { if (desktop.matches) setOpen(false); };
+    document.addEventListener('keydown', keys); desktop.addEventListener('change', resize);
+    return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', keys); desktop.removeEventListener('change', resize); };
+  }, [open]);
+  const groups: Record<string, Record<string, Navigation>> = Object.create(null);
+  for (const item of navigation.filter(item => `${item.label} ${item.group ?? ''} ${item.module ?? ''}`.toLowerCase().includes(search.toLowerCase()))) {
+    const group = item.group ?? 'Workspace'; const module = item.module ?? 'Manage';
+    groups[group] ??= Object.create(null); groups[group][module] ??= []; groups[group][module].push(item);
+  }
+  const current = url.split('?')[0].split('/')[1];
+  const initials = auth.user?.name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase();
+  return <div className="workspace"><Head title={`${title} | iTechOrbit workspace`}><meta name="robots" content="noindex,nofollow" /></Head><a className="skip-link" href="#main">Skip to content</a>
+    {open && <button className="workspace-overlay" aria-label="Close workspace overlay" onClick={() => { setOpen(false); trigger.current?.focus(); }} />}
+    <aside ref={aside} className={`workspace-sidebar ${open ? 'is-open' : ''}`} role={open ? 'dialog' : undefined} aria-modal={open || undefined} aria-label="Workspace sidebar"><div className="workspace-sidebar-brand"><Link href="/home" className="brand workspace-brand" aria-label="iTechOrbit workspace" onClick={() => setOpen(false)}><BrandLogo /></Link><button className="workspace-mobile-close workspace-icon-button" aria-label="Close workspace navigation" onClick={() => { setOpen(false); trigger.current?.focus(); }}><X size={19} /></button></div>
+      <div className="workspace-sidebar-context"><span className="workspace-context-icon"><LayoutDashboard size={18} /></span><div><strong>Studio workspace</strong><span>Content & operations</span></div></div>
+      <label className="workspace-sidebar-search"><Search size={16} aria-hidden="true" /><input aria-label="Find a module" value={search} onChange={event => setSearch(event.target.value)} placeholder="Find a module…" /></label>
+      <nav className="workspace-navigation" aria-label="Workspace navigation"><Link href="/home" onClick={() => setOpen(false)} className={`workspace-nav-link ${current === 'home' ? 'is-current' : ''}`} aria-current={current === 'home' ? 'page' : undefined}><LayoutDashboard size={18} /><span>Overview</span></Link>
+        {Object.entries(groups).map(([group, modules]) => <div className="workspace-nav-group" key={group}><p>{group}</p>{Object.entries(modules).map(([module, items]) => <details key={module} open={!!search || items.some(item => item.url.split('/')[1] === current) || current === 'home'} className="workspace-nav-module"><summary><span>{module}</span><small>{items.length}</small><ChevronDown size={14} /></summary><div>{items.map(item => { const slug = item.url.slice(1); const Icon = icons[slug] ?? Settings2; return <Link key={item.url} href={item.url} onClick={() => setOpen(false)} className={`workspace-nav-link ${current === slug ? 'is-current' : ''}`} aria-current={current === slug ? 'page' : undefined}><Icon size={17} /><span>{item.label}</span>{current === slug && <span className="workspace-active-dot" />}</Link>; })}</div></details>)}</div>)}
+        {!Object.keys(groups).length && <p className="workspace-nav-empty">No matching modules.</p>}
+      </nav><div className="workspace-sidebar-footer"><SiteLink href="/" className="workspace-nav-link"><Globe size={17} /><span>Visit public website</span><ArrowUpRight size={15} /></SiteLink><div><ShieldCheck size={15} /><span>Engineering with AI</span></div></div>
+    </aside>
+    <div className="workspace-body"><header className="workspace-topbar"><div className="workspace-topbar-start"><button ref={trigger} className="workspace-mobile-trigger workspace-icon-button" aria-label="Open workspace navigation" aria-expanded={open} onClick={() => setOpen(true)}><Menu size={21} /></button><div className="workspace-breadcrumb"><Link href="/home" aria-label="Workspace overview"><Home size={16} /></Link><ChevronRight size={14} /><span>{title}</span></div></div><div className="workspace-topbar-actions">{navigation.some(item => item.url === '/contacts') && <Link href="/contacts" aria-label="Contact inquiries" className="workspace-inbox-link"><Bell size={18} /></Link>}<Link href="/account/settings" className="workspace-user" aria-label="Account settings"><span>{initials || 'U'}</span><div><strong>{auth.user?.name}</strong><small>My account</small></div></Link><Button variant="ghost" size="icon" aria-label="Sign out" onClick={() => router.post('/logout')}><LogOut size={18} /></Button></div></header><main id="main" className="workspace-main">{children}</main><footer className="workspace-footer"><span>iTechOrbit workspace</span><span>Thoughtful engineering. Clear operations.</span></footer></div>
+  </div>;
 }

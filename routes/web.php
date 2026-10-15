@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceInfoController;
 use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\SocialLinkController;
+use App\Http\Controllers\Admin\TableController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\CommentController;
@@ -48,6 +49,7 @@ Auth::routes(['verify' => true]);
 //  For Google
 Route::get('/login/google', [GoogleController::class, 'login'])->name('login.google');
 Route::get('/login/google/callback', [GoogleController::class, 'callback']);
+Route::get('/workspace/data/{resource}', TableController::class)->middleware('auth')->whereIn('resource', array_keys(config('admin')))->name('workspace.data');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('logout', fn () => redirect('/home'));

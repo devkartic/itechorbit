@@ -44,6 +44,7 @@ PHP tests force SQLite memory. Browser tests create a new temporary SQLite datab
 - [Deployment and rollback](docs/DEPLOYMENT.md)
 - [Verification report](docs/COMPLETION_REPORT.md)
 - [Website cleanup record](docs/CLEANUP.md)
+- [Admin workspace and editor](docs/ADMIN_MODERNIZATION.md)
 
 CI is supplied in `.github/workflows/modernization.yml`, using paths relative to this standalone application repository. No automatic deployment is configured.
 # itechorbit
