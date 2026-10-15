@@ -148,3 +148,13 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Review public, auth, workspace and retained Blade logo references. Constrain the workspace logo beside mobile controls and preserve image proportions under legacy CSS.
 - [x] Add browser regression coverage comparing homepage/login/register/password-reset logo geometry and testing image decoding, home navigation and workspace branding.
 - [x] Verify all 24 browser checks; after the final empty-email normalization, recheck all 4 affected branding/admin scenarios. Types, lint and client/SSR builds pass; mobile login capture reviewed.
+
+## Website file cleanup — 2026-10-15
+- [x] Create `refactor/website-cleanup`; trace routes, render calls, imports, composers and static asset references before removing files.
+- [x] Remove 200 tracked retired website files (about 26 MB), one ignored OS metadata file, empty directories and unused old component CSS.
+- [x] Remove the old public blog/portfolio controllers, models and sidebar composer; remove only that composer's registration.
+- [x] Remove old public Blade templates, unused scaffold auth/home layout, Sass/Mix inputs and outputs, and retired theme CSS/JS/vendors. Preserve all legacy image paths and admin files.
+- [x] Move search privacy coverage from the retired helper onto both active public search endpoints.
+- [x] Verify identical inventories for all 210 routes and matching SHA-256 hashes for all 147 legacy media files. Refresh Composer autoload metadata.
+- [x] Verify 34 PHP tests / 716 assertions, Pint, 3 frontend tests, types/lint, Blade compilation and client/SSR builds. Full 24 browser checks pass; 8 affected checks pass after the last unused CSS removal.
+- [x] Record removals, preserved files, limits and rollback in CLEANUP.md. No admin cleanup, existing-data migration or production deployment performed.

@@ -22,7 +22,6 @@
   .shell { @apply mx-auto w-full max-w-7xl px-6 lg:px-10; }
   .site-header { @apply sticky top-0 z-30 border-b border-slate-200/70 bg-white; }
   .brand { @apply inline-flex items-center gap-2.5 text-xl font-bold tracking-tight; }
-  .brand-mark { @apply flex size-9 items-center justify-center rounded-lg bg-blue-600 text-white; }
   .nav-link { @apply rounded-full px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-blue-50 hover:text-blue-700 aria-[current=page]:bg-blue-50 aria-[current=page]:text-blue-700; }
   .skip-link { @apply fixed left-4 top-4 z-50 -translate-y-28 rounded-lg bg-navy px-5 py-3 text-white focus:translate-y-0; }
   .eyebrow { @apply flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[.16em] text-blue-700; }
@@ -31,10 +30,6 @@
   .hero { background: radial-gradient(ellipse at 90% 50%, #ede4ff 0, transparent 55%), radial-gradient(ellipse at 65% 90%, #fce7ee 0, transparent 40%), #fcfbf8; @apply relative overflow-hidden; }
   .hero h1 { @apply mt-6 text-[clamp(2.7rem,5.8vw,5rem)] leading-[1.04] font-semibold tracking-[-.04em]; }
   .hero-grid { @apply grid items-center gap-10 pb-12 pt-10 lg:grid-cols-[1.08fr_1fr] lg:gap-14 lg:pb-16 lg:pt-12; }
-  .engineering-board { @apply relative rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_60px_-30px_#44669145] md:p-7; }
-  .board-label { @apply flex items-center justify-between border-b border-slate-100 pb-5 text-xs font-semibold tracking-[.12em] text-slate-500; }
-  .architecture-layer { @apply flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-5; }
-  .architecture-line { @apply mx-auto h-7 w-px border-l border-dashed border-blue-300; }
   .section { @apply py-10 lg:py-16; }
   .section-title { @apply mt-4 text-[clamp(2rem,3.4vw,3rem)] leading-[1.12] font-semibold tracking-[-.03em]; }
   .section-heading { @apply mb-8 flex flex-wrap items-end justify-between gap-6; }
@@ -106,12 +101,6 @@
   .studio-code { @apply mt-6 overflow-hidden rounded-xl bg-navy text-white; }
   .code-tab { @apply flex items-center gap-2 border-b border-white/10 px-4 py-3 font-mono text-xs text-slate-300; }
   .studio-code pre { @apply overflow-x-auto p-5 text-xs leading-[1.8] text-slate-200 sm:text-sm; }
-  .code-violet { color: #c6adff; } .code-green { color: #d6f576; }
-  .studio-modules { @apply mt-5 grid grid-cols-3 gap-3; }
-  .studio-modules > div { @apply flex flex-col items-start gap-2 rounded-lg bg-slate-50 p-3; }
-  .studio-modules svg { color: #7040cf; }
-  .studio-modules strong { @apply text-xs font-semibold; }
-  .studio-modules span { @apply text-xs leading-4 text-slate-600; }
   .floating-note { @apply absolute bottom-0 left-0 right-8 flex items-center gap-3 rounded-xl border border-white bg-white p-4 shadow-[0_12px_35px_-15px_#4e279745] sm:right-16; }
   .floating-note > span { @apply flex size-10 shrink-0 items-center justify-center rounded-lg text-navy; background: #d6f576; }
   .floating-note strong { @apply text-sm font-semibold; }
@@ -135,7 +124,6 @@
   .process-grid h3 { @apply mt-8 text-xl font-semibold tracking-tight; }
   .process-grid p { @apply mt-3 text-sm leading-7 text-slate-300; }
   .site-footer { @apply border-t border-white/10 bg-navy text-white; }
-  .site-footer .brand-mark { background: #d6f576; color: #18152c; }
   .site-footer .footer-copy, .site-footer nav, .site-footer .footer-links { color: #c9c3d9; }
   .site-footer a:hover { color: #d6f576; }
   .site-footer .footer-bottom { @apply border-t border-white/15 text-slate-300; }
@@ -144,8 +132,6 @@
 @media (max-width: 380px) {
   .shell { padding-inline: 1.25rem; }
   .studio-body { padding: 1rem; }
-  .studio-modules { gap: .375rem; }
-  .studio-modules > div { padding: .5rem; }
 }
 
 @layer components {
@@ -175,7 +161,6 @@
   .site-header.is-scrolled { background: white; box-shadow: 0 8px 30px -16px #30264345; }
   .site-header.is-scrolled .header-inner { height: 4.5rem; }
   .site-header .brand { @apply shrink-0 text-[22px]; }
-  .site-header .brand-mark { @apply size-10 rounded-xl; box-shadow: 0 5px 16px -7px #7040cf80; }
   #mobile-navigation { @apply max-h-[calc(100dvh-5rem)] overflow-y-auto; }
   #mobile-navigation a { @apply transition-colors hover:bg-blue-50 hover:text-blue-700; }
 }
@@ -285,8 +270,6 @@
   .service-card-featured { border-color: #c4adff; background: linear-gradient(135deg, #f4effb, #f1faf4); }
   .service-feature-label { @apply mt-5 inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold tracking-wider text-blue-800; }
   .service-card-featured .service-feature-label + h3 { margin-top: .75rem; }
-  .nav-link.nav-ai { color: #6031b9; background: #f4effb; }
-  .nav-link.nav-ai:hover { background: #e9e1ff; }
 }
 
 /* Allow readable code to scroll inside its panel, without widening the mobile layout. */
@@ -303,10 +286,6 @@
 
 /* A clear navigation hierarchy with a distinct personal account space. */
 .header-inner { gap: 1rem; }
-.header-brand-copy { display: flex; flex-direction: column; gap: .3rem; }
-.header-brand-copy > span { line-height: 1; }
-.header-brand-copy small { font-size: .5625rem; font-weight: 600; letter-spacing: .13em; color: #676174; }
-.site-header .brand-mark { background: linear-gradient(145deg, #7040cf, #34244f); border: 1px solid #ffffff45; }
 .brand-logo { display: block; width: 12.5rem; height: auto; flex-shrink: 0; object-fit: contain; }
 .workspace-brand .brand-logo { width: 11.25rem; }
 .brand-logo-on-dark { filter: invert(1) hue-rotate(180deg); }
@@ -377,4 +356,4 @@
 @media (min-width: 1024px) { .account-workspace { grid-template-columns: 16rem 1fr; gap: 2rem; } .account-card { padding: 2rem; } }
 @media (min-width: 1440px) { .account-trigger-name { display: block; } }
 @media (max-width: 639px) { .header-inner { gap: .75rem; } .header-actions { gap: .45rem; } }
-@media (max-width: 380px) { .site-header .brand { font-size: 20px; gap: .5rem; } .site-header .brand-mark { width: 2rem; height: 2rem; } .header-brand-copy small { font-size: .5rem; letter-spacing: .07em; } .header-sign-in svg { display: none; } }
+@media (max-width: 380px) { .site-header .brand { font-size: 20px; gap: .5rem; } .header-sign-in svg { display: none; } }

@@ -5,9 +5,9 @@ namespace Tests\Feature;
 use App\Models\Admin\Category;
 use App\Models\Admin\Post;
 use App\Models\Admin\Role;
-use App\Models\Blog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class SecurityRegressionTest extends TestCase
@@ -37,7 +37,12 @@ class SecurityRegressionTest extends TestCase
         $public = $this->article();
         $this->article(['is_private' => 1]);
         $this->article(['status' => 0]);
-        $this->assertSame([$public->id], Blog::search_posts('needle')->pluck('id')->all());
+        foreach (['/blogs?key=needle', '/blogs/search?key=needle'] as $url) {
+            $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->component('Blog')
+                ->has('articles.data', 1)
+                ->where('articles.data.0.id', $public->id));
+        }
     }
 
     public function test_article_detail_returns_404_for_private_draft_and_missing_records(): void
