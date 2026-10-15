@@ -180,3 +180,13 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 
 ## Sidebar label refinement — 2026-10-15
 - [x] Remove numeric badges beside sidebar module names and their unused styling; preserve configured numeric/alphabetical sorting.
+
+## Portfolio template studio — 2026-10-15
+- [x] Inspect existing portfolio payload, publication controls, profile fields, navigation and authorization.
+- [x] Add five distinct responsive portfolio layouts using shared sanitized profile content and accessible controls.
+- [x] Add a private workspace chooser with real-content previews, desktop/mobile sizing, current selection and explicit saving.
+- [x] Add an allowlisted per-user template preference via an additive nullable column; preserve public URLs and publication status.
+- [x] Verify 43 PHP tests / 1,027 assertions; authenticated self-only persistence, hidden portfolios, sanitization, invalid/retired choices and public URL behavior.
+- [x] Verify all 30 desktop/mobile browser regressions, including every template preview/save/reload/public SSR; review layouts and save seven synthetic screenshots. Types, lint, Pint, 3 frontend tests and client/SSR builds pass.
+- [x] Document migration, rollback, implementation and validation in PORTFOLIO_TEMPLATES.md; update README and architecture.
+- [ ] Apply the additive preference migration in the application runtime. Blocker: configured `mariadb` hostname does not resolve from this shell. Migration verified only on disposable SQLite databases; no application/production data modified.

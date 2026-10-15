@@ -273,3 +273,36 @@ test('rich text forms validate save formatted content and retain success feedbac
   await expect(page.locator('.prose-content h2')).toHaveText('Clear engineering decisions');
   await page.goto('/posts'); await page.getByRole('button', { name: `Delete ${title}`, exact: true }).click(); await page.getByRole('button', { name: 'Delete record', exact: true }).click(); await expect(page.getByRole('button', { name: `Delete ${title}`, exact: true })).toHaveCount(0);
 });
+
+test('portfolio template studio previews five layouts and persists the public selection', async ({ page, request, isMobile }, testInfo) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  await page.getByRole('link', { name: 'Portfolio templates', exact: true }).click();
+  await expect(page.getByRole('radio')).toHaveCount(5);
+  await expect(page.getByRole('button', { name: 'Save template', exact: true })).toBeDisabled();
+  for (const name of ['Executive', 'Blueprint', 'Editorial', 'Spotlight', 'Studio']) {
+    await page.locator('.template-choice').getByText(name, { exact: true }).click();
+    const preview = page.getByRole('region', { name: `${name} portfolio preview` });
+    await expect(preview.locator('.portfolio-view')).toHaveAttribute('data-template', name.toLowerCase());
+    await page.getByRole('button', { name: 'Mobile preview', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Mobile preview', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    expect(await preview.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBeTruthy();
+    await page.getByRole('button', { name: 'Desktop preview', exact: true }).click();
+    await page.getByRole('button', { name: 'Save template', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Portfolio template saved.');
+    await page.reload();
+    await expect(page.getByRole('radio', { name: new RegExp(name) })).toBeChecked();
+    await page.goto('/portfolios/TESTPROFILE');
+    await expect(page.locator('.portfolio-view')).toHaveAttribute('data-template', name.toLowerCase());
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Test Engineer/);
+    await expect(page.getByRole('heading', { name: 'Built with purpose.' })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    const html = await (await request.get('/portfolios/TESTPROFILE')).text();
+    expect(html).toContain(`data-template="${name.toLowerCase()}"`); expect(html).toContain('Synthetic project for testing');
+    await page.screenshot({ path: testInfo.outputPath(`portfolio-${name.toLowerCase()}.png`), fullPage: true });
+    await page.goto('/workspace/portfolio-templates');
+  }
+  await page.screenshot({ path: testInfo.outputPath('portfolio-template-studio.png'), fullPage: true });
+  expect(errors).toEqual([]);
+});

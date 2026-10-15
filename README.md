@@ -48,3 +48,5 @@ PHP tests force SQLite memory. Browser tests create a new temporary SQLite datab
 
 CI is supplied in `.github/workflows/modernization.yml`, using paths relative to this standalone application repository. No automatic deployment is configured.
 # itechorbit
+
+Portfolio design selection is available under **Workspace → Portfolio templates**. See [portfolio templates](docs/PORTFOLIO_TEMPLATES.md) for the five layouts, migration requirement, preview/save workflow and rollback.

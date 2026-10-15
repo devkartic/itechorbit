@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\LinkController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PortfolioTemplateController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\PrivacyPolicyController;
 use App\Http\Controllers\Admin\ProjectController;
@@ -52,6 +53,8 @@ Route::get('/login/google/callback', [GoogleController::class, 'callback']);
 Route::get('/workspace/data/{resource}', TableController::class)->middleware('auth')->whereIn('resource', array_keys(config('admin')))->name('workspace.data');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/workspace/portfolio-templates', [PortfolioTemplateController::class, 'index'])->name('workspace.portfolio-templates');
+    Route::patch('/workspace/portfolio-templates', [PortfolioTemplateController::class, 'update'])->middleware('throttle:20,1')->name('workspace.portfolio-templates.update');
     Route::get('logout', fn () => redirect('/home'));
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');

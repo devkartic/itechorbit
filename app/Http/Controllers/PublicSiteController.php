@@ -14,6 +14,7 @@ use App\Models\Admin\ServiceInfo;
 use App\Models\Comment;
 use App\Models\Contact;
 use App\Models\User;
+use App\Services\PortfolioPresentation;
 use App\Services\PublicContent;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -121,23 +122,8 @@ class PublicSiteController extends Controller
     {
         $user = $key ? User::where('portfolio_id', $key)->firstOrFail() : User::findOrFail(config('site.owner_id'));
         abort_unless($user->status && $user->portfolio_status, 403, 'This portfolio is not available.');
-        $user->load(['basic', 'skills' => fn ($q) => $q->where('status', 1), 'projects' => fn ($q) => $q->where('status', 1),
-            'services' => fn ($q) => $q->where('status', 1), 'experiences' => fn ($q) => $q->where('status', 1), 'social_links' => fn ($q) => $q->where('status', 1)]);
-        $basic = $user->basic?->status ? $user->basic : null;
 
-        return $this->page('Portfolio', $user->name.' — Engineering portfolio', 'Published engineering work and professional experience.', [
-            'profile' => ['name' => $user->name, 'portfolioId' => $user->portfolio_id,
-                'designation' => $basic?->designation, 'introduction' => $this->content->html($basic?->self_introduction),
-                'objective' => $this->content->html($basic?->career_objective), 'additional' => $this->content->html($basic?->additional_information),
-                'image' => $this->content->media($basic?->profile_image_path),
-                'cv' => $basic?->cv_public_status ? $this->content->media($basic?->cv_path) : null,
-                'skills' => $user->skills->pluck('name'),
-                'services' => $user->services->map(fn ($service) => [...$service->only(['name', 'title']), 'about_service' => $this->content->html($service->about_service)]),
-                'experiences' => $user->experiences->map(fn ($experience) => [...$experience->only(['designation', 'organization', 'join_date', 'resign_date']), 'responsibilities' => $this->content->html($experience->responsibilities), 'descriptions' => $this->content->html($experience->descriptions)]),
-                'socials' => $user->social_links->map(fn ($social) => ['name' => $social->name, 'url' => $this->content->externalUrl($social->social_url)])->filter(fn ($social) => $social['url'])->values(),
-            ],
-            'projects' => $user->projects->map(fn ($project) => $this->content->project($project)),
-        ]);
+        return $this->page('Portfolio', $user->name.' — Engineering portfolio', 'Published engineering work and professional experience.', app(PortfolioPresentation::class)->data($user));
     }
 
     public function offerings()
