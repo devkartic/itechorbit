@@ -1,6 +1,7 @@
 import '../../../css/portfolio.css';
 import { ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Command, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ContactForm } from '@/components/ContactForm';
 import type { Project } from '@/lib/types';
 import { dateLabel } from '@/lib/utils';
 
@@ -17,8 +18,7 @@ function Section({ id, title, label, children }: { id: string; title: string; la
   return <section className="pf-section" id={id}><div className="pf-section-heading"><div><p className="pf-kicker"><span />{label}</p><h2>{title}</h2></div><span className="pf-section-glyph" aria-hidden="true"><ArrowUpRight size={25} strokeWidth={1} /></span></div>{children}</section>;
 }
 function Actions({ profile }: { profile: Profile }) {
-  const contact = `/contact/info?${new URLSearchParams({ ...(profile.portfolioId ? { portfolio_id: profile.portfolioId } : {}), subject: 'Engineering opportunity for ' + profile.name })}`;
-  return <div className="pf-actions"><a href={contact} className="pf-button"><span>Let’s connect</span><ArrowUpRight size={17} /></a>{profile.cv && <a href={profile.cv} download className="pf-button pf-button-secondary"><span>Download CV</span><Download size={16} /></a>}</div>;
+  return <div className="pf-actions"><a href="#connect" className="pf-button"><span>Let’s connect</span><ArrowUpRight size={17} /></a>{profile.cv && <a href={profile.cv} download className="pf-button pf-button-secondary"><span>Download CV</span><Download size={16} /></a>}</div>;
 }
 function Socials({ profile }: { profile: Profile }) {
   return profile.socials.length ? <div className="pf-socials">{profile.socials.map(social => <a key={social.url} href={social.url} target="_blank" rel="noopener noreferrer">{social.name}<MoveUpRight size={13} /></a>)}</div> : null;
@@ -71,8 +71,8 @@ function Facts({ profile, projects }: { profile: Profile; projects: Project[] })
   const facts = [[projects.length, 'Published projects'], [profile.skills.length, 'Technologies'], [profile.experiences.length, 'Experience entries']].filter(([count]) => Number(count) > 0);
   return facts.length ? <div className="pf-facts" aria-label="Portfolio overview"><div className="pf-facts-label"><Workflow size={24} strokeWidth={1.3} /><span>THE PROFILE<br /><strong>AT A GLANCE</strong></span></div>{facts.map(([count, label]) => <div key={label}><strong>{String(count).padStart(2, '0')}</strong><span>{label}</span></div>)}<ArrowUpRight className="pf-facts-arrow" size={28} strokeWidth={1.2} aria-hidden="true" /></div> : null;
 }
-function Contact({ profile }: { profile: Profile }) {
-  return <section className="pf-contact" id="connect"><div className="pf-contact-orbit" aria-hidden="true"><ArrowUpRight size={85} strokeWidth={.7} /></div><div><p className="pf-kicker">The next chapter</p><h2>Good work starts with<br /><span>a conversation.</span></h2><p>Discuss a role, a project, or a technical challenge.</p><Actions profile={profile} /></div><span className="pf-contact-note">IDEAS WELCOME.<br />LET’S BUILD WHAT’S NEXT.</span></section>;
+function Contact({ profile, preview }: { profile: Profile; preview: boolean }) {
+  return <section className="pf-contact pf-personal-contact" id="connect"><div className="pf-contact-copy"><p className="pf-kicker">Contact {profile.name}</p><h2>A conversation.<br /><span>A new possibility.</span></h2><p>Have a role, project or technical challenge in mind? Send a personal message to {profile.name}.</p><Socials profile={profile} />{preview && <p>Form preview — messages cannot be sent from this preview.</p>}</div><div className="pf-contact-form">{profile.portfolioId ? <ContactForm recipient={{ name: profile.name, portfolio_id: profile.portfolioId }} preview={preview} /> : <p>Contact details are not available for this profile.</p>}</div></section>;
 }
 export function PortfolioView({ profile, projects, template, preview = false }: PortfolioData & { preview?: boolean }) {
   const style = names[template] ? template : 'studio';
@@ -96,7 +96,7 @@ export function PortfolioView({ profile, projects, template, preview = false }: 
         : style === 'editorial' ? <><div className="pf-editorial-masthead"><span>THE ENGINEERING EDITION</span><span>INDEPENDENT THINKING. INTENTIONAL CRAFT.</span></div>{hero}<div className="pf-editorial-intro">{about}{skills}</div>{work}{experience}{services}</>
         : style === 'spotlight' ? <><div className="pf-spotlight-stage">{hero}<div className="pf-spotlight-ticker" aria-hidden="true"><span>ENGINEER.</span><span>CREATE.</span><span>ITERATE.</span><ArrowUpRight size={48} strokeWidth={1} /></div></div>{work}<div className="pf-split">{about}{skills}</div>{experience}{services}</>
         : <>{hero}<Facts profile={profile} projects={projects} /><div className="pf-split">{about}{skills}</div>{work}{experience}{services}</>}
-      <Contact profile={profile} /><footer className="pf-signature"><span><Fingerprint size={15} />{profile.name} / Engineering portfolio</span><a href="/">Built on iTechOrbit <ArrowUpRight size={12} /></a></footer>
+      <Contact profile={profile} preview={preview} /><footer className="pf-signature"><span><Fingerprint size={15} />{profile.name} / Engineering portfolio</span><a href="/">Built on iTechOrbit <ArrowUpRight size={12} /></a></footer>
     </div>
   </div>;
 }

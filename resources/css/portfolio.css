@@ -290,3 +290,23 @@
 }
 @keyframes pf-appear { from { opacity:.5; translate:0 6px; } to { opacity:1; translate:0 0; } }
 @media(prefers-reduced-motion:reduce) { .portfolio-view * { animation:none !important; transition:none !important; } }
+
+/* Personal contact belongs to the portfolio owner, independently of the agency form. */
+.pf-personal-contact { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); align-items:center; gap:36px; }
+.pf-contact-copy { min-width:0; } .pf-contact-copy h1 { font-size:clamp(35px,5.5cqw,68px); line-height:1.1; font-weight:500; letter-spacing:-.055em; overflow-wrap:anywhere; }
+.pf-contact-copy>p:not(.pf-kicker) { max-width:390px; line-height:1.9; }
+.pf-contact-copy .pf-socials a { color:var(--pf-muted); }
+.pf-contact-form { --pf-ink:#211b37; --pf-muted:#625a72; position:relative; z-index:1; padding:26px; border-radius:16px; background:#fff; color:#211b37; box-shadow:0 12px 32px #0000001a; }
+.pf-contact-form .form-label { color:#392f49; font-size:12px; }
+.pf-contact-form .form-control { color:#211b37; background:#faf9fc; border-color:#ded8e8; font-size:13px; }
+.pf-contact-form .form-control::placeholder { color:#786b86; }
+.pf-contact-form .form-control:focus { border-color:#7956c1; }
+.pf-contact-form .form-error { color:#b91c1c; }
+.pf-contact-form button[type=submit] { color:white; background:#6942d4; font-size:12px; }
+.pf-executive .pf-contact-form button[type=submit],.pf-blueprint .pf-contact-form button[type=submit] { background:#28645f; }
+.pf-editorial .pf-contact-form button[type=submit] { background:#b74b29; }
+.pf-spotlight .pf-contact-form button[type=submit] { background:#2947d6; }
+.pf-contact-form fieldset:disabled { opacity:.8; }
+.pf-contact-page { min-height:100vh; }
+.pf-contact-page .pf-personal-contact { margin-top:40px; }
+@container(max-width:800px) { .pf-personal-contact { grid-template-columns:1fr; gap:28px; } .pf-contact-form { width:100%; padding:22px; } .pf-contact-page .pf-personal-contact { margin-top:24px; } }

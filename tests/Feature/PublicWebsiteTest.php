@@ -88,7 +88,8 @@ class PublicWebsiteTest extends TestCase
         $owner = $this->user(1);
         config(['site.owner_id' => $owner->id]);
         $recipient = $this->user(4, ['portfolio_id' => 'RECIPIENT', 'portfolio_status' => 1]);
-        $this->get('/contact/info?portfolio_id=RECIPIENT')->assertOk()->assertInertia(fn (Assert $page) => $page->where('recipient.name', $recipient->name)->missing('recipient.email'));
+        $this->get('/contact/info?portfolio_id=RECIPIENT')->assertRedirect('/portfolios/RECIPIENT/contact');
+        $this->get('/portfolios/RECIPIENT/contact')->assertOk()->assertInertia(fn (Assert $page) => $page->where('recipient.name', $recipient->name)->missing('recipient.email'));
         $data = ['portfolio_id' => 'RECIPIENT', 'name' => 'Client', 'email' => 'client@example.test', 'subject' => 'Profile inquiry', 'message' => 'A project opportunity.'];
         $this->from('/contact/info?portfolio_id=RECIPIENT')->post('/inquiries', $data)->assertRedirect();
         $this->assertDatabaseHas('contacts', ['user_id' => $recipient->id, 'subject' => 'Profile inquiry']);

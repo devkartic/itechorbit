@@ -165,3 +165,9 @@ Centered the canvas and incomplete gallery rows; replaced fixed hero heights wit
 Validation adds sparse-profile, grid-centering, sampled contrast, hover-shadow and reduced-motion checks to the existing desktop/mobile portfolio flow. PHP (44 tests / 1,040 assertions), frontend unit tests (3), TypeScript, lint, Pint and production client/SSR builds pass. No environment configuration or database changes were needed. See PORTFOLIO_TEMPLATES.md for scope and contrast-check limitations.
 
 Final browser result for this correction: 30 passed. Updated full-content and sparse synthetic profile screenshots are saved under docs/assets.
+
+## Personal portfolio contact and both email templates — 2026-10-16
+
+Implemented inline portfolio-owner forms and standalone personal contact pages, with legacy-link redirects. Personal submissions resolve the active/public owner from the URL, save under that user and queue email only to them. Personal emails identify the portfolio owner; business emails retain iTechOrbit branding. Both templates now include a sender/subject card, full escaped message, reply/inbox actions, visitor Reply-To and plain-text alternative. No `.env` changes, migration or dependencies were needed.
+
+Verified 48 PHP tests / 1,089 assertions, 3 frontend tests, types/lint, Pint, client/SSR builds, Blade compilation and all 32 browser checks. Reviewed synthetic desktop/mobile contact and email captures. No external emails were sent; configured SMTP delivery was not tested. Details and rollback: [CONTACT_AND_EMAIL.md](CONTACT_AND_EMAIL.md).

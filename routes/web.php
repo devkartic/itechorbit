@@ -98,6 +98,8 @@ Route::middleware('auth')->group(function () {
 Route::get('blogs', [PublicSiteController::class, 'blog'])->name('blogs.index');
 Route::get('blogs/{id}', [PublicSiteController::class, 'article'])->whereNumber('id')->name('blogs.show');
 Route::get('portfolios', [PublicSiteController::class, 'portfolio'])->name('portfolios.index');
+Route::get('portfolios/{key}/contact', [PublicSiteController::class, 'portfolioContact'])->name('portfolios.contact');
+Route::post('portfolios/{key}/inquiries', [PublicSiteController::class, 'portfolioInquiry'])->middleware('throttle:5,1')->name('portfolios.inquiries');
 Route::get('portfolios/{key}', [PublicSiteController::class, 'portfolio'])->name('portfolios.show');
 Route::resource('contacts', ContactController::class)->only(['index', 'show', 'destroy'])->middleware('auth');
 Route::post('contacts', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contacts.store');

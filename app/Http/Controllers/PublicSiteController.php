@@ -152,6 +152,11 @@ class PublicSiteController extends Controller
     {
         $input = $request->validate(['portfolio_id' => ['nullable', 'string', 'max:100']]);
         $recipient = ! empty($input['portfolio_id']) ? User::where('portfolio_id', $input['portfolio_id'])->where('status', 1)->where('portfolio_status', 1)->firstOrFail() : null;
+        if ($recipient) {
+            $query = $request->validate(['subject' => ['nullable', 'string', 'max:255']]);
+
+            return redirect('/portfolios/'.rawurlencode($recipient->portfolio_id).'/contact'.(! empty($query['subject']) ? '?'.http_build_query(['subject' => $query['subject']]) : ''));
+        }
         $info = ContactInfo::where('status', 1)->first();
 
         return $this->page('Contact', 'Let’s build what comes next', 'Discuss a software project, a modernization challenge or an engineering opportunity.', ['existingContent' => $this->content->html($info?->descriptions), 'recipient' => $recipient?->only(['name', 'portfolio_id'])]);
@@ -162,10 +167,37 @@ class PublicSiteController extends Controller
         $owner = $request->filled('portfolio_id')
             ? User::where('portfolio_id', $request->validated('portfolio_id'))->where('status', 1)->where('portfolio_status', 1)->firstOrFail()
             : User::where('status', 1)->findOrFail(config('site.owner_id'));
-        $contact = Contact::create([...$request->safe()->only(['name', 'email', 'subject', 'message']), 'user_id' => $owner->id]);
-        ContactMailerJob::dispatch($owner, $contact)->afterCommit();
 
-        return back()->with('success', 'Thank you. Your inquiry has been received.');
+        return $this->saveInquiry($request, $owner, $request->filled('portfolio_id'));
+    }
+
+    private function portfolioOwner(string $key): User
+    {
+        return User::where('portfolio_id', $key)->where('status', 1)->where('portfolio_status', 1)->firstOrFail();
+    }
+
+    public function portfolioContact(string $key)
+    {
+        $owner = $this->portfolioOwner($key);
+
+        return $this->page('PortfolioContact', 'Contact '.$owner->name, 'Send a personal portfolio inquiry to '.$owner->name.'.', [
+            'recipient' => $owner->only(['name', 'portfolio_id']),
+            'template' => app(PortfolioPresentation::class)->template($owner),
+        ], noindex: true);
+    }
+
+    public function portfolioInquiry(ContactRequest $request, string $key)
+    {
+        // The URL determines the recipient; submitted user IDs, emails and portfolio IDs cannot override it.
+        return $this->saveInquiry($request, $this->portfolioOwner($key), true);
+    }
+
+    private function saveInquiry(ContactRequest $request, User $owner, bool $personal)
+    {
+        $contact = Contact::create([...$request->safe()->only(['name', 'email', 'subject', 'message']), 'user_id' => $owner->id]);
+        ContactMailerJob::dispatch($owner, $contact, $personal)->afterCommit();
+
+        return back()->with('success', $personal ? 'Thank you. Your message has been received for '.$owner->name.'.' : 'Thank you. Your inquiry has been received.');
     }
 
     public function privacy()

@@ -51,7 +51,7 @@ class ContactController extends Controller
 
         if ($contact) {
             //          Mail send functionality with job, queue and work
-            ContactMailerJob::dispatch($user, $contact)->delay(now()->addMinute());
+            ContactMailerJob::dispatch($user, $contact, true)->delay(now()->addMinute());
         }
 
         return response()->json(['success' => 'Message sent successfully']);

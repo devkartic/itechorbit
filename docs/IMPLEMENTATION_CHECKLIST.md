@@ -205,3 +205,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Declare theme-aware headings/contact surfaces explicitly and increase small content labels for readability.
 - [x] Verify all 30 browser checks: five public/admin-preview designs, sparse profiles, incomplete row centering, sampled text contrast, hover shadows and reduced-motion behavior.
 - [x] Verify 44 PHP tests / 1,040 assertions, 3 frontend tests, TypeScript, lint, Pint and client/SSR builds. Review/save updated synthetic screenshots and document checks and limits.
+
+## Owner-specific portfolio contact and both inquiry email templates — 2026-10-16
+- [x] Add inline owner forms and standalone personal contact pages; keep agency contact independent and retain old portfolio contact links.
+- [x] Resolve recipients from the public portfolio URL, preserve ownership/publication checks, and queue only to the selected owner.
+- [x] Modernize personal and business notification emails with complete escaped message bodies, Reply-To, reply/inbox actions and plain-text alternatives.
+- [x] Verify 48 PHP tests / 1,089 assertions, 3 frontend tests, types, lint, Pint, client/SSR builds and Blade compilation. All 32 browser checks pass.
+- [x] Review/save desktop/mobile personal contact and both email renders using synthetic content; document behavior, deployment and rollback in CONTACT_AND_EMAIL.md. No real email sent, database migration or environment change.

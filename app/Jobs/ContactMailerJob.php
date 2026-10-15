@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Mail\SendContactNotifications;
+use App\Mail\SendPortfolioInquiry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,15 +19,18 @@ class ContactMailerJob implements ShouldQueue
 
     public object $contact;
 
+    public bool $personal = false;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($user, $contact)
+    public function __construct($user, $contact, bool $personal = false)
     {
         $this->user = $user;
         $this->contact = $contact;
+        $this->personal = $personal;
     }
 
     /**
@@ -36,7 +40,7 @@ class ContactMailerJob implements ShouldQueue
      */
     public function handle()
     {
-        Mail::to($this->user->email)->send(new SendContactNotifications($this->user, $this->contact));
+        Mail::to($this->user->email)->send($this->personal ? new SendPortfolioInquiry($this->user, $this->contact) : new SendContactNotifications($this->user, $this->contact));
         $this->contact->update(['sent_mail_status' => 1]);
     }
 }

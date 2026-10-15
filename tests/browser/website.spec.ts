@@ -360,3 +360,22 @@ test('portfolio template studio previews five layouts and persists the public se
   await page.screenshot({ path: testInfo.outputPath('portfolio-template-studio.png'), fullPage: true });
   expect(errors).toEqual([]);
 });
+
+test('portfolio contact belongs to its owner and supports personal inquiries', async ({ page }, testInfo) => {
+  await page.goto('/portfolios/TESTPROFILE');
+  const form = page.getByRole('form', { name: 'Contact Test Engineer', exact: true });
+  await expect(form.getByText('Your message is sent directly to Test Engineer.')).toBeVisible();
+  await form.getByLabel('Your name', { exact: true }).fill('Portfolio recruiter');
+  await form.getByLabel('Email address', { exact: true }).fill('recruiter@example.test');
+  await form.getByLabel('Subject', { exact: true }).fill('Personal engineering opportunity');
+  await form.getByLabel('Your message', { exact: true }).fill('A personal portfolio inquiry from the synthetic browser fixture.');
+  await Promise.all([page.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith('/portfolios/TESTPROFILE/inquiries')), form.getByRole('button', { name: 'Send personal message' }).click()]);
+  await expect(form.getByRole('status')).toContainText('received for Test Engineer');
+  await page.goto('/contact/info?portfolio_id=TESTPROFILE');
+  await expect(page).toHaveURL(/\/portfolios\/TESTPROFILE\/contact$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Test Engineer');
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'iTechOrbit home' })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.screenshot({ path: testInfo.outputPath('portfolio-personal-contact.png'), fullPage: true });
+});
