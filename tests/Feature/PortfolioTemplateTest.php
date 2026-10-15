@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Admin\Basic;
 use App\Services\PortfolioPresentation;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
 use Tests\TestCase;
@@ -12,6 +14,15 @@ use Tests\TestCase;
 class PortfolioTemplateTest extends TestCase
 {
     use BuildsTestData, RefreshDatabase;
+
+    public function test_pending_migration_keeps_previews_available_and_returns_a_validation_error_on_save(): void
+    {
+        $user = $this->user();
+        // RefreshDatabase confines this schema change to the disposable test database.
+        Schema::table('users', fn (Blueprint $table) => $table->dropColumn('portfolio_template'));
+        $this->actingAs($user)->get('/workspace/portfolio-templates')->assertOk()->assertInertia(fn (Assert $page) => $page->where('storageReady', false)->where('template', 'studio'));
+        $this->patch('/workspace/portfolio-templates', ['template' => 'spotlight'])->assertSessionHasErrors('template');
+    }
 
     public function test_template_studio_requires_an_active_verified_account(): void
     {

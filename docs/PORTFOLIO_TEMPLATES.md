@@ -37,7 +37,9 @@ npm run build
 
 Restart the existing SSR worker after deploying the matching client/SSR builds. On production, use the established approved deployment command/environment; no production deployment was performed here. Schema changes on a large users table should be scheduled according to the database's locking behavior.
 
-The migration was applied and exercised on isolated SQLite test databases. The configured application connection uses the `mariadb` hostname, which does not resolve from this shell. Its migration status could not be read, and this migration has **not** been applied to that database. Saving a design requires applying it in the runtime where that database is reachable. Existing public reads safely fall back to Studio when the preference is absent.
+The migration was applied and exercised on isolated SQLite test databases, then reviewed with `--pretend` and applied to the local development database through `docker exec php-workspace-itechorbit-1 php artisan migrate --path=database/migrations/2026_10_15_190000_add_portfolio_template_to_users.php`. Migration status confirms batch 3 / Ran. The host shell cannot resolve `mariadb`, but the application container can. The migration added only the nullable column; no existing records were rewritten. No production migration was run.
+
+If another environment has not applied the migration, previews remain available, saving is disabled with a clear setup message, and the server rejects direct save attempts with a validation error instead of an unknown-column exception. Existing public reads safely fall back to Studio when the preference is absent.
 
 For rollback, revert the feature's code/build and restart SSR. The nullable column may remain without affecting older code. Prefer leaving it in place to preserve selections. The migration's `down()` removes only this new column and discards saved template choices; obtain approval and a backup before executing that destructive rollback. Do not roll back unrelated migrations or restore an entire database just to change a portfolio design.
 
@@ -53,7 +55,7 @@ For rollback, revert the feature's code/build and restart SSR. The nullable colu
 
 ## Validation
 
-- PHP: 43 tests / 1,027 assertions passed, including four new template tests.
+- PHP: 44 tests / 1,040 assertions passed, including five template tests and the missing-column regression.
 - Frontend: 3 unit tests, TypeScript, ESLint, Pint and client/SSR builds passed.
 - All 30 desktop/mobile browser regressions passed, including private preview/save/reload and public SSR checks for every template.
 - No Lighthouse scores measured for this change. Portfolio view JS is about 9.8 KB / 3 KB gzip and template CSS about 18 KB / 3.8 KB gzip in the production build; these assets are shared between the public portfolio and private chooser.

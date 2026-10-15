@@ -189,4 +189,5 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Verify 43 PHP tests / 1,027 assertions; authenticated self-only persistence, hidden portfolios, sanitization, invalid/retired choices and public URL behavior.
 - [x] Verify all 30 desktop/mobile browser regressions, including every template preview/save/reload/public SSR; review layouts and save seven synthetic screenshots. Types, lint, Pint, 3 frontend tests and client/SSR builds pass.
 - [x] Document migration, rollback, implementation and validation in PORTFOLIO_TEMPLATES.md; update README and architecture.
-- [ ] Apply the additive preference migration in the application runtime. Blocker: configured `mariadb` hostname does not resolve from this shell. Migration verified only on disposable SQLite databases; no application/production data modified.
+- [x] Apply the additive preference migration through the local Docker application runtime after reviewing its SQL; confirmed batch 3 / Ran. No existing records rewritten or production database modified.
+- [x] Guard missing-schema environments with a preview-only setup notice and validated save rejection. Verify 44 PHP tests / 1,040 assertions, types, lint, Pint, client/SSR builds and both affected desktop/mobile browser scenarios.
