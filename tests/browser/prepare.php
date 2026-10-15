@@ -53,3 +53,7 @@ foreach (['PHP', 'React', 'TypeScript', 'MySQL', 'Redis'] as $technology) {
 $skill = Skill::create(['name' => 'Laravel', 'user_id' => $user->id, 'status' => 1]);
 Project::create(['user_id' => $user->id, 'skill_id' => $skill->id, 'name' => 'Synthetic project for testing', 'client_name' => 'Synthetic client', 'project_category' => 'Web application', 'about_project' => 'A synthetic project used only for automated UI verification.', 'played_role' => 'Engineering', 'technology_used' => json_encode(['Laravel', 'React']), 'status' => 1]);
 echo "Isolated synthetic fixtures prepared.\n";
+
+foreach ([['Synthetic API platform', 'API platform', 'API architecture'], ['Synthetic developer workspace', 'Developer tooling', 'Full-stack engineering']] as [$name, $category, $role]) {
+    Project::create(['user_id' => $user->id, 'skill_id' => $skill->id, 'name' => $name, 'client_name' => 'Synthetic client', 'project_category' => $category, 'about_project' => 'A synthetic portfolio entry for gallery and category filter verification.', 'played_role' => $role, 'technology_used' => json_encode(['Laravel', 'TypeScript', 'Redis']), 'status' => 1]);
+}

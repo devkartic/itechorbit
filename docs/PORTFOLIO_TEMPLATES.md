@@ -6,17 +6,19 @@ The existing `/portfolios` and `/portfolios/{key}` pages now render a saved user
 
 | Design | Presentation |
 | --- | --- |
-| Studio | Violet accents, an asymmetric profile hero, factual portfolio counts and bento sections. |
-| Executive | Navy resume, persistent identity rail, career-first reading column and restrained project cards. |
-| Blueprint | Dark grid canvas, mint accents, technical profile header and projects before experience. |
-| Editorial | Ivory background, serif display typography, arch portrait and alternating horizontal project stories. |
-| Spotlight | Centered cobalt hero, lime call to action and a large featured project followed by a project grid. |
+| Studio | Sculpted violet identity, orbital artwork, lime work badge, tactile bento surfaces and an asymmetric project gallery. |
+| Executive | Cinematic navy introduction with mint details, architectural identity frames and a career intelligence grid. |
+| Blueprint | Dark technical workbench, mint circuit details, expertise nodes and a project-first gallery. |
+| Editorial | Ivory engineering journal, oversized serif type, orange annotations, arch identity and alternating project stories. |
+| Spotlight | Electric-blue identity stage, lime details, oversized outline typography and a visual work mosaic. |
 
-Missing images use an initial-based identity card or neutral engineering artwork rendered in CSS/SVG; no client logos, claims, testimonials or achievements are fabricated. Empty sections are omitted. Single projects occupy a complete showcase row. Existing active content appears in all five templates, including introduction, objective, additional information, skills, experience, services, projects, social links and public CVs.
+Missing images use an initial-based identity card or neutral engineering artwork rendered in CSS/SVG; no client logos, claims, testimonials or achievements are fabricated. Empty sections are omitted. The first project occupies a complete showcase row. Symbolic project artwork displays the actual project name and technology tags; it is decorative artwork, not a fabricated product screenshot. Existing active content appears in all five templates, including introduction, objective, additional information, skills, experience, services, projects, social links and public CVs.
 
 ## User workflow
 
 Open **Portfolio templates** in the workspace sidebar, or visit `/workspace/portfolio-templates`. Choose a design card to preview your own active content immediately. Switch between desktop and mobile preview widths, then click **Save template**. The current design is labeled and persists across visits. Previewing alone does not save a choice. Links are inactive inside the preview; the public portfolio retains working project, contact, social and CV links.
+
+Project category filters work in both the preview and public page, with keyboard-operable buttons, pressed states and a result announcement. Public section navigation links to the work, experience, expertise and contact sections when present. Identity metadata and counts derive from active profile content. Decorative orbit lines do not imply availability, verified results or proficiency ratings.
 
 Preview rendering uses the same React component as the public page, with CSS container queries for the preview width. It does not use an iframe or weaken the existing framing policy. Public pages remain rendered through the existing Inertia SSR process. The chooser is private and marked noindex through the workspace layout and security middleware.
 
@@ -58,7 +60,8 @@ For rollback, revert the feature's code/build and restart SSR. The nullable colu
 - PHP: 44 tests / 1,040 assertions passed, including five template tests and the missing-column regression.
 - Frontend: 3 unit tests, TypeScript, ESLint, Pint and client/SSR builds passed.
 - All 30 desktop/mobile browser regressions passed, including private preview/save/reload and public SSR checks for every template.
-- No Lighthouse scores measured for this change. Portfolio view JS is about 9.8 KB / 3 KB gzip and template CSS about 18 KB / 3.8 KB gzip in the production build; these assets are shared between the public portfolio and private chooser.
+- No Lighthouse scores measured for this change. Portfolio view JS is about 16.8 KB / 4.8 KB gzip and template CSS about 33.4 KB / 7 KB gzip in the production build; these assets are shared between the public portfolio and private chooser.
+- The 2026-10-16 art-direction refresh passed all 30 browser regressions, including keyboard/category filtering and all five saved layouts. Reduced-motion preferences disable gallery transitions/animations, and container sizing keeps private previews responsive. No new dependencies or schema changes were introduced by this refresh.
 - Visual review uses synthetic profiles only. Screenshots below contain no application user data.
 
 ## Screenshots

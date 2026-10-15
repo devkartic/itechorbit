@@ -191,3 +191,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Document migration, rollback, implementation and validation in PORTFOLIO_TEMPLATES.md; update README and architecture.
 - [x] Apply the additive preference migration through the local Docker application runtime after reviewing its SQL; confirmed batch 3 / Ran. No existing records rewritten or production database modified.
 - [x] Guard missing-schema environments with a preview-only setup notice and validated save rejection. Verify 44 PHP tests / 1,040 assertions, types, lint, Pint, client/SSR builds and both affected desktop/mobile browser scenarios.
+
+## Advanced portfolio art direction — 2026-10-16
+- [x] Replace the basic compositions with sculpted Studio, cinematic Executive, technical Blueprint, expressive Editorial and electric Spotlight designs.
+- [x] Add real-content identity layers, section navigation, interactive project filters, symbolic project artwork, bento expertise cards and clearer career timelines.
+- [x] Keep shared content/selection/publication behavior; add no dependencies or database changes.
+- [x] Verify all 30 desktop/mobile browser regressions, including all five public/admin-preview layouts, keyboard/category filtering, saved selection and crawlable SSR.
+- [x] Review all five desktop designs and responsive mobile rendering; refresh template thumbnails/descriptions, synthetic screenshots and portfolio documentation. Verify 44 PHP tests / 1,040 assertions, 3 frontend tests, TypeScript, ESLint, Pint and production client/SSR builds.

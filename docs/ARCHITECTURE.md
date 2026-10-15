@@ -20,3 +20,5 @@ Page components load independently; article highlighting loads only on article p
 ## Portfolio template studio
 
 `PortfolioPresentation` supplies the same sanitized profile/project payload to the public portfolio and private template chooser. Five React layouts share content sections while changing structure, type and palette. The authenticated chooser writes only the current user’s allowlisted `portfolio_template` preference; a nullable users column defaults to Studio through presentation fallback. Preview uses the actual layout with container-query sizing. Existing portfolio routes, canonical URLs, publication status and contact routing are preserved. See [PORTFOLIO_TEMPLATES.md](PORTFOLIO_TEMPLATES.md) for deployment and validation.
+
+The 2026-10-16 portfolio visual refresh adds shared identity artwork, section anchors and client-side project category filtering over the already-authorized project payload. Each design has its own composition and tokens; container queries on the portfolio root keep admin previews aligned with public rendering. All filter results remain available in SSR before hydration. No new API, dependencies or migrations are required.

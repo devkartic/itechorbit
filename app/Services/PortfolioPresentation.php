@@ -7,11 +7,11 @@ use App\Models\User;
 class PortfolioPresentation
 {
     public const TEMPLATES = [
-        'studio' => ['name' => 'Studio', 'description' => 'A confident violet-accented bento layout for versatile full-stack engineers.'],
-        'executive' => ['name' => 'Executive', 'description' => 'A refined navy resume with a persistent profile rail and a clear career narrative.'],
-        'blueprint' => ['name' => 'Blueprint', 'description' => 'A dark technical canvas with mint accents and project-first engineering detail.'],
-        'editorial' => ['name' => 'Editorial', 'description' => 'An ivory editorial layout with expressive serif typography and generous reading space.'],
-        'spotlight' => ['name' => 'Spotlight', 'description' => 'A bold cobalt introduction and a visual showcase for product-focused engineers.'],
+        'studio' => ['name' => 'Studio', 'description' => 'A sculpted violet identity, layered profile visuals and tactile bento panels.'],
+        'executive' => ['name' => 'Executive', 'description' => 'A cinematic navy introduction with a career intelligence grid and mint details.'],
+        'blueprint' => ['name' => 'Blueprint', 'description' => 'A dark engineering workbench with circuit details, mint accents and a project-first gallery.'],
+        'editorial' => ['name' => 'Editorial', 'description' => 'An art-directed ivory journal with oversized typography, orange annotations and project stories.'],
+        'spotlight' => ['name' => 'Spotlight', 'description' => 'An electric-blue identity stage, bold outline type and a visual project mosaic.'],
     ];
 
     public function __construct(private PublicContent $content) {}

@@ -271,3 +271,18 @@
 .template-preview-note { font-size:11px; line-height:1.9; margin-top:16px; color:#88788f; max-width:800px; }
 @media(max-width:1200px) { .template-choices { grid-template-columns:repeat(3,minmax(0,1fr)); } .template-studio-heading { align-items:flex-start; flex-direction:column; } }
 @media(max-width:640px) { .template-choices { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .template-miniature { height:142px; } .template-preview-stage { padding:8px; } .template-preview-toolbar { padding:16px; } .template-preview-actions { width:100%; justify-content:space-between; } }
+
+/* Refined thumbnails mirror the current portfolio compositions. */
+.miniature-studio .mini-avatar { border-radius:22px 5px 5px 5px !important; box-shadow:4px 5px 0 #ded4f0; }
+.miniature-executive { --mini-bg:#112d39; --mini-accent:#c8e5a5; --mini-soft:#25434c; }
+.miniature-executive .mini-avatar { left:auto; right:12px; top:28px; width:31%; height:64px; border-radius:3px !important; }
+.miniature-executive .mini-title { top:37px; width:42%; height:11px; }
+.miniature-executive .mini-subtitle { top:56px; width:37%; }
+.miniature-executive .mini-button { top:72px; width:25%; height:10px; }
+.miniature-executive .mini-grid { top:108px; left:12px; height:21px; flex-direction:row; }
+.miniature-editorial { --mini-accent:#b74b29; }
+.miniature-editorial .mini-avatar { box-shadow:4px 3px 0 #e3d2bf; }
+.miniature-spotlight .mini-avatar { width:31%; height:60px; border-radius:20px 20px 3px 3px !important; left:auto; right:12px; top:25px; background:#6780df; }
+.miniature-spotlight .mini-title { left:12px; top:37px; width:44%; height:11px; }
+.miniature-spotlight .mini-subtitle { left:12px; top:56px; width:36%; }
+.miniature-spotlight .mini-button { left:12px; top:72px; width:24%; height:10px; }
