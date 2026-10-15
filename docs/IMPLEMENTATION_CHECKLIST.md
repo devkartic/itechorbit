@@ -232,3 +232,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Replace competing side-by-side sections in all five templates with two independent full-width rows.
 - [x] Create a title/content row layout, subtle dividers, theme-aware surfaces and responsive expertise tiles; preserve natural section heights and existing content.
 - [x] Verify full-width stacked row geometry in all five templates, responsive header/footer alignment, contact forms and screenshot uploads: all 6 desktop/mobile browser checks pass. TypeScript, lint and client/SSR builds pass; review and refresh captures.
+
+## Skills-first profile layout refinement — 2026-10-16
+- [x] Put Skills before the existing personal/About content in all five templates; preserve actual content without inventing hobbies.
+- [x] Remove large profile card shells and heading/content columns; use open sections, compact technology tiles, one divider and natural reading width.
+- [x] Verify the final section order, Skills-first position, spacing, responsive alignment, all template previews and contact/upload behavior: all 6 affected browser scenarios pass. Types/lint, Pint and client/SSR builds pass; review and refresh captures.
+
+- [x] Standardize the career section order in every template: introduction → skills → experience → projects → services → personal/About → contact. Align local navigation with this order.

@@ -189,3 +189,9 @@ Alignment verification: all 6 affected desktop/mobile browser checks passed, inc
 ## Premium profile rows — 2026-10-16
 
 Moved About and Technology & Expertise into separate full-width rows across all five portfolio designs, with heading/content columns, dividers and theme-aware surfaces. Mobile stacks the contents; section heights follow their own content. Added geometry regression checks and refreshed captures. All 6 affected desktop/mobile browser flows, TypeScript, lint and client/SSR builds pass. No data, environment, dependencies or migrations changed.
+
+## Final career order and compact profile layout — 2026-10-16
+
+Standardized all five portfolio templates to Introduction → Skills → Experience → Projects → Services → About → Contact, with matching local navigation and omission of empty sections. Replaced the rejected boxed rows with open sections, compact skill tiles and natural reading width. Removed decorative indices/arrow affordances from non-clickable skills. Preserved existing personal content; no hobbies were invented or schema fields added. Verified types, lint, Pint and client/SSR builds; browser coverage now asserts the final order as well as alignment/contact/upload behavior.
+
+Final career-order verification: 6 desktop/mobile browser checks passed. Updated portfolio captures reviewed and saved.

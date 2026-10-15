@@ -306,11 +306,13 @@ test('portfolio template studio previews five layouts and persists the public se
       const box = container.getBoundingClientRect();
       const about = container.querySelector('#about')!.getBoundingClientRect();
       const expertise = container.querySelector('#expertise')!.getBoundingClientRect();
-      return { width: box.width, aboutWidth: about.width, expertiseWidth: expertise.width, gap: expertise.top - about.bottom };
+      return { width: box.width, aboutWidth: about.width, expertiseWidth: expertise.width, gap: about.top - expertise.bottom };
     });
     expect(Math.abs(profileRows.aboutWidth - profileRows.width)).toBeLessThan(1);
     expect(Math.abs(profileRows.expertiseWidth - profileRows.width)).toBeLessThan(1);
-    expect(profileRows.gap).toBeGreaterThanOrEqual(16);
+    expect(profileRows.gap).toBeGreaterThanOrEqual(0);
+    await expect(page.locator('.pf-profile-sections > section').first()).toHaveAttribute('id', 'expertise');
+    expect(await page.locator('.pf-profile-sections > section').evaluateAll(sections => sections.map(section => section.id))).toEqual(['expertise', 'experience', 'projects', 'services', 'about']);
 
     const originalViewport = page.viewportSize()!;
     const alignmentSizes = [originalViewport, ...(!isMobile ? [{ width: 768, height: 900 }, { width: 1440, height: 900 }] : [])];

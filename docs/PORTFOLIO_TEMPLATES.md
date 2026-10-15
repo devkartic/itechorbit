@@ -7,8 +7,8 @@ The existing `/portfolios` and `/portfolios/{key}` pages now render a saved user
 | Design | Presentation |
 | --- | --- |
 | Studio | Sculpted violet identity, orbital artwork, lime work badge, tactile bento surfaces and an asymmetric project gallery. |
-| Executive | Cinematic navy introduction with mint details, architectural identity frames and a balanced full-width career timeline and paired expertise/about panels. |
-| Blueprint | Dark technical workbench, mint circuit details, expertise nodes and a project-first gallery. |
+| Executive | Cinematic navy introduction with mint details, architectural identity frames and a balanced full-width career timeline and open skills/personal sections. |
+| Blueprint | Dark technical workbench, mint circuit details, expertise nodes and a structured career gallery. |
 | Editorial | Ivory engineering journal, oversized serif type, orange annotations, arch identity and alternating project stories. |
 | Spotlight | Electric-blue identity stage, lime details, oversized outline typography and a visual work mosaic. |
 
@@ -109,3 +109,11 @@ Browser coverage measures both left/right portfolio content edges against the he
 About and Technology & Expertise are now two separate full-width rows in every template. They no longer occupy unequal-height side-by-side cards. Each row has a heading column and a readable content column, separated by a quiet vertical rule; narrow layouts stack those elements with a horizontal divider. Expertise tiles wrap within their own full-width section. Existing text, theme colors, subtle shadows and reduced-motion handling are retained. Empty rows remain omitted.
 
 Verified all five designs in both public pages and admin previews, including full-row width/non-overlap measurements and shared header/footer edges. All 6 affected desktop/mobile browser flows pass, including personal contact and screenshot upload. TypeScript, lint and client/SSR builds pass. Updated screenshots above show the final row composition.
+
+## Career-first order and open sections — 2026-10-16
+
+The final section order is consistent across all five templates: introduction → skills → professional experience → selected projects → services → personal/About content → contact. Local section navigation follows Skills, Experience, Work, Connect. Sections without content remain omitted. The template choice controls art direction, rather than changing the order recruiters must follow.
+
+The previous boxed profile rows and side-by-side heading/content columns were removed. Skills now use compact wrapping tiles with actual technology names and neutral code icons; decorative indices and link-like arrows were removed. Personal content is a simple readable About me section, with a quiet divider and natural reading width. There is no dedicated hobby field in the current schema; existing introduction/additional information is preserved without inventing hobbies or relabeling technical content as hobby facts.
+
+TypeScript, lint, Pint and production client/SSR builds pass. Browser coverage explicitly checks the section order, Skills-first position, full-width content alignment, contact forms and uploaded screenshots on desktop/mobile.

@@ -7,9 +7,9 @@ use App\Models\User;
 class PortfolioPresentation
 {
     public const TEMPLATES = [
-        'studio' => ['name' => 'Studio', 'description' => 'A sculpted violet identity, layered profile visuals and tactile bento panels.'],
-        'executive' => ['name' => 'Executive', 'description' => 'A cinematic navy introduction with a career intelligence grid and mint details.'],
-        'blueprint' => ['name' => 'Blueprint', 'description' => 'A dark engineering workbench with circuit details, mint accents and a project-first gallery.'],
+        'studio' => ['name' => 'Studio', 'description' => 'A sculpted violet identity, layered visuals and a clean skills-led profile.'],
+        'executive' => ['name' => 'Executive', 'description' => 'A cinematic navy introduction, mint details and a clear career narrative.'],
+        'blueprint' => ['name' => 'Blueprint', 'description' => 'A dark engineering workbench with circuit details, mint accents and a structured career story.'],
         'editorial' => ['name' => 'Editorial', 'description' => 'An art-directed ivory journal with oversized typography, orange annotations and project stories.'],
         'spotlight' => ['name' => 'Spotlight', 'description' => 'An electric-blue identity stage, bold outline type and a visual project mosaic.'],
     ];
