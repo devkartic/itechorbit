@@ -1,6 +1,6 @@
 import '../../../css/portfolio.css';
 import { ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Command, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Project } from '@/lib/types';
 import { dateLabel } from '@/lib/utils';
 
@@ -76,11 +76,22 @@ function Contact({ profile }: { profile: Profile }) {
 }
 export function PortfolioView({ profile, projects, template, preview = false }: PortfolioData & { preview?: boolean }) {
   const style = names[template] ? template : 'studio';
+  const canvas = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!canvas.current || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) { entry.target.classList.add('is-in-view'); observer.unobserve(entry.target); }
+      }
+    }, { threshold: 0.08 });
+    canvas.current.querySelectorAll('.pf-section, .pf-facts, .pf-contact').forEach(section => observer.observe(section));
+    return () => observer.disconnect();
+  }, [style]);
   const about = <About profile={profile} />; const experience = <Experience profile={profile} />; const work = <Projects projects={projects} />; const skills = <Skills profile={profile} />; const services = <Services profile={profile} />;
   const hero = <Hero profile={profile} projects={projects} variant={style}>{projects.length > 0 && <a href="#projects" className="pf-scroll-link"><span><ArrowDown size={15} /></span>Explore the work</a>}</Hero>;
-  return <div id="portfolio-top" className={`portfolio-view pf-${style}`} data-template={style} onClick={preview ? event => { if ((event.target as Element).closest('a')) event.preventDefault(); } : undefined}>
+  return <div ref={canvas} id="portfolio-top" className={`portfolio-view pf-${style}`} data-template={style} onClick={preview ? event => { if ((event.target as Element).closest('a')) event.preventDefault(); } : undefined}>
     <div className="pf-shell"><SectionNav profile={profile} projects={projects} />
-      {style === 'executive' ? <><div className="pf-executive-stage">{hero}<div className="pf-executive-signoff"><span>ENGINEERING / PERSPECTIVE / EXECUTION</span><Fingerprint size={22} strokeWidth={1} /></div></div><Facts profile={profile} projects={projects} />{work}<div className="pf-executive-grid">{experience}<aside>{skills}{about}</aside></div>{services}</>
+      {style === 'executive' ? <><div className="pf-executive-stage">{hero}<div className="pf-executive-signoff"><span>ENGINEERING / PERSPECTIVE / EXECUTION</span><Fingerprint size={22} strokeWidth={1} /></div></div><Facts profile={profile} projects={projects} />{work}<div className="pf-executive-grid">{experience}{skills}{about}</div>{services}</>
         : style === 'blueprint' ? <><div className="pf-terminal-bar"><span><span className="pf-terminal-dot" /> engineer.profile</span><span>HUMAN AT THE CORE / ENGINEERING AT THE EDGES</span></div>{hero}{work}<div className="pf-split">{skills}{about}</div>{experience}{services}</>
         : style === 'editorial' ? <><div className="pf-editorial-masthead"><span>THE ENGINEERING EDITION</span><span>INDEPENDENT THINKING. INTENTIONAL CRAFT.</span></div>{hero}<div className="pf-editorial-intro">{about}{skills}</div>{work}{experience}{services}</>
         : style === 'spotlight' ? <><div className="pf-spotlight-stage">{hero}<div className="pf-spotlight-ticker" aria-hidden="true"><span>ENGINEER.</span><span>CREATE.</span><span>ITERATE.</span><ArrowUpRight size={48} strokeWidth={1} /></div></div>{work}<div className="pf-split">{about}{skills}</div>{experience}{services}</>

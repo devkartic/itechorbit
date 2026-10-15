@@ -7,7 +7,7 @@ The existing `/portfolios` and `/portfolios/{key}` pages now render a saved user
 | Design | Presentation |
 | --- | --- |
 | Studio | Sculpted violet identity, orbital artwork, lime work badge, tactile bento surfaces and an asymmetric project gallery. |
-| Executive | Cinematic navy introduction with mint details, architectural identity frames and a career intelligence grid. |
+| Executive | Cinematic navy introduction with mint details, architectural identity frames and a balanced full-width career timeline and paired expertise/about panels. |
 | Blueprint | Dark technical workbench, mint circuit details, expertise nodes and a project-first gallery. |
 | Editorial | Ivory engineering journal, oversized serif type, orange annotations, arch identity and alternating project stories. |
 | Spotlight | Electric-blue identity stage, lime details, oversized outline typography and a visual work mosaic. |
@@ -60,7 +60,7 @@ For rollback, revert the feature's code/build and restart SSR. The nullable colu
 - PHP: 44 tests / 1,040 assertions passed, including five template tests and the missing-column regression.
 - Frontend: 3 unit tests, TypeScript, ESLint, Pint and client/SSR builds passed.
 - All 30 desktop/mobile browser regressions passed, including private preview/save/reload and public SSR checks for every template.
-- No Lighthouse scores measured for this change. Portfolio view JS is about 16.8 KB / 4.8 KB gzip and template CSS about 33.4 KB / 7 KB gzip in the production build; these assets are shared between the public portfolio and private chooser.
+- No Lighthouse scores measured for this change. Portfolio view JS is about 17.2 KB / 5 KB gzip and template CSS about 36.6 KB / 7.6 KB gzip in the production build; these assets are shared between the public portfolio and private chooser.
 - The 2026-10-16 art-direction refresh passed all 30 browser regressions, including keyboard/category filtering and all five saved layouts. Reduced-motion preferences disable gallery transitions/animations, and container sizing keeps private previews responsive. No new dependencies or schema changes were introduced by this refresh.
 - Visual review uses synthetic profiles only. Screenshots below contain no application user data.
 
@@ -73,3 +73,13 @@ For rollback, revert the feature's code/build and restart SSR. The nullable colu
 - [Editorial](assets/portfolio-editorial-desktop.png)
 - [Spotlight](assets/portfolio-spotlight-desktop.png)
 - [Blueprint on mobile](assets/portfolio-blueprint-mobile.png)
+
+## Layout and visual quality corrections — 2026-10-16
+
+The canvas now uses a centered 1,120px maximum width, content-driven heroes and shorter section spacing. Gallery rows wrap around a centered axis; an unmatched final card is centered, while a two-project gallery uses two complete showcase rows. Service columns fit the available content, and empty paired sections collapse. Executive experience occupies a complete row rather than leaving a short timeline beside a tall sidebar. Larger content labels and explicit theme-scoped heading/contact colors improve readability across public pages and private previews.
+
+Cards have visible resting shadows and stronger hover/focus depth, with a colored edge light on Blueprint's dark surfaces. Floating identity chips and signal accents animate gently. IntersectionObserver triggers section reveals once as they enter view. Content remains visible when JavaScript or IntersectionObserver is unavailable. Reduced-motion preferences disable animations and transitions.
+
+Browser coverage now includes five sparse synthetic profiles, incomplete gallery-row centering, gallery hover-shadow changes, reduced-motion behavior, and sampled heading/body/contact text contrast against their background surfaces. Contrast checks use the declared base surface of gradients and do not constitute a complete WCAG audit. Synthetic fixtures and all checks run separately from application data. No environment settings, database schema, dependencies or publication rules were changed.
+
+Follow-up verification: all 30 browser tests passed, including the added checks on each template. PHP: 44 tests / 1,040 assertions; frontend: 3 tests; TypeScript, lint, Pint and client/SSR builds pass. Additional captures: [sparse desktop](assets/portfolio-sparse-desktop.png), [sparse mobile](assets/portfolio-sparse-mobile.png).

@@ -13,6 +13,7 @@ use App\Models\Admin\Route;
 use App\Models\Admin\Service;
 use App\Models\Admin\Skill;
 use App\Models\User;
+use App\Services\PortfolioPresentation;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
@@ -54,6 +55,11 @@ $skill = Skill::create(['name' => 'Laravel', 'user_id' => $user->id, 'status' =>
 Project::create(['user_id' => $user->id, 'skill_id' => $skill->id, 'name' => 'Synthetic project for testing', 'client_name' => 'Synthetic client', 'project_category' => 'Web application', 'about_project' => 'A synthetic project used only for automated UI verification.', 'played_role' => 'Engineering', 'technology_used' => json_encode(['Laravel', 'React']), 'status' => 1]);
 echo "Isolated synthetic fixtures prepared.\n";
 
-foreach ([['Synthetic API platform', 'API platform', 'API architecture'], ['Synthetic developer workspace', 'Developer tooling', 'Full-stack engineering']] as [$name, $category, $role]) {
+foreach ([['Synthetic API platform', 'API platform', 'API architecture'], ['Synthetic developer workspace', 'Developer tooling', 'Full-stack engineering'], ['Synthetic data integration', 'Data integration', 'Integration engineering']] as [$name, $category, $role]) {
     Project::create(['user_id' => $user->id, 'skill_id' => $skill->id, 'name' => $name, 'client_name' => 'Synthetic client', 'project_category' => $category, 'about_project' => 'A synthetic portfolio entry for gallery and category filter verification.', 'played_role' => $role, 'technology_used' => json_encode(['Laravel', 'TypeScript', 'Redis']), 'status' => 1]);
+}
+
+foreach (array_keys(PortfolioPresentation::TEMPLATES) as $template) {
+    $sparse = User::create(['name' => 'Minimal Engineer', 'email' => 'sparse-'.$template.'@example.test', 'password' => Hash::make('Synthetic-only-password-42'), 'role_id' => 4, 'status' => 1, 'portfolio_status' => 1, 'portfolio_id' => 'SPARSE-'.strtoupper($template)]);
+    $sparse->forceFill(['portfolio_template' => $template])->save();
 }

@@ -198,3 +198,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Keep shared content/selection/publication behavior; add no dependencies or database changes.
 - [x] Verify all 30 desktop/mobile browser regressions, including all five public/admin-preview layouts, keyboard/category filtering, saved selection and crawlable SSR.
 - [x] Review all five desktop designs and responsive mobile rendering; refresh template thumbnails/descriptions, synthetic screenshots and portfolio documentation. Verify 44 PHP tests / 1,040 assertions, 3 frontend tests, TypeScript, ESLint, Pint and production client/SSR builds.
+
+## Portfolio layout, contrast and motion corrections — 2026-10-16
+- [x] Remove fixed hero heights, center incomplete gallery rows, collapse empty sections and rebalance the Executive grid.
+- [x] Strengthen card shadows, add viewport reveals and floating accents, and preserve reduced-motion and SSR visibility.
+- [x] Declare theme-aware headings/contact surfaces explicitly and increase small content labels for readability.
+- [x] Verify all 30 browser checks: five public/admin-preview designs, sparse profiles, incomplete row centering, sampled text contrast, hover shadows and reduced-motion behavior.
+- [x] Verify 44 PHP tests / 1,040 assertions, 3 frontend tests, TypeScript, lint, Pint and client/SSR builds. Review/save updated synthetic screenshots and document checks and limits.

@@ -157,3 +157,11 @@ Missing-column follow-up: reviewed and applied the additive `users.portfolio_tem
 Reworked all five portfolio designs with stronger art direction: sculpted Studio bento surfaces, a cinematic Executive hero/career grid, a Blueprint technical workbench, expressive Editorial typography/orange accents, and an electric Spotlight stage. Added layered identity artwork driven by actual metadata, portfolio section links, working project category filters, richer symbolic project artwork, expertise cards, current-role timeline panels and thematic contact sections. Updated chooser thumbnails and descriptions. No dependencies, migrations, publication rules or user data were changed.
 
 Validation: 44 PHP tests / 1,040 assertions, 3 frontend tests, TypeScript, ESLint, Pint and client/SSR builds passed. Browser checks cover all five public/preview layouts, desktop/mobile sizes, keyboard/category filtering, saved selection and SSR. Updated synthetic screenshots and deployment/rollback instructions remain in [PORTFOLIO_TEMPLATES.md](PORTFOLIO_TEMPLATES.md). No new Lighthouse scores were measured.
+
+## Portfolio layout/contrast/motion corrections — 2026-10-16
+
+Centered the canvas and incomplete gallery rows; replaced fixed hero heights with content-driven sizing; reduced section spacing; removed empty/uneven columns and rebalanced Executive experience. Increased small label sizes and applied explicit theme-aware heading/contact colors. Added visible default shadows, hover/focus lift, dark-surface edge lighting, floating accents and viewport-triggered reveals with reduced-motion support and a visible no-JavaScript fallback. Preserved all existing template choices and content.
+
+Validation adds sparse-profile, grid-centering, sampled contrast, hover-shadow and reduced-motion checks to the existing desktop/mobile portfolio flow. PHP (44 tests / 1,040 assertions), frontend unit tests (3), TypeScript, lint, Pint and production client/SSR builds pass. No environment configuration or database changes were needed. See PORTFOLIO_TEMPLATES.md for scope and contrast-check limitations.
+
+Final browser result for this correction: 30 passed. Updated full-content and sparse synthetic profile screenshots are saved under docs/assets.

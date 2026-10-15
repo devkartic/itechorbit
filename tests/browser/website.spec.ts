@@ -289,7 +289,7 @@ test('portfolio template studio previews five layouts and persists the public se
     await previewFilters.getByRole('button', { name: 'API platform', exact: true }).click();
     await expect(preview.locator('.pf-project')).toHaveCount(1);
     await previewFilters.getByRole('button', { name: /All work/ }).click();
-    await expect(preview.locator('.pf-project')).toHaveCount(3);
+    await expect(preview.locator('.pf-project')).toHaveCount(4);
     await page.getByRole('button', { name: 'Mobile preview', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Mobile preview', exact: true })).toHaveAttribute('aria-pressed', 'true');
     expect(await preview.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBeTruthy();
@@ -308,15 +308,53 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect(page.locator('.pf-project h3')).toHaveText('Synthetic developer workspace');
     const allWork = filters.getByRole('button', { name: /All work/ });
     await allWork.focus(); await page.keyboard.press('Enter');
-    await expect(page.locator('.pf-project')).toHaveCount(3);
+    await expect(page.locator('.pf-project')).toHaveCount(4);
     await expect(page.getByRole('navigation', { name: 'Portfolio sections' }).getByRole('link', { name: 'Work', exact: true })).toHaveAttribute('href', '#projects');
+    const gallery = await page.locator('.pf-projects').boundingBox();
+    const finalCard = await page.locator('.pf-project').last().boundingBox();
+    expect(Math.abs((gallery!.x + gallery!.width / 2) - (finalCard!.x + finalCard!.width / 2))).toBeLessThan(2);
+    if (!isMobile) {
+      const card = page.locator('.pf-project').first();
+      const restingShadow = await card.evaluate(element => getComputedStyle(element).boxShadow);
+      await card.hover();
+      await expect.poll(() => card.evaluate(element => getComputedStyle(element).boxShadow)).not.toBe(restingShadow);
+    }
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(page.locator('.pf-floating-stack')).toHaveCSS('animation-name', 'none');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    const lowContrast = await page.locator('.portfolio-view').evaluate(root => {
+      const luminance = (rgb: number[]) => rgb.slice(0, 3).map(value => value / 255).map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((total, value, i) => total + value * [.2126, .7152, .0722][i], 0);
+      const channels = (color: string) => (color.match(/[\d.]+/g) ?? []).map(Number);
+      return [...root.querySelectorAll<HTMLElement>('.pf-hero h1, .pf-section h2, .pf-rich, .pf-project h3, .pf-contact h2, .pf-contact h2>span')].flatMap(element => {
+        let surface: Element | null = element;
+        let background: number[] = [];
+        while (surface) {
+          background = channels(getComputedStyle(surface).backgroundColor);
+          if (background.length >= 3 && (background.length < 4 || background[3] === 1)) break;
+          surface = surface.parentElement;
+        }
+        if (!surface) return [];
+        const text = luminance(channels(getComputedStyle(element).color)); const backdrop = luminance(background);
+        const ratio = (Math.max(text, backdrop) + .05) / (Math.min(text, backdrop) + .05);
+        const threshold = /^H[123]$/.test(element.tagName) || element.parentElement?.tagName === 'H2' ? 3 : 4.5;
+        return ratio + .01 < threshold ? [{ text: element.textContent?.slice(0, 55), ratio: Math.round(ratio * 100) / 100 }] : [];
+      });
+    });
+    expect(lowContrast).toEqual([]);
     const html = await (await request.get('/portfolios/TESTPROFILE')).text();
     expect(html).toContain(`data-template="${name.toLowerCase()}"`); expect(html).toContain('Synthetic project for testing');
     await page.evaluate(() => { (document.activeElement as HTMLElement)?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.getByRole('link', { name: 'iTechOrbit home', exact: true })).toBeInViewport();
     await page.screenshot({ path: testInfo.outputPath(`portfolio-${name.toLowerCase()}.png`), fullPage: true });
+    await page.goto(`/portfolios/SPARSE-${name.toUpperCase()}`);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Minimal Engineer');
+    await expect(page.locator('.pf-project, .pf-section')).toHaveCount(0);
+    expect(await page.locator('.pf-hero').evaluate(element => element.getBoundingClientRect().height)).toBeLessThan(isMobile ? 900 : 600);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+    if (name === 'Studio') await page.screenshot({ path: testInfo.outputPath('portfolio-sparse.png'), fullPage: true });
     await page.goto('/workspace/portfolio-templates');
   }
   await page.screenshot({ path: testInfo.outputPath('portfolio-template-studio.png'), fullPage: true });
