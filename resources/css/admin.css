@@ -23,7 +23,6 @@
 .workspace-nav-module>summary { display:flex; list-style:none; align-items:center; gap:8px; padding:8px 12px; font-size:12px; font-weight:600; color:#4f455e; }
 .workspace-nav-module>summary::-webkit-details-marker { display:none; }
 .workspace-nav-module>summary>span { flex:1; }
-.workspace-nav-module>summary small { font-size:12px; color:#80718d; font-weight:500; }
 .workspace-nav-module>summary svg { transition:transform 160ms ease; color:#80718d; }
 .workspace-nav-module[open]>summary svg { transform:rotate(180deg); }
 .workspace-nav-module>div { margin-left:6px; }

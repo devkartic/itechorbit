@@ -177,3 +177,6 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Add isolated regression coverage for all three levels, zero versus unset orders, equal numbers, case-insensitive names and natural numeric names.
 - [x] Verify 39 PHP tests / 810 assertions, 3 frontend tests, Pint, TypeScript, ESLint and production client/SSR builds.
 - [x] Verify desktop/mobile sidebar alphabetical fallback and existing AJAX table interactions: both browser checks pass against an isolated test database.
+
+## Sidebar label refinement — 2026-10-15
+- [x] Remove numeric badges beside sidebar module names and their unused styling; preserve configured numeric/alphabetical sorting.
