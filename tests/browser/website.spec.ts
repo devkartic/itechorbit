@@ -212,6 +212,9 @@ test('workspace tables load server-side search sorting pagination and recover fr
   await page.screenshot({ path: testInfo.outputPath('admin-dashboard.png'), fullPage: true });
   if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByText('Test workspace', { exact: true })).toBeVisible();
+  const sidebarLabels = await page.locator('.workspace-nav-module .workspace-nav-link span:first-of-type').allTextContents();
+  expect(sidebarLabels.length).toBeGreaterThan(1);
+  expect(sidebarLabels).toEqual([...sidebarLabels].sort((left, right) => left.localeCompare(right, 'en', { numeric: true, sensitivity: 'base' })));
   await page.getByLabel('Find a module').fill('Articles');
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByRole('link', { name: 'Articles', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByRole('link', { name: 'Categories', exact: true })).toHaveCount(0);

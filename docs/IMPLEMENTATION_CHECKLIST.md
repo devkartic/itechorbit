@@ -170,3 +170,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Sanitize admin rich previews and rich portfolio output; preserve existing CRUD handlers, uploads, records and public URLs. Improve permission-matrix feedback.
 - [x] Verify 37 PHP tests / 805 assertions, 3 frontend tests, Pint, types/lint, client/SSR builds and Blade compilation. Final full browser suite: 28 passed. Review/save four synthetic-data UI captures.
 - [x] Verify all 210 original route definitions retain their semantics; add only the authenticated JSON table route. Document implementation, limits, staging and rollback in ADMIN_MODERNIZATION.md.
+
+## Admin sidebar ordering — 2026-10-15
+- [x] Sort menus, modules and links hierarchically by ascending order number; keep zero valid and use natural alphabetical fallback for unset/tied values.
+- [x] Preserve server ordering in React using insertion-ordered maps, including numeric menu/module names; retain permission filtering and fixed Overview navigation.
+- [x] Add isolated regression coverage for all three levels, zero versus unset orders, equal numbers, case-insensitive names and natural numeric names.
+- [x] Verify 39 PHP tests / 810 assertions, 3 frontend tests, Pint, TypeScript, ESLint and production client/SSR builds.
+- [x] Verify desktop/mobile sidebar alphabetical fallback and existing AJAX table interactions: both browser checks pass against an isolated test database.

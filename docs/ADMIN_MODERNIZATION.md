@@ -6,6 +6,8 @@ The private workspace now has a dedicated responsive design, menu/module navigat
 
 The sidebar groups authorized links using their existing Link → Module → Menu relationships. Resources without configured relationships use Content, Administration or Portfolio & inquiries fallback groups. Modules collapse independently, the active module opens, and Find a module filters the visible navigation. Overview, account settings, sign out and the public website remain directly accessible. Mobile navigation has an overlay, Escape dismissal, focus trapping/restoration and body-scroll locking.
 
+At each sidebar level, explicit `order_number` values sort numerically ascending, including zero. Items with no order follow alphabetically by displayed name; equal numbers also use case-insensitive natural alphabetical order (for example, Module 2 before Module 10). Menu order takes precedence over module order, then link order. Configure these using the existing Menus, Modules and Links forms; leave Order number blank for alphabetical fallback. The client preserves the server's sequence even for numeric menu/module names. Overview remains pinned above the configurable groups. No database migration or existing-record changes are required.
+
 The overview uses real existing counts and recent articles, with permission-aware quick access and a create-article action only for authorized roles. The resource list, create/edit, detail and permission-matrix pages share scoped workspace styling. Public website styling remains separate; `resources/css/admin.css` loads with AdminLayout.
 
 ## Server-side tables
