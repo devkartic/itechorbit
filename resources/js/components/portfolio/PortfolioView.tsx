@@ -1,5 +1,5 @@
 import '../../../css/portfolio.css';
-import { ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Command, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ContactForm } from '@/components/ContactForm';
 import type { Project } from '@/lib/types';
@@ -14,8 +14,8 @@ const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(word
 function Rich({ html, className = '' }: { html?: string; className?: string }) {
   return html ? <div className={`pf-rich ${className}`} dangerouslySetInnerHTML={{ __html: html }} /> : null;
 }
-function Section({ id, title, label, children }: { id: string; title: string; label: string; children: ReactNode }) {
-  return <section className="pf-section" id={id}><div className="pf-section-heading"><div><p className="pf-kicker"><span />{label}</p><h2>{title}</h2></div><span className="pf-section-glyph" aria-hidden="true"><ArrowUpRight size={25} strokeWidth={1} /></span></div>{children}</section>;
+function Section({ id, title, label, children, className = '' }: { id: string; title: string; label: string; children: ReactNode; className?: string }) {
+  return <section className={`pf-section ${className}`} id={id}><div className="pf-section-heading"><div><p className="pf-kicker"><span />{label}</p><h2>{title}</h2></div><span className="pf-section-glyph" aria-hidden="true"><ArrowUpRight size={25} strokeWidth={1} /></span></div>{children}</section>;
 }
 function Actions({ profile }: { profile: Profile }) {
   return <div className="pf-actions"><a href="#connect" className="pf-button"><span>Let’s connect</span><ArrowUpRight size={17} /></a>{profile.cv && <a href={profile.cv} download className="pf-button pf-button-secondary"><span>Download CV</span><Download size={16} /></a>}</div>;
@@ -43,10 +43,10 @@ function Hero({ profile, projects, variant, children }: { profile: Profile; proj
   return <header className="pf-hero"><div className="pf-hero-copy"><div className="pf-hero-label"><span className="pf-label-line" /><span>{profile.designation || 'Engineering portfolio'}</span></div><p className="pf-hero-prelude">{variant === 'blueprint' ? 'Human thinking. System-level craft.' : variant === 'editorial' ? 'A different perspective on engineering.' : variant === 'executive' ? 'Engineering ideas into impact.' : variant === 'spotlight' ? 'The craft behind the experience.' : 'A little curiosity. A lot of craft.'}</p><h1>{profile.name}<span className="pf-name-dot">.</span></h1><Rich html={profile.objective} className="pf-objective" /><Actions profile={profile} /><Socials profile={profile} />{children}</div><Identity profile={profile} projects={projects} technical={variant === 'blueprint'} /></header>;
 }
 function Skills({ profile }: { profile: Profile }) {
-  return profile.skills.length ? <Section id="expertise" label="The toolkit" title="Technology & expertise"><div className="pf-toolkit-heading"><Command size={24} strokeWidth={1.4} /><span>Tools I work with.<br /><strong>Possibilities I build with.</strong></span></div><div className="pf-skills">{profile.skills.map((skill, index) => <span key={skill}><small aria-hidden="true">{String(index + 1).padStart(2, '0')}</small>{skill}<ArrowUpRight size={12} aria-hidden="true" /></span>)}</div></Section> : null;
+  return profile.skills.length ? <Section id="expertise" label="The toolkit" title="Technology & expertise" className="pf-profile-row pf-expertise-row"><div className="pf-profile-content"><div className="pf-skills">{profile.skills.map((skill, index) => <span key={skill}><small aria-hidden="true">{String(index + 1).padStart(2, '0')}</small>{skill}<ArrowUpRight size={13} aria-hidden="true" /></span>)}</div></div></Section> : null;
 }
 function About({ profile }: { profile: Profile }) {
-  return profile.introduction || profile.additional ? <Section id="about" label="Behind the work" title="An engineer. A problem solver."><div className="pf-about-symbol" aria-hidden="true"><Braces size={24} strokeWidth={1.3} /><span>CRAFT + CURIOSITY</span></div><Rich html={profile.introduction} /><Rich html={profile.additional} className="pf-additional" /></Section> : null;
+  return profile.introduction || profile.additional ? <Section id="about" label="Behind the work" title="An engineer. A problem solver." className="pf-profile-row pf-about-row"><div className="pf-profile-content"><Rich html={profile.introduction} /><Rich html={profile.additional} className="pf-additional" /></div></Section> : null;
 }
 function Experience({ profile }: { profile: Profile }) {
   return profile.experiences.length ? <Section id="experience" label="Career journey" title="Experience that shapes the work"><div className="pf-timeline">{profile.experiences.map((experience, i) => <article key={i} className="pf-experience"><div className="pf-experience-index"><span>{String(i + 1).padStart(2, '0')}</span><p className="pf-date">{experience.join_date ? dateLabel(experience.join_date) : ''}{experience.join_date && ' — '}{experience.resign_date ? dateLabel(experience.resign_date) : 'Present'}</p></div><div className="pf-experience-body"><div className="pf-experience-top"><div><h3>{experience.designation}</h3><p className="pf-organization">{experience.organization}</p></div>{!experience.resign_date && <span className="pf-current-role"><span />Current role</span>}</div><Rich html={experience.responsibilities} /><Rich html={experience.descriptions} /></div></article>)}</div></Section> : null;
@@ -91,11 +91,11 @@ export function PortfolioView({ profile, projects, template, preview = false }: 
   const hero = <Hero profile={profile} projects={projects} variant={style}>{projects.length > 0 && <a href="#projects" className="pf-scroll-link"><span><ArrowDown size={15} /></span>Explore the work</a>}</Hero>;
   return <div ref={canvas} id="portfolio-top" className={`portfolio-view pf-${style}`} data-template={style} onClick={preview ? event => { if ((event.target as Element).closest('a')) event.preventDefault(); } : undefined}>
     <div className="shell pf-shell"><SectionNav profile={profile} projects={projects} />
-      {style === 'executive' ? <><div className="pf-executive-stage">{hero}<div className="pf-executive-signoff"><span>ENGINEERING / PERSPECTIVE / EXECUTION</span><Fingerprint size={22} strokeWidth={1} /></div></div><Facts profile={profile} projects={projects} />{work}<div className="pf-executive-grid">{experience}{skills}{about}</div>{services}</>
-        : style === 'blueprint' ? <><div className="pf-terminal-bar"><span><span className="pf-terminal-dot" /> engineer.profile</span><span>HUMAN AT THE CORE / ENGINEERING AT THE EDGES</span></div>{hero}{work}<div className="pf-split">{skills}{about}</div>{experience}{services}</>
-        : style === 'editorial' ? <><div className="pf-editorial-masthead"><span>THE ENGINEERING EDITION</span><span>INDEPENDENT THINKING. INTENTIONAL CRAFT.</span></div>{hero}<div className="pf-editorial-intro">{about}{skills}</div>{work}{experience}{services}</>
-        : style === 'spotlight' ? <><div className="pf-spotlight-stage">{hero}<div className="pf-spotlight-ticker" aria-hidden="true"><span>ENGINEER.</span><span>CREATE.</span><span>ITERATE.</span><ArrowUpRight size={48} strokeWidth={1} /></div></div>{work}<div className="pf-split">{about}{skills}</div>{experience}{services}</>
-        : <>{hero}<Facts profile={profile} projects={projects} /><div className="pf-split">{about}{skills}</div>{work}{experience}{services}</>}
+      {style === 'executive' ? <><div className="pf-executive-stage">{hero}<div className="pf-executive-signoff"><span>ENGINEERING / PERSPECTIVE / EXECUTION</span><Fingerprint size={22} strokeWidth={1} /></div></div><Facts profile={profile} projects={projects} />{work}{experience}<div className="pf-profile-sections">{about}{skills}</div>{services}</>
+        : style === 'blueprint' ? <><div className="pf-terminal-bar"><span><span className="pf-terminal-dot" /> engineer.profile</span><span>HUMAN AT THE CORE / ENGINEERING AT THE EDGES</span></div>{hero}{work}<div className="pf-profile-sections">{about}{skills}</div>{experience}{services}</>
+        : style === 'editorial' ? <><div className="pf-editorial-masthead"><span>THE ENGINEERING EDITION</span><span>INDEPENDENT THINKING. INTENTIONAL CRAFT.</span></div>{hero}<div className="pf-profile-sections">{about}{skills}</div>{work}{experience}{services}</>
+        : style === 'spotlight' ? <><div className="pf-spotlight-stage">{hero}<div className="pf-spotlight-ticker" aria-hidden="true"><span>ENGINEER.</span><span>CREATE.</span><span>ITERATE.</span><ArrowUpRight size={48} strokeWidth={1} /></div></div>{work}<div className="pf-profile-sections">{about}{skills}</div>{experience}{services}</>
+        : <>{hero}<Facts profile={profile} projects={projects} /><div className="pf-profile-sections">{about}{skills}</div>{work}{experience}{services}</>}
       <Contact profile={profile} preview={preview} /><footer className="pf-signature"><span><Fingerprint size={15} />{profile.name} / Engineering portfolio</span><a href="/">Built on iTechOrbit <ArrowUpRight size={12} /></a></footer>
     </div>
   </div>;

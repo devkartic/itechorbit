@@ -103,3 +103,9 @@ Entrance motion keeps text fully opaque from the first frame; only its position 
 Public portfolio content now reuses the exact shared `.shell` used by the header and footer: 80rem maximum outer width with 1.5rem gutters below the desktop breakpoint and 2.5rem on desktop (1.25rem on very narrow screens). Removed the competing portfolio-only maximum width and width-minus-gutter calculations. The personal contact page uses the same shell. Admin previews use matching container-width gutter rules without nesting another padded container.
 
 Browser coverage measures both left/right portfolio content edges against the header and footer for each template at the standard mobile viewport and 768px, 1280px and 1440px desktop/tablet widths. Existing template content, cards, uploads and contact behavior are unchanged.
+
+## Independent About and Expertise sections — 2026-10-16
+
+About and Technology & Expertise are now two separate full-width rows in every template. They no longer occupy unequal-height side-by-side cards. Each row has a heading column and a readable content column, separated by a quiet vertical rule; narrow layouts stack those elements with a horizontal divider. Expertise tiles wrap within their own full-width section. Existing text, theme colors, subtle shadows and reduced-motion handling are retained. Empty rows remain omitted.
+
+Verified all five designs in both public pages and admin previews, including full-row width/non-overlap measurements and shared header/footer edges. All 6 affected desktop/mobile browser flows pass, including personal contact and screenshot upload. TypeScript, lint and client/SSR builds pass. Updated screenshots above show the final row composition.

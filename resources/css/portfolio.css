@@ -341,3 +341,29 @@
 /* Match the shared site's gutters at the preview container's width as well. */
 @container(max-width:1023px) { .pf-shell { padding-inline:1.5rem; } }
 @container(max-width:380px) { .pf-shell { padding-inline:1.25rem; } }
+
+/* Independent full-width profile rows: natural height without competing side cards. */
+.pf-profile-sections { display:grid; gap:18px; margin:16px 0; }
+.pf-profile-sections:empty { display:none; }
+.pf-profile-row { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.35fr); gap:42px; align-items:start; margin:0; padding:32px; border:1px solid var(--pf-line); border-radius:20px; background:var(--pf-card); box-shadow:0 7px 24px #21143a0c; }
+.pf-profile-row .pf-section-heading { margin:0; align-items:start; gap:18px; }
+.pf-profile-row .pf-section-heading h2 { font-size:clamp(26px,2.8cqw,36px); line-height:1.2; }
+.pf-profile-row .pf-section-glyph { width:35px; height:35px; }
+.pf-profile-content { min-width:0; border-left:1px solid var(--pf-line); padding-left:32px; }
+.pf-profile-content .pf-rich:last-child>:last-child { margin-bottom:0; }
+.pf-expertise-row { background:linear-gradient(115deg,var(--pf-card) 35%,var(--pf-soft)); }
+.pf-profile-row .pf-skills { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; }
+.pf-profile-row .pf-skills>span,.pf-profile-row .pf-skills>span:last-child:nth-child(odd) { flex:1 1 145px; min-width:0; width:auto; max-width:calc(50% - 5px); grid-column:auto; padding:15px; font-size:13px; background:var(--pf-card); border-radius:10px; }
+.pf-profile-row .pf-skills>span:only-child { max-width:100%; }
+.pf-profile-row .pf-skills small { font-size:10px; }
+.pf-blueprint .pf-profile-row { border-radius:6px; box-shadow:0 10px 26px #00000035; }
+.pf-editorial .pf-profile-row { border-radius:8px; }
+@container(max-width:800px) {
+  .pf-profile-row { grid-template-columns:1fr; padding:26px; gap:22px; }
+  .pf-profile-row .pf-section-heading h2 { font-size:29px; }
+  .pf-profile-content { padding:22px 0 0; border-left:0; border-top:1px solid var(--pf-line); }
+}
+@container(max-width:480px) {
+  .pf-profile-row { padding:23px 20px; border-radius:15px; }
+  .pf-profile-row .pf-skills>span,.pf-profile-row .pf-skills>span:last-child:nth-child(odd) { flex-basis:120px; padding:12px; font-size:12px; }
+}

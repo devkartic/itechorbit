@@ -185,3 +185,7 @@ Final full browser regression result for the project card/upload correction: 34 
 Replaced the independent portfolio width/gutters with the shared site `.shell`, aligning both edges with the header/footer. Personal contact pages use the same shell; preview sizing remains container-responsive. TypeScript, lint and client/SSR builds pass. Added geometric edge checks to each template's desktop/mobile browser flow, including tablet and wide desktop widths. No environment, dependency, database or content changes were required.
 
 Alignment verification: all 6 affected desktop/mobile browser checks passed, including geometric checks for all five templates at tablet/desktop widths. Refreshed the saved portfolio captures.
+
+## Premium profile rows — 2026-10-16
+
+Moved About and Technology & Expertise into separate full-width rows across all five portfolio designs, with heading/content columns, dividers and theme-aware surfaces. Mobile stacks the contents; section heights follow their own content. Added geometry regression checks and refreshed captures. All 6 affected desktop/mobile browser flows, TypeScript, lint and client/SSR builds pass. No data, environment, dependencies or migrations changed.

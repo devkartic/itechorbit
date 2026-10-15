@@ -302,6 +302,16 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect(page.locator('.portfolio-view')).toHaveAttribute('data-template', name.toLowerCase());
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Test Engineer/);
     await expect(page.getByRole('heading', { name: 'Built with purpose.' })).toBeVisible();
+    const profileRows = await page.locator('.pf-profile-sections').evaluate(container => {
+      const box = container.getBoundingClientRect();
+      const about = container.querySelector('#about')!.getBoundingClientRect();
+      const expertise = container.querySelector('#expertise')!.getBoundingClientRect();
+      return { width: box.width, aboutWidth: about.width, expertiseWidth: expertise.width, gap: expertise.top - about.bottom };
+    });
+    expect(Math.abs(profileRows.aboutWidth - profileRows.width)).toBeLessThan(1);
+    expect(Math.abs(profileRows.expertiseWidth - profileRows.width)).toBeLessThan(1);
+    expect(profileRows.gap).toBeGreaterThanOrEqual(16);
+
     const originalViewport = page.viewportSize()!;
     const alignmentSizes = [originalViewport, ...(!isMobile ? [{ width: 768, height: 900 }, { width: 1440, height: 900 }] : [])];
     for (const viewport of alignmentSizes) {

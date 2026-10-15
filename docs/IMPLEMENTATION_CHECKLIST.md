@@ -227,3 +227,8 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Identify independent 1,120px portfolio width and mismatched 18/24/32px gutters versus the shared site shell.
 - [x] Reuse `.shell` in public portfolios and personal contact pages; remove competing portfolio width rules and match preview gutters by container width.
 - [x] Verify both content edges against the header/footer for all five templates on mobile, tablet, desktop and wide desktop: all 6 affected browser scenarios pass, including uploads and personal contact. Types/lint and client/SSR builds pass. Review and refresh captures.
+
+## Independent premium About and Expertise rows — 2026-10-16
+- [x] Replace competing side-by-side sections in all five templates with two independent full-width rows.
+- [x] Create a title/content row layout, subtle dividers, theme-aware surfaces and responsive expertise tiles; preserve natural section heights and existing content.
+- [x] Verify full-width stacked row geometry in all five templates, responsive header/footer alignment, contact forms and screenshot uploads: all 6 desktop/mobile browser checks pass. TypeScript, lint and client/SSR builds pass; review and refresh captures.
