@@ -416,7 +416,66 @@
 
 /* Keep personal navigation within reach while reading a long career profile. */
 .pf-masthead { position:sticky; top:0; z-index:30; border-bottom:1px solid var(--pf-line); background:color-mix(in srgb,var(--pf-bg) 96%,transparent); backdrop-filter:blur(12px); box-shadow:0 8px 18px color-mix(in srgb,var(--pf-ink) 4%,transparent); }
-.portfolio-view:has(.pf-header-with-return) :is(.pf-section,.pf-contact) { scroll-margin-top:120px; }
-@container(max-width:680px) { .portfolio-view:has(.pf-header-with-return) :is(.pf-section,.pf-contact) { scroll-margin-top:145px; } }
+.portfolio-view:has(.pf-header-with-return) :is(.pf-section,.pf-contact,.pf-connect) { scroll-margin-top:120px; }
+@container(max-width:680px) { .portfolio-view:has(.pf-header-with-return) :is(.pf-section,.pf-contact,.pf-connect) { scroll-margin-top:145px; } }
 
 .pf-masthead .pf-local-header { border-bottom:0; }
+
+/* Shared card finish: quiet depth, tactile details and a consistent reading rhythm. */
+.portfolio-view { --pf-elevation:0 2px 4px color-mix(in srgb,var(--pf-ink) 3%,transparent),0 12px 30px color-mix(in srgb,var(--pf-ink) 5%,transparent); }
+.portfolio-view :is(.pf-project,.pf-experience-body,.pf-services>article,.pf-facts) { border-color:color-mix(in srgb,var(--pf-accent) 10%,var(--pf-line)); box-shadow:var(--pf-elevation),inset 0 1px 0 color-mix(in srgb,var(--pf-card) 80%,transparent); }
+.portfolio-view :is(.pf-experience-body,.pf-services>article) { border-radius:18px; padding:28px; background:linear-gradient(130deg,var(--pf-card) 70%,color-mix(in srgb,var(--pf-soft) 30%,var(--pf-card))); transition:border-color .25s,box-shadow .25s; }
+.portfolio-view :is(.pf-experience-body,.pf-services>article):hover { border-color:color-mix(in srgb,var(--pf-accent) 35%,var(--pf-line)); box-shadow:0 12px 32px color-mix(in srgb,var(--pf-ink) 10%,transparent); }
+.portfolio-view .pf-experience h3 { font-size:24px; font-weight:600; }
+.portfolio-view .pf-current-role { background:var(--pf-soft); color:var(--pf-accent); font-size:10px; padding:7px 10px; border-color:transparent; }
+.portfolio-view .pf-date { font-size:12px; }
+.portfolio-view .pf-project { border-radius:20px; }
+.portfolio-view .pf-project-content { gap:0; }
+.portfolio-view .pf-project-role { border-left:2px solid var(--pf-accent); padding:3px 0 3px 12px; }
+.portfolio-view .pf-project-role>span { font-size:10px; font-weight:500; margin-bottom:3px; letter-spacing:.08em; }
+.portfolio-view .pf-project-tags { gap:7px; margin-top:20px; }
+.portfolio-view .pf-project-tags span { background:var(--pf-soft); border:0; color:var(--pf-ink); border-radius:6px; padding:6px 9px; font-size:11px; line-height:1.5; }
+.portfolio-view .pf-project .pf-text-link { border-top:1px solid var(--pf-line); margin-top:22px; padding-top:16px; justify-content:space-between; width:100%; font-size:12px; }
+.portfolio-view .pf-project .pf-text-link svg { transition:transform .2s; }
+.portfolio-view .pf-project:hover .pf-text-link svg { transform:translateX(4px); }
+.portfolio-view .pf-services>article:only-child { display:block; }
+.portfolio-view .pf-services>article:only-child .pf-service-top { margin-bottom:20px; }
+.portfolio-view .pf-services>article:only-child h3 { margin-bottom:12px; }
+.portfolio-view .pf-services .pf-rich { max-width:80ch; }
+.portfolio-view .pf-service-top { margin-bottom:22px; }
+.portfolio-view .pf-service-top>span { background:var(--pf-soft); border:0; border-radius:14px; }
+.portfolio-view .pf-service-top>small { font-size:10px; }
+.portfolio-view .pf-services h3 { font-size:24px; font-weight:600; }
+.portfolio-view .pf-profile-row .pf-skills>span { padding:14px; gap:10px; border-radius:12px; box-shadow:0 2px 4px color-mix(in srgb,var(--pf-ink) 3%,transparent); }
+.portfolio-view .pf-profile-row .pf-skills svg { width:26px; height:26px; padding:5px; background:var(--pf-soft); border-radius:7px; }
+.portfolio-view .pf-profile-row .pf-skills>span:hover { box-shadow:0 8px 20px color-mix(in srgb,var(--pf-accent) 12%,transparent); }
+/* Contact is an open composition with one form surface, rather than nested cards. */
+.pf-connect { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); align-items:start; gap:clamp(28px,6cqw,80px); padding:40px 0 28px; margin-top:20px; border-top:1px solid var(--pf-line); }
+.pf-connect-copy { padding:16px 0; min-width:0; }
+.pf-connect-icon { width:54px; height:54px; display:grid; place-items:center; color:var(--pf-accent); background:var(--pf-soft); border:1px solid var(--pf-line); border-radius:17px; margin-bottom:25px; }
+.pf-connect .pf-kicker { font-size:11px; margin-bottom:15px; }
+.pf-connect h2 { font-size:clamp(36px,4.5cqw,58px); line-height:1.08; font-weight:600; letter-spacing:-.055em; margin:0; }
+.pf-connect h2>span { color:var(--pf-accent); }
+.pf-connect-copy>p:not(.pf-kicker) { margin-top:22px; max-width:38ch; font-size:15px; line-height:1.85; color:var(--pf-muted); }
+.pf-connect-details { display:flex; align-items:center; gap:12px; margin-top:30px; padding-top:24px; border-top:1px solid var(--pf-line); max-width:360px; }
+.pf-connect-avatar { display:grid; place-items:center; flex-shrink:0; width:42px; height:42px; border:1px solid var(--pf-line); border-radius:50%; color:var(--pf-accent); background:var(--pf-card); font-size:14px; font-weight:600; }
+.pf-connect-details>div { display:grid; gap:4px; overflow-wrap:anywhere; }
+.pf-connect-details strong { color:var(--pf-ink); font-size:14px; font-weight:600; }
+.pf-connect-details>div>span { color:var(--pf-muted); font-size:12px; line-height:1.6; }
+.pf-connect-form { min-width:0; padding:30px; border:1px solid var(--pf-line); border-radius:22px; background:var(--pf-card); box-shadow:var(--pf-elevation); }
+.pf-connect-form-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.pf-connect-form-heading h3 { font-size:18px; font-weight:600; letter-spacing:-.025em; }
+.pf-connect-form-heading svg { color:var(--pf-accent); }
+.pf-connect-form .form-label { color:var(--pf-ink); font-size:12px; font-weight:500; }
+.pf-connect-form .form-control { background:color-mix(in srgb,var(--pf-bg) 70%,var(--pf-card)); border:1px solid var(--pf-line); border-radius:10px; color:var(--pf-ink); font-size:14px; padding:12px 14px; box-shadow:none; transition:border-color .2s,box-shadow .2s; }
+.pf-connect-form .form-control::placeholder { color:var(--pf-muted); opacity:1; }
+.pf-connect-form .form-control:focus { outline:0; border-color:var(--pf-accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--pf-accent) 15%,transparent); }
+.pf-connect-form fieldset>p { color:var(--pf-muted); font-size:12px; line-height:1.8; }
+.pf-connect-form fieldset>p[role=alert],.pf-connect-form .form-error { color:#b91c1c; }
+.pf-blueprint .pf-connect-form :is(.form-error,p[role=alert]) { color:#fda4af; }
+.pf-connect-form button[type=submit] { width:100%; justify-content:space-between; border-radius:10px; font-size:13px; background:var(--pf-accent); color:white; box-shadow:0 4px 12px color-mix(in srgb,var(--pf-accent) 15%,transparent); }
+.pf-blueprint .pf-connect-form button[type=submit] { color:#10251e; }
+.pf-connect-form fieldset:disabled { opacity:.75; }
+@container(max-width:800px) { .pf-connect { grid-template-columns:1fr; gap:26px; padding-top:30px; } .pf-connect-copy { padding:0; } .pf-connect-details { max-width:none; margin-top:22px; padding-top:18px; } .pf-connect h2 { font-size:40px; } .pf-connect-icon { width:46px; height:46px; margin-bottom:20px; } }
+@container(max-width:680px) { .pf-connect-form { padding:22px; border-radius:18px; } .pf-connect-form .form-control { font-size:16px; } .pf-connect-form fieldset>.grid { grid-template-columns:1fr; gap:20px; } .portfolio-view :is(.pf-experience-body,.pf-services>article) { padding:22px; } .portfolio-view .pf-experience h3,.portfolio-view .pf-services h3 { font-size:21px; } .portfolio-view .pf-profile-row .pf-skills>span { padding:12px; gap:8px; } }
+@media(prefers-reduced-motion:reduce) { .portfolio-view :is(.pf-experience-body,.pf-services>article,.pf-text-link svg) { transition:none; } }

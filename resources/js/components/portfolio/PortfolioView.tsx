@@ -1,5 +1,5 @@
 import '../../../css/portfolio.css';
-import { ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
+import { Mail, ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ContactForm } from '@/components/ContactForm';
 import type { Project } from '@/lib/types';
@@ -72,7 +72,7 @@ function Facts({ profile, projects }: { profile: Profile; projects: Project[] })
   return facts.length ? <div className="pf-facts" aria-label="Portfolio overview"><div className="pf-facts-label"><Workflow size={24} strokeWidth={1.3} /><span>THE PROFILE<br /><strong>AT A GLANCE</strong></span></div>{facts.map(([count, label]) => <div key={label}><strong>{String(count).padStart(2, '0')}</strong><span>{label}</span></div>)}<ArrowUpRight className="pf-facts-arrow" size={28} strokeWidth={1.2} aria-hidden="true" /></div> : null;
 }
 function Contact({ profile, preview }: { profile: Profile; preview: boolean }) {
-  return <section className="pf-contact pf-personal-contact" id="connect"><div className="pf-contact-copy"><p className="pf-kicker">Contact {profile.name}</p><h2>Let’s discuss<br /><span>your opportunity.</span></h2><p>Hiring for your team? Share the role, what you’re building and the next steps directly with {profile.name}.</p><Socials profile={profile} />{preview && <p>Form preview — messages cannot be sent from this preview.</p>}</div><div className="pf-contact-form">{profile.portfolioId ? <ContactForm recipient={{ name: profile.name, portfolio_id: profile.portfolioId }} preview={preview} /> : <p>Contact details are not available for this profile.</p>}</div></section>;
+  return <section className="pf-connect" id="connect" aria-labelledby="portfolio-contact-title"><div className="pf-connect-copy"><span className="pf-connect-icon" aria-hidden="true"><Mail size={25} strokeWidth={1.5} /></span><p className="pf-kicker">Contact {profile.name}</p><h2 id="portfolio-contact-title">Have a role<br /><span>in mind?</span></h2><p>Let’s start with a conversation. Share the role, your team and what you’re building with {profile.name}.</p><div className="pf-connect-details"><span className="pf-connect-avatar" aria-hidden="true">{initials(profile.name)}</span><div><strong>{profile.name}</strong><span>{profile.designation || 'Personal portfolio'}</span></div></div><Socials profile={profile} />{preview && <p className="pf-connect-preview">Form preview — messages cannot be sent from this preview.</p>}</div><div className="pf-connect-form"><div className="pf-connect-form-heading"><h3>Send a personal message</h3><ArrowUpRight size={19} aria-hidden="true" /></div>{profile.portfolioId ? <ContactForm recipient={{ name: profile.name, portfolio_id: profile.portfolioId }} preview={preview} /> : <p>Contact details are not available for this profile.</p>}</div></section>;
 }
 export function PortfolioView({ profile, projects, template, preview = false }: PortfolioData & { preview?: boolean }) {
   const style = names[template] ? template : 'studio';
@@ -84,7 +84,7 @@ export function PortfolioView({ profile, projects, template, preview = false }: 
         if (entry.isIntersecting) { entry.target.classList.add('is-in-view'); observer.unobserve(entry.target); }
       }
     }, { threshold: 0.08 });
-    canvas.current.querySelectorAll('.pf-section, .pf-facts, .pf-contact').forEach(section => observer.observe(section));
+    canvas.current.querySelectorAll('.pf-section, .pf-facts, .pf-connect').forEach(section => observer.observe(section));
     return () => observer.disconnect();
   }, [style]);
   const about = <About profile={profile} />; const experience = <Experience profile={profile} />; const work = <Projects projects={projects} />; const skills = <Skills profile={profile} />; const services = <Services profile={profile} />;

@@ -266,3 +266,10 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Verify sticky behavior, visible creator name and unobscured section headings in all five themes on desktop/mobile.
 - [x] Extend the sticky masthead surface, divider and shadow to the full viewport width while retaining the shared content shell.
 - [x] Verify full-width masthead geometry and contained content alignment at mobile, tablet, desktop and wide desktop sizes across all five themes. Both desktop/mobile template scenarios pass with working anchors, sticky positioning, visible creator names and copyright-only footers. Types, lint and client/SSR builds pass. Review and refresh captures.
+
+
+## Portfolio card and contact refinement — 2026-10-16
+- [x] Inspect existing card styles and nested dark contact container; retain real screenshots, five themes, six-column expertise and sticky header.
+- [x] Refine project, experience, capability, overview and skill surfaces, typography, contribution labels, tags and restrained hover depth.
+- [x] Replace the enclosing contact panel with an open two-column composition and one theme-aware form card; preserve personal recipients and validation.
+- [ ] Verify types, lint, builds, five-theme desktop/mobile layouts, contact submission and screenshots; review final captures.

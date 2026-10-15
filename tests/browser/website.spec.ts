@@ -396,7 +396,7 @@ test('portfolio template studio previews five layouts and persists the public se
     const lowContrast = await page.locator('.portfolio-view').evaluate(root => {
       const luminance = (rgb: number[]) => rgb.slice(0, 3).map(value => value / 255).map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((total, value, i) => total + value * [.2126, .7152, .0722][i], 0);
       const channels = (color: string) => (color.match(/[\d.]+/g) ?? []).map(Number);
-      return [...root.querySelectorAll<HTMLElement>('.pf-hero h1, .pf-section h2, .pf-rich, .pf-project h3, .pf-contact h2, .pf-contact h2>span')].flatMap(element => {
+      return [...root.querySelectorAll<HTMLElement>('.pf-hero h1, .pf-section h2, .pf-rich, .pf-project h3, .pf-connect h2, .pf-connect h2>span')].flatMap(element => {
         let surface: Element | null = element;
         let background: number[] = [];
         while (surface) {
