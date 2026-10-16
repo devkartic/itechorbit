@@ -273,3 +273,11 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Refine project, experience, capability, overview and skill surfaces, typography, contribution labels, tags and restrained hover depth.
 - [x] Replace the enclosing contact panel with an open two-column composition and one theme-aware form card; preserve personal recipients and validation.
 - [x] Types, lint, client/SSR builds and all 6 affected desktop/mobile browser scenarios pass: five-theme navigation, contrast sampling, card hover, personal inquiry submission and screenshot upload. Review and refresh captures. Fix project hover specificity; prevent template tests from saving an unchanged selection after a preceding failed scenario.
+
+
+## Admin workspace editor, tables and themes — 2026-10-16
+- [x] Audit existing Tiptap editor, AJAX server-side tables, permission scoping and grouped sidebar; verify installed APIs against official Tiptap and Symfony documentation.
+- [x] Extend rich text with bounded font sizes/font families while retaining styles, links, source preservation and safe public sanitization. Enable editing for contributions and testimonial text; keep code input plain.
+- [x] Add persistent light/dark workspace theme and clear category/module/page hierarchy; keep ordering and server-side permissions.
+- [x] Refine server-side list presentation, status badges, action states, filter summaries/reset and live feedback; retain authenticated, scoped endpoints.
+- [x] Verify 51 PHP tests / 1,104 assertions, 3 frontend tests, all 34 desktop/mobile browser checks, TypeScript, lint, Pint and client/SSR builds. Formatting survives save/reopen/public display; unsafe formatting is rejected; both themes persist through reload/navigation. Review and save light/dark captures. Initial category-label assertion caught the new marker text being combined with the group name; keep the group name in its own span.

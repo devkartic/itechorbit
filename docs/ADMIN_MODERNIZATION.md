@@ -50,3 +50,32 @@ An initial mobile check caught a hidden page indicator; it is now visible. Field
 Install the locked dependencies with `npm ci`, run the checks from README.md, and build both client and SSR with `npm run build`. Restart the supervised SSR process after deploying a matching versioned bundle to approved staging. There are no schema migrations or new service/environment requirements for this change. Verify representative admin permissions, ownership, rich fields, uploads and both viewport sizes on staging before requesting production approval.
 
 To undo this feature, revert its commit, restore the corresponding package lock, run `npm ci` and rebuild/restart client/SSR for that release. No database rollback is required. Source-mode HTML and existing records/media remain compatible with the prior application. Production deployment was not performed.
+
+
+## Workspace refinement — 2026-10-16
+
+The existing Tiptap and AJAX infrastructure is extended rather than replaced. No dependency versions or schema changes are required.
+
+### Text formatting
+
+All content fields use the visual editor, including project Engineering contributions and testimonial Comment. Article Codebase remains a plain code input. The editor now offers font sizes 14, 16, 18, 20, 24 and 32px, plus theme, sans serif, serif and monospace font options. Existing bold, italic, underline, headings, lists, links, source editing and undo/redo remain available. Existing advanced HTML still opens in source mode to preserve its content.
+
+The small TextFormatting mark uses bounded data attributes instead of arbitrary inline CSS. PublicContent and TextFormattingSanitizer allow only those six sizes and three font identifiers on spans. Unsafe URLs, event handlers and arbitrary CSS remain removed. Shared CSS renders the same attributes in the editor, admin preview and public content. Project contributions are sanitized before HTML rendering; legacy plain-text line breaks and comparison symbols are preserved. Tests cover unsafe formatting rejection and save → detail → public article → reopen behavior.
+
+References checked: [Tiptap Mark API](https://tiptap.dev/docs/editor/extensions/custom-extensions/create-new/mark) and [Symfony HTML Sanitizer](https://symfony.com/doc/current/html_sanitizer.html), together with the installed package interfaces.
+
+### Workspace appearance and navigation
+
+The topbar has accessible Light theme and Dark theme buttons. A choice persists in browser localStorage under itechorbit-workspace-theme; absent an explicit choice, the OS preference is used after hydration. When browser storage is blocked, an in-memory preference keeps the current session usable. Storage events synchronize other tabs. SSR starts with a deterministic light snapshot; public pages and individual portfolio designs are independent of the workspace preference.
+
+A semantic token palette now covers workspace surfaces, borders, forms, notices, editor, dashboard, tables, detail previews and dialogs. Categories use uppercase markers, modules use a folder icon, a Module label and an expandable surface, and actual pages are indented along a guide with a distinct selected state. Numerical ordering and alphabetical fallback are unchanged; no order numbers are displayed.
+
+### Resource lists
+
+The existing authenticated server-side endpoint continues to handle debounced search, allowlisted sorting, status filtering, page size and pagination. The refreshed list adds more readable titles, badges, row actions, filter summaries, Reset filters and live loading/result feedback. Requests still abort on replacement; errors have retry behavior; responses remain permission-scoped and exclude rich bodies/secrets. No external DataTables package or client-side full-dataset loading is introduced.
+
+### Verification, release and rollback
+
+51 PHP tests / 1,104 assertions, 3 frontend tests and all 34 browser checks pass, as do TypeScript, ESLint, Pint and client/SSR production builds. Reviewed synthetic captures include [dark table](assets/admin-table-dark-desktop.png), [light table](assets/admin-table-desktop.png), [dark editor](assets/admin-editor-dark-desktop.png) and [mobile editor](assets/admin-editor-dark-mobile.png). Tests verify actual AJAX requests, sorting/search/pagination and error recovery, persistence of both themes, permission-sensitive flows and safe formatting round trips. No Lighthouse score is claimed.
+
+Deploy the matching PHP/config files and rebuilt client/SSR assets using the existing approved staging workflow; refresh the configuration cache if used and restart SSR. There are no new environment variables, migrations or external services. Revert this change and rebuild matching assets/config cache to roll back; saved rich content remains intact, though an older release will omit the new font-size/font-family presentation. No data rollback is required. Production deployment was not performed.

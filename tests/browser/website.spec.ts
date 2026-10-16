@@ -209,9 +209,15 @@ test('header sign-in and account dropdown support profile settings and logout', 
 
 test('workspace tables load server-side search sorting pagination and recover from errors', async ({ page, isMobile }, testInfo) => {
   await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
+  await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'dark');
   await page.screenshot({ path: testInfo.outputPath('admin-dashboard.png'), fullPage: true });
   if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByText('Test workspace', { exact: true })).toBeVisible();
+  await expect(page.locator('.workspace-module-label').first()).toHaveText('Module');
+  await expect(page.locator('.workspace-nav-group>p small').first()).toHaveText('Category');
   const sidebarLabels = await page.locator('.workspace-nav-module .workspace-nav-link span:first-of-type').allTextContents();
   expect(sidebarLabels.length).toBeGreaterThan(1);
   expect(sidebarLabels).toEqual([...sidebarLabels].sort((left, right) => left.localeCompare(right, 'en', { numeric: true, sensitivity: 'base' })));
@@ -221,6 +227,7 @@ test('workspace tables load server-side search sorting pagination and recover fr
   await page.getByLabel('Find a module').fill('');
   if (isMobile) await page.keyboard.press('Escape');
   await page.goto('/posts');
+  await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'dark');
   await page.evaluate(() => { document.documentElement.dataset.tableDocument = 'retained'; });
   await Promise.all([page.waitForResponse(response => response.url().includes('/workspace/data/posts?') && response.url().includes('per_page=10')), page.getByLabel('Rows per page').selectOption('10')]);
   await expect(page.locator('.admin-table tbody tr')).toHaveCount(10);
@@ -241,6 +248,11 @@ test('workspace tables load server-side search sorting pagination and recover fr
   await Promise.all([page.waitForResponse(response => response.url().includes('/workspace/data/posts?') && response.url().includes('key=Engineering')), page.getByRole('searchbox', { name: 'Search Articles' }).fill('Engineering')]);
   await expect(page.locator('.admin-table tbody tr')).toHaveCount(10);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.screenshot({ path: testInfo.outputPath('admin-table-dark.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Light theme', exact: true }).click();
+  await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'light');
+  await page.reload();
+  await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'light');
   await page.screenshot({ path: testInfo.outputPath('admin-table.png'), fullPage: true });
 });
 
@@ -256,21 +268,43 @@ test('rich text forms validate save formatted content and retain success feedbac
   await page.getByRole('group', { name: 'Body editing mode' }).getByRole('button', { name: 'HTML', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Body HTML', exact: true })).toHaveValue(/<h2><strong>Clear engineering decisions<\/strong><\/h2>/);
   await page.getByRole('group', { name: 'Body editing mode' }).getByRole('button', { name: 'Visual', exact: true }).click();
+  await body.click(); await body.press('ControlOrMeta+A');
+  await page.getByRole('combobox', { name: 'Body font size', exact: true }).selectOption('20');
+  await page.getByRole('combobox', { name: 'Body font style', exact: true }).selectOption('serif');
+  await page.getByRole('toolbar', { name: 'Body formatting' }).getByRole('button', { name: 'Insert link', exact: true }).click();
+  await page.getByLabel('Link URL', { exact: true }).fill('https://example.com/careers');
+  await page.getByRole('button', { name: 'Apply link', exact: true }).click();
+  await expect(body.locator('span[data-font-size="20"][data-text-font="serif"]')).toHaveText('Clear engineering decisions');
+  await expect(body.getByRole('link')).toHaveAttribute('href', 'https://example.com/careers');
+  await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
+
   await page.getByLabel('Title *', { exact: true }).fill('x'.repeat(201));
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
   await expect(page.locator('#title-error')).toContainText('200');
   await expect(page.getByRole('textbox', { name: 'Body *', exact: true })).toContainText('Clear engineering decisions');
   await page.getByLabel('Title *', { exact: true }).fill(title);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.screenshot({ path: testInfo.outputPath('admin-editor-dark.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Light theme', exact: true }).click();
   await page.screenshot({ path: testInfo.outputPath('admin-editor.png'), fullPage: true });
   await page.getByRole('button', { name: 'Save changes', exact: true }).click(); await expect(page).toHaveURL(/\/posts$/);
   await expect(page.getByRole('status')).toContainText('Post created successfully');
   await page.getByRole('link', { name: `View ${title}`, exact: true }).click();
   await expect(page.locator('.workspace-record-details h2')).toHaveText('Clear engineering decisions');
   await expect(page.locator('.workspace-record-details strong')).toHaveText('Clear engineering decisions');
+  await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
+  const headingColor = await page.locator('.workspace-record-details h2').evaluate(node => getComputedStyle(node).color);
+  expect(headingColor).toBe(await page.locator('.workspace').evaluate(node => getComputedStyle(node).color));
   const articleId = page.url().split('/').at(-1);
   await page.goto(`/blogs/${articleId}`);
+  await expect(page.locator('.workspace')).toHaveCount(0);
   await expect(page.locator('.prose-content h2')).toHaveText('Clear engineering decisions');
+  const formatted = page.locator('.prose-content span[data-font-size="20"][data-text-font="serif"]');
+  await expect(formatted).toHaveText('Clear engineering decisions');
+  await expect(formatted).toHaveCSS('font-size', '20px');
+  await expect(page.locator('.prose-content a')).toHaveAttribute('href', 'https://example.com/careers');
+  await page.goto(`/posts/${articleId}/edit`);
+  await expect(page.getByRole('textbox', { name: 'Body *', exact: true }).locator('span[data-font-size="20"][data-text-font="serif"]')).toHaveText('Clear engineering decisions');
   await page.goto('/posts'); await page.getByRole('button', { name: `Delete ${title}`, exact: true }).click(); await page.getByRole('button', { name: 'Delete record', exact: true }).click(); await expect(page.getByRole('button', { name: `Delete ${title}`, exact: true })).toHaveCount(0);
 });
 

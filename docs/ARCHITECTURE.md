@@ -26,3 +26,7 @@ The 2026-10-16 portfolio visual refresh adds shared identity artwork, section an
 ## Personal portfolio contact and inquiry email
 
 Personal forms submit to `/portfolios/{key}/inquiries`; the URL resolves an active, published owner. The standalone owner contact page is separate from PublicLayout and agency content. Legacy portfolio-query contact links redirect to the owner page. ContactMailerJob selects the personal or business Mailable while preserving recipient ownership; both render a shared HTML frame and plain-text alternative. See CONTACT_AND_EMAIL.md.
+
+
+### Workspace appearance and safe font formatting — 2026-10-16
+AdminLayout owns a workspace-only light/dark token palette, selected through useWorkspaceTheme with browser persistence and a deterministic SSR snapshot. Personal portfolio themes remain independent. Existing navigation permissions/order and AdminTable ownership/query validation continue to apply. TextFormatting extends the installed editor with bounded span attributes; the server-side TextFormattingSanitizer and shared CSS use the same size/font allowlist. Public project contributions now render only after PublicContent sanitization. No schema or dependency changes.

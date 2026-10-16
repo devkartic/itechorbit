@@ -13,6 +13,7 @@ class PublicContent
     public function html(?string $html): string
     {
         $config = (new HtmlSanitizerConfig)->allowSafeElements()
+            ->allowElement('span', ['data-font-size', 'data-text-font'])->withAttributeSanitizer(new TextFormattingSanitizer)
             ->allowElement('pre', ['class'])->allowElement('code', ['class'])
             ->allowElement('h2', ['id'])->allowElement('h3', ['id'])
             ->allowLinkSchemes(['http', 'https', 'mailto'])->allowRelativeLinks()
@@ -58,7 +59,9 @@ class PublicContent
             'image' => $this->media($project->image_path), 'url' => '/work/'.$project->id,
             'excerpt' => Str::limit(strip_tags($project->about_project), 180)];
         if ($detail) {
-            $item += ['description' => $this->html($project->about_project), 'contributions' => $project->jobs,
+            $contributions = $project->jobs ?? '';
+            $contributions = preg_match('/<\/?[a-z][^>]*>/i', $contributions) ? $contributions : nl2br(e($contributions));
+            $item += ['description' => $this->html($project->about_project), 'contributions' => $this->html($contributions),
                 'liveUrl' => $this->externalUrl($project->project_url)];
         }
 
