@@ -70,11 +70,14 @@ test('contact validation and successful inquiry', async ({ page }) => {
 test('authentication, admin CRUD, inbox and permission interface', async ({ page, isMobile }) => {
   await page.goto('/posts'); await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/(home|posts)$/);
-  if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Open workspace navigation', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.workspace-sidebar')).toBeHidden();
+  await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
   const workspaceLogo = page.getByRole('link', { name: 'iTechOrbit workspace', exact: true }).getByRole('img');
   await expect(workspaceLogo).toBeVisible();
   await expect.poll(() => workspaceLogo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBeTruthy();
-  if (isMobile) await page.getByRole('button', { name: 'Close workspace navigation', exact: true }).click();
+  await page.getByRole('button', { name: 'Close workspace navigation', exact: true }).click();
+  await expect(page.locator('.workspace-sidebar')).toBeHidden();
   await page.goto('/posts/create'); await page.getByLabel('Title *', { exact: true }).fill(`Browser CRUD ${isMobile ? 'mobile' : 'desktop'}`); await page.getByLabel('Category *', { exact: true }).selectOption({ label: 'Laravel' }); await page.getByLabel('Body *', { exact: true }).fill('<p>Browser regression article.</p>'); await page.getByRole('button', { name: 'Save changes' }).click(); await expect(page).toHaveURL(/\/posts$/);
   const title = `Browser CRUD ${isMobile ? 'mobile' : 'desktop'}`; await page.getByRole('link', { name: `Edit ${title}`, exact: true }).click(); await page.getByLabel('Title *', { exact: true }).fill(title + ' revised'); await page.getByRole('button', { name: 'Save changes' }).click(); await expect(page).toHaveURL(/\/posts$/); await page.getByRole('button', { name: `Delete ${title} revised`, exact: true }).click(); await expect(page.getByRole('dialog')).toBeVisible(); await page.getByRole('button', { name: 'Delete record', exact: true }).click(); await expect(page.getByText(title + ' revised', { exact: true })).toHaveCount(0);
   await page.goto('/contacts'); await expect(page.getByRole('heading', { level: 1 })).toHaveText('Contact inquiries'); await page.goto('/permissions'); await expect(page.getByLabel('Select role')).toBeVisible(); await page.getByLabel('Select role').selectOption('4'); await expect(page.getByRole('heading', { level: 1 })).toHaveText('Roles & permissions');
@@ -207,14 +210,16 @@ test('header sign-in and account dropdown support profile settings and logout', 
   await page.goto('/account/settings'); await expect(page).toHaveURL(/\/login$/);
 });
 
-test('workspace tables load server-side search sorting pagination and recover from errors', async ({ page, isMobile }, testInfo) => {
+test('workspace tables load server-side search sorting pagination and recover from errors', async ({ page }, testInfo) => {
   await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
   await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
   await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'dark');
   await page.reload();
   await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'dark');
   await page.screenshot({ path: testInfo.outputPath('admin-dashboard.png'), fullPage: true });
-  if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Open workspace navigation', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.workspace-sidebar')).toBeHidden();
+  await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByText('Test workspace', { exact: true })).toBeVisible();
   await expect(page.locator('.workspace-module-label').first()).toHaveText('Module');
   await expect(page.locator('.workspace-nav-group>p small').first()).toHaveText('Category');
@@ -225,7 +230,9 @@ test('workspace tables load server-side search sorting pagination and recover fr
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByRole('link', { name: 'Articles', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByRole('link', { name: 'Categories', exact: true })).toHaveCount(0);
   await page.getByLabel('Find a module').fill('');
-  if (isMobile) await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.workspace-sidebar')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Open workspace navigation', exact: true })).toBeFocused();
   await page.goto('/posts');
   await expect(page.locator('.workspace')).toHaveAttribute('data-theme', 'dark');
   await page.evaluate(() => { document.documentElement.dataset.tableDocument = 'retained'; });
@@ -312,7 +319,9 @@ test('portfolio template studio previews five layouts and persists the public se
   test.setTimeout(60000); // Five themes, twenty section-anchor checks and public return navigation.
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
-  if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Open workspace navigation', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.workspace-sidebar')).toBeHidden();
+  await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
   await page.getByRole('link', { name: 'Portfolio templates', exact: true }).click();
   await expect(page.getByRole('radio')).toHaveCount(5);
   await expect(page.getByRole('button', { name: 'Save template', exact: true })).toBeDisabled();
