@@ -68,7 +68,7 @@ class PrivacyPolicyController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:100'],
             'subtitle' => ['required', 'string', 'max:255'],
-            'descriptions' => ['required', 'string'],
+            'descriptions' => ['required', 'string', 'max:1000000'],
         ]);
     }
 
@@ -114,7 +114,7 @@ class PrivacyPolicyController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:100'],
             'subtitle' => ['required', 'string', 'max:255'],
-            'descriptions' => ['required', 'string'],
+            'descriptions' => ['required', 'string', 'max:1000000'],
         ]);
     }
 

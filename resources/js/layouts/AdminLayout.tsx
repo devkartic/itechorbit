@@ -13,6 +13,8 @@ export default function AdminLayout({ children, title, navigation }: { children:
   const { theme, setTheme } = useWorkspaceTheme();
   const { auth } = usePage<Shared>().props; const { url } = usePage();
   const [open, setOpen] = useState(false); const [search, setSearch] = useState('');
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+  const navigationPanel = useRef<HTMLElement>(null);
   const aside = useRef<HTMLElement>(null); const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -31,6 +33,21 @@ export default function AdminLayout({ children, title, navigation }: { children:
     document.addEventListener('keydown', keys); desktop.addEventListener('change', resize);
     return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', keys); desktop.removeEventListener('change', resize); };
   }, [open]);
+  useEffect(() => {
+    const revealActiveLink = () => {
+      const panel = navigationPanel.current;
+      const active = panel?.querySelector<HTMLElement>('a[aria-current="page"]');
+      if (!panel || !active || !active.getClientRects().length || panel.clientHeight === 0) return;
+      const bounds = panel.getBoundingClientRect();
+      const link = active.getBoundingClientRect();
+      // Scroll only the navigation panel; leave the page position and keyboard focus intact.
+      if (link.top < bounds.top + 12) panel.scrollTop += link.top - bounds.top - 12;
+      else if (link.bottom > bounds.bottom - 12) panel.scrollTop += link.bottom - bounds.bottom + 12;
+    };
+    const frame = requestAnimationFrame(revealActiveLink);
+    window.addEventListener('resize', revealActiveLink);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', revealActiveLink); };
+  }, [url, open, search, expandedModules]);
   const groups = new Map<string, Map<string, Navigation>>();
   for (const item of navigation.filter(item => `${item.label} ${item.group ?? ''} ${item.module ?? ''}`.toLowerCase().includes(search.toLowerCase()))) {
     const group = item.group ?? 'Workspace'; const module = item.module ?? 'Manage';
@@ -46,8 +63,12 @@ export default function AdminLayout({ children, title, navigation }: { children:
     <aside ref={aside} className={`workspace-sidebar ${open ? 'is-open' : ''}`} role={open ? 'dialog' : undefined} aria-modal={open || undefined} aria-label="Workspace sidebar"><div className="workspace-sidebar-brand"><Link href="/home" className="brand workspace-brand" aria-label="iTechOrbit workspace" onClick={() => setOpen(false)}><BrandLogo /></Link><button className="workspace-mobile-close workspace-icon-button" aria-label="Close workspace navigation" onClick={() => { setOpen(false); trigger.current?.focus(); }}><X size={19} /></button></div>
       <div className="workspace-sidebar-context"><span className="workspace-context-icon"><LayoutDashboard size={18} /></span><div><strong>Studio workspace</strong><span>Content & operations</span></div></div>
       <label className="workspace-sidebar-search"><Search size={16} aria-hidden="true" /><input aria-label="Find a module" value={search} onChange={event => setSearch(event.target.value)} placeholder="Find a module…" /></label>
-      <nav className="workspace-navigation" aria-label="Workspace navigation"><Link href="/home" onClick={() => setOpen(false)} className={`workspace-nav-link ${current === 'home' ? 'is-current' : ''}`} aria-current={current === 'home' ? 'page' : undefined}><LayoutDashboard size={18} /><span>Overview</span></Link><Link href="/workspace/portfolio-templates" onClick={() => setOpen(false)} className={`workspace-nav-link ${url.startsWith('/workspace/portfolio-templates') ? 'is-current' : ''}`} aria-current={url.startsWith('/workspace/portfolio-templates') ? 'page' : undefined}><Palette size={18} /><span>Portfolio templates</span></Link>
-        {[...groups].map(([group, modules]) => <div className="workspace-nav-group" key={group}><p><span className="workspace-group-marker" aria-hidden="true" /><span>{group}</span><small>Category</small></p>{[...modules].map(([module, items]) => <details key={module} open={!!search || items.some(item => item.url.split('/')[1] === current) || current === 'home'} className="workspace-nav-module"><summary><FolderOpen size={15} aria-hidden="true" /><span>{module}</span><small className="workspace-module-label">Module</small><ChevronDown size={14} /></summary><div>{items.map(item => { const slug = item.url.slice(1); const Icon = icons[slug] ?? Settings2; return <Link key={item.url} href={item.url} onClick={() => setOpen(false)} className={`workspace-nav-link ${current === slug ? 'is-current' : ''}`} aria-current={current === slug ? 'page' : undefined}><Icon size={17} /><span>{item.label}</span>{current === slug && <span className="workspace-active-dot" />}</Link>; })}</div></details>)}</div>)}
+      <nav ref={navigationPanel} className="workspace-navigation" aria-label="Workspace navigation"><Link href="/home" onClick={() => setOpen(false)} className={`workspace-nav-link ${current === 'home' ? 'is-current' : ''}`} aria-current={current === 'home' ? 'page' : undefined}><LayoutDashboard size={18} /><span>Overview</span></Link><Link href="/workspace/portfolio-templates" onClick={() => setOpen(false)} className={`workspace-nav-link ${url.startsWith('/workspace/portfolio-templates') ? 'is-current' : ''}`} aria-current={url.startsWith('/workspace/portfolio-templates') ? 'page' : undefined}><Palette size={18} /><span>Portfolio templates</span></Link>
+        {[...groups].map(([group, modules]) => <div className="workspace-nav-group" key={group}><p><span className="workspace-group-marker" aria-hidden="true" /><span>{group}</span><small>Category</small></p>{[...modules].map(([module, items]) => {
+          const moduleKey = JSON.stringify([group, module, search, url.split('?')[0]]);
+          const expanded = expandedModules[moduleKey] ?? (!!search || items.some(item => item.url.split('/')[1] === current));
+          return <details key={module} open={expanded} className="workspace-nav-module"><summary onClick={event => { event.preventDefault(); setExpandedModules(previous => ({ ...previous, [moduleKey]: !expanded })); }}><FolderOpen size={15} aria-hidden="true" /><span>{module}</span><small className="workspace-module-label">Module</small><ChevronDown size={14} /></summary><div>{items.map(item => { const slug = item.url.slice(1); const Icon = icons[slug] ?? Settings2; return <Link key={item.url} href={item.url} onClick={() => setOpen(false)} className={`workspace-nav-link ${current === slug ? 'is-current' : ''}`} aria-current={current === slug ? 'page' : undefined}><Icon size={17} /><span>{item.label}</span>{current === slug && <span className="workspace-active-dot" />}</Link>; })}</div></details>;
+        })}</div>)}
         {!groups.size && <p className="workspace-nav-empty">No matching modules.</p>}
       </nav><div className="workspace-sidebar-footer"><SiteLink href="/" className="workspace-nav-link"><Globe size={17} /><span>Visit public website</span><ArrowUpRight size={15} /></SiteLink><div><ShieldCheck size={15} /><span>Engineering with AI</span></div></div>
     </aside>

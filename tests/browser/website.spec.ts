@@ -49,7 +49,21 @@ test('logo stays loaded and aligned between the homepage and authentication page
     expect(authHeader?.height).toBe(initialHeader?.height);
     for (const key of ['x', 'y', 'width', 'height'] as const) expect(authLogo?.[key]).toBeCloseTo(initialLogo?.[key] ?? 0, 1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
-    if (path === '/login') await page.screenshot({ path: testInfo.outputPath('login-branding.png'), fullPage: true });
+    const originalViewport = page.viewportSize()!;
+    for (const width of [390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      const alignment = await page.locator('main').evaluate(main => {
+        const card = main.querySelector('form')!.parentElement!.getBoundingClientRect();
+        const back = main.querySelector('a[href="/"]')!.getBoundingClientRect();
+        return { cardCenter: card.left + card.width / 2, linkCenter: back.left + back.width / 2, viewportCenter: innerWidth / 2, cardWidth: card.width, overflow: document.documentElement.scrollWidth > innerWidth };
+      });
+      expect(Math.abs(alignment.cardCenter - alignment.viewportCenter)).toBeLessThan(1);
+      expect(Math.abs(alignment.linkCenter - alignment.cardCenter)).toBeLessThan(1);
+      expect(alignment.cardWidth).toBeLessThanOrEqual(448);
+      expect(alignment.overflow).toBeFalsy();
+    }
+    await page.setViewportSize(originalViewport);
+    if (path === '/login' || path === '/register') await page.screenshot({ path: testInfo.outputPath(`${path.slice(1)}-branding.png`), fullPage: true });
   }
   await header.getByRole('link', { name: 'iTechOrbit home', exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -256,56 +270,55 @@ test('workspace tables load server-side search sorting pagination and recover fr
   await page.screenshot({ path: testInfo.outputPath('admin-table.png'), fullPage: true });
 });
 
-test('rich text forms validate save formatted content and retain success feedback', async ({ page, isMobile }, testInfo) => {
+test('CKEditor formats links and preserves published content after save and reload', async ({ page, isMobile }, testInfo) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
-  await page.goto('/posts/create'); const title = `Editor QA ${isMobile ? 'mobile' : 'desktop'}`;
+  await page.goto('/posts/create'); const title = `CKEditor QA ${isMobile ? 'mobile' : 'desktop'}`;
   await page.getByLabel('Title *', { exact: true }).fill(title); await page.getByLabel('Category *', { exact: true }).selectOption({ label: 'Laravel' });
   const body = page.getByRole('textbox', { name: 'Body *', exact: true }); await expect(body).toBeVisible();
+  const field = page.locator('.workspace-ckeditor-field');
   await page.getByRole('button', { name: 'Save changes', exact: true }).click(); await expect(page.getByText('Body is required.', { exact: true })).toBeVisible();
   await body.fill('Clear engineering decisions'); await body.press('ControlOrMeta+A');
-  await page.getByRole('toolbar', { name: 'Body formatting' }).getByRole('button', { name: 'Bold', exact: true }).click();
-  await page.getByRole('toolbar', { name: 'Body formatting' }).getByRole('button', { name: 'Heading 2', exact: true }).click();
-  await page.getByRole('group', { name: 'Body editing mode' }).getByRole('button', { name: 'HTML', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Body HTML', exact: true })).toHaveValue(/<h2><strong>Clear engineering decisions<\/strong><\/h2>/);
-  await page.getByRole('group', { name: 'Body editing mode' }).getByRole('button', { name: 'Visual', exact: true }).click();
-  await body.click(); await body.press('ControlOrMeta+A');
-  await page.getByRole('combobox', { name: 'Body font size', exact: true }).selectOption('20');
-  await page.getByRole('combobox', { name: 'Body font style', exact: true }).selectOption('serif');
-  await page.getByRole('toolbar', { name: 'Body formatting' }).getByRole('button', { name: 'Insert link', exact: true }).click();
+  await field.getByRole('button', { name: 'Bold', exact: true }).click();
+  await field.getByRole('button', { name: 'Paragraph, Heading', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: 'Heading 2', exact: true }).click();
+  await field.getByRole('button', { name: 'Font Size', exact: true }).click();
+  await field.locator('.ck-font-size-dropdown').getByText('20', { exact: true }).click();
+  await field.getByRole('button', { name: 'Font Family', exact: true }).click();
+  await field.locator('.ck-font-family-dropdown').getByText('Georgia', { exact: true }).click();
+  await field.getByRole('button', { name: 'Link', exact: true }).click();
   await page.getByLabel('Link URL', { exact: true }).fill('https://example.com/careers');
-  await page.getByRole('button', { name: 'Apply link', exact: true }).click();
-  await expect(body.locator('span[data-font-size="20"][data-text-font="serif"]')).toHaveText('Clear engineering decisions');
+  await page.getByRole('button', { name: 'Insert', exact: true }).click();
   await expect(body.getByRole('link')).toHaveAttribute('href', 'https://example.com/careers');
+  await expect(body.locator('strong')).toHaveText('Clear engineering decisions');
   await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
-
+  await page.screenshot({ path: testInfo.outputPath('ckeditor-dark.png'), fullPage: true });
   await page.getByLabel('Title *', { exact: true }).fill('x'.repeat(201));
-  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
-  await expect(page.locator('#title-error')).toContainText('200');
-  await expect(page.getByRole('textbox', { name: 'Body *', exact: true })).toContainText('Clear engineering decisions');
-  await page.getByLabel('Title *', { exact: true }).fill(title);
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-  await page.screenshot({ path: testInfo.outputPath('admin-editor-dark.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Light theme', exact: true }).click();
-  await page.screenshot({ path: testInfo.outputPath('admin-editor.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click(); await expect(page.locator('#title-error')).toContainText('200');
+  await expect(body).toContainText('Clear engineering decisions'); await page.getByLabel('Title *', { exact: true }).fill(title);
   await page.getByRole('button', { name: 'Save changes', exact: true }).click(); await expect(page).toHaveURL(/\/posts$/);
   await expect(page.getByRole('status')).toContainText('Post created successfully');
   await page.getByRole('link', { name: `View ${title}`, exact: true }).click();
   await expect(page.locator('.workspace-record-details h2')).toHaveText('Clear engineering decisions');
-  await expect(page.locator('.workspace-record-details strong')).toHaveText('Clear engineering decisions');
-  await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
-  const headingColor = await page.locator('.workspace-record-details h2').evaluate(node => getComputedStyle(node).color);
-  expect(headingColor).toBe(await page.locator('.workspace').evaluate(node => getComputedStyle(node).color));
   const articleId = page.url().split('/').at(-1);
   await page.goto(`/blogs/${articleId}`);
-  await expect(page.locator('.workspace')).toHaveCount(0);
   await expect(page.locator('.prose-content h2')).toHaveText('Clear engineering decisions');
   const formatted = page.locator('.prose-content span[data-font-size="20"][data-text-font="serif"]');
-  await expect(formatted).toHaveText('Clear engineering decisions');
-  await expect(formatted).toHaveCSS('font-size', '20px');
+  await expect(formatted).toHaveText('Clear engineering decisions'); await expect(formatted).toHaveCSS('font-size', '20px');
   await expect(page.locator('.prose-content a')).toHaveAttribute('href', 'https://example.com/careers');
   await page.goto(`/posts/${articleId}/edit`);
-  await expect(page.getByRole('textbox', { name: 'Body *', exact: true }).locator('span[data-font-size="20"][data-text-font="serif"]')).toHaveText('Clear engineering decisions');
+  await expect(page.getByRole('textbox', { name: 'Body *', exact: true })).toContainText('Clear engineering decisions');
+  await page.getByRole('button', { name: 'Source', exact: true }).click();
+  const source = page.locator('.ck-source-editing-area textarea');
+  await source.fill('<h2>Updated through HTML source</h2><p><a href="https://example.com/updated">Updated link</a></p><table><tbody><tr><td>Preserved table cell</td></tr></tbody></table>');
+  // Saving directly from source mode must include edits without manually returning to visual mode.
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click(); await expect(page).toHaveURL(/\/posts$/);
+  await page.goto(`/blogs/${articleId}`);
+  await expect(page.locator('.prose-content h2')).toHaveText('Updated through HTML source');
+  await expect(page.locator('.prose-content a')).toHaveAttribute('href', 'https://example.com/updated');
+  await expect(page.locator('.prose-content table td')).toHaveText('Preserved table cell');
   await page.goto('/posts'); await page.getByRole('button', { name: `Delete ${title}`, exact: true }).click(); await page.getByRole('button', { name: 'Delete record', exact: true }).click(); await expect(page.getByRole('button', { name: `Delete ${title}`, exact: true })).toHaveCount(0);
+  expect(errors).toEqual([]);
 });
 
 test('portfolio template studio previews five layouts and persists the public selection', async ({ page, request, isMobile }, testInfo) => {
@@ -512,4 +525,390 @@ test('uploaded project screenshots appear as compact uncropped portfolio thumbna
     const cleanup = await page.request.post('/project-file-delete', { headers: { 'X-CSRF-TOKEN': token ?? '', Accept: 'application/json' }, data: { id: 1, field_name: 'image_path' } });
     expect(cleanup.ok()).toBeTruthy();
   }
+});
+
+test('CKEditor replaces every rich-text resource and supports native link insertion', async ({ page }, testInfo) => {
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  for (const [resource, count] of [['posts', 1], ['projects', 2], ['basics', 3], ['services', 1], ['experiences', 2], ['testimonials', 1], ['about-info', 1], ['service-info', 1], ['privacy-policies', 1], ['contact-info', 1]] as const) {
+    await page.goto(resource === 'basics' ? '/basics/1/edit' : `/${resource}/create`);
+    await expect(page.locator('.ck-editor__editable')).toHaveCount(count);
+    await expect(page.locator('.workspace-ckeditor-field')).toHaveCount(count);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  }
+  await page.goto('/posts/create');
+  const body = page.getByRole('textbox', { name: 'Body *', exact: true });
+  const field = page.locator('.workspace-ckeditor-field');
+  await expect(body).toBeVisible(); await body.click();
+  let saves = 0; page.on('request', request => { if (request.method() === 'POST' && new URL(request.url()).pathname === '/posts') saves++; });
+  await field.getByRole('button', { name: 'Link', exact: true }).click();
+  await page.getByLabel('Displayed text', { exact: true }).fill('Read the guide');
+  await page.getByLabel('Link URL', { exact: true }).fill('example.com/guide');
+  await page.getByLabel('Link URL', { exact: true }).press('Enter');
+  await expect(body.getByRole('link')).toHaveText('Read the guide');
+  await expect(body.getByRole('link')).toHaveAttribute('href', 'https://example.com/guide');
+  await expect(page).toHaveURL(/\/posts\/create$/); expect(saves).toBe(0);
+  await body.getByRole('link').click();
+  await page.getByRole('button', { name: 'Unlink', exact: true }).click();
+  await expect(body.getByRole('link')).toHaveCount(0); await expect(body).toHaveText('Read the guide');
+  await field.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(body.getByRole('link')).toHaveAttribute('href', 'https://example.com/guide');
+  await field.getByRole('button', { name: 'Redo', exact: true }).click();
+  await expect(body.getByRole('link')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('ckeditor-native-links.png'), fullPage: true });
+});
+
+test('privacy policy saves long pasted content and reopens without truncation', async ({ page, isMobile }) => {
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/privacy-policies/create');
+  const title = `Privacy paste QA ${isMobile ? 'mobile' : 'desktop'}`;
+  await page.getByLabel('Title *', { exact: true }).fill(title);
+  await page.getByLabel('Subtitle *', { exact: true }).fill('How we protect visitor information');
+  const editor = page.getByRole('textbox', { name: 'Descriptions *', exact: true });
+  const paragraph = 'At iTechOrbit.com, accessible from iTechOrbit, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by iTechOrbit and how we use it.';
+  const text = `${Array.from({ length: 400 }, () => paragraph).join('\n\n')}\n\nChildren’s Information\n\nWe protect the privacy of children under the age of 13.`;
+  expect(new TextEncoder().encode(text).length).toBeGreaterThan(65535);
+  await editor.fill(text);
+  const saved = page.waitForResponse(response => response.url().endsWith('/privacy-policies') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  expect((await saved).status()).toBe(200);
+  await expect(page).toHaveURL(/\/privacy-policies$/);
+  await page.getByRole('link', { name: `Edit ${title}`, exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Descriptions *', exact: true })).toContainText('We protect the privacy of children under the age of 13.');
+  await page.goto('/privacy-policies');
+  await page.getByRole('button', { name: `Delete ${title}`, exact: true }).click(); await page.getByRole('button', { name: 'Delete record', exact: true }).click();
+  await expect(page.getByRole('button', { name: `Delete ${title}`, exact: true })).toHaveCount(0);
+});
+
+test('privileged Users table opens public portfolios and retains links after filtering', async ({ page, context }, testInfo) => {
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/users');
+  await expect(page.getByRole('columnheader', { name: 'Sort by Portfolio', exact: true })).toBeVisible();
+  await expect(page.locator('thead th').filter({ hasText: 'Portfolio' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Sort by Public portfolio', exact: true })).toHaveCount(0);
+  const profile = page.getByRole('link', { name: 'View public portfolio for Test Engineer', exact: true });
+  await expect(profile).toHaveAttribute('href', '/portfolios/TESTPROFILE');
+  await expect(profile).toHaveAttribute('target', '_blank');
+  await Promise.all([page.waitForResponse(response => response.url().includes('/workspace/data/users?') && response.url().includes('key=Test')), page.getByRole('searchbox', { name: 'Search Users', exact: true }).fill('Test')]);
+  await expect(profile).toHaveAttribute('href', '/portfolios/TESTPROFILE');
+  const popup = context.waitForEvent('page'); await profile.click(); const portfolio = await popup;
+  await portfolio.waitForLoadState(); await expect(portfolio).toHaveURL(/\/portfolios\/TESTPROFILE$/);
+  await expect(portfolio.getByRole('heading', { level: 1 })).toHaveText('Test Engineer.');
+  await portfolio.close(); await expect(page).toHaveURL(/\/users$/);
+  await page.screenshot({ path: testInfo.outputPath('users-public-portfolios.png'), fullPage: true });
+});
+
+test('Users table combines portfolio status with links and red inactive badges', async ({ page, context }) => {
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/users');
+  await Promise.all([page.waitForResponse(response => response.url().includes('/workspace/data/users?') && response.url().includes('sparse-studio')), page.getByRole('searchbox', { name: 'Search Users', exact: true }).fill('sparse-studio')]);
+  const row = page.locator('.admin-table tbody tr');
+  const link = row.getByRole('link', { name: 'View public portfolio for Minimal Engineer', exact: true });
+  await expect(link).toBeVisible(); await expect(link).toHaveClass(/is-active/);
+  await page.getByRole('button', { name: 'Disable user', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Enable user', exact: true })).toBeVisible();
+  await expect(link).toHaveCount(0);
+  await expect(row.locator('.workspace-badge.is-inactive')).toHaveCount(2);
+  const border = await row.locator('.workspace-badge.is-inactive').last().evaluate(element => {
+    const style = getComputedStyle(element); return { width: style.borderTopWidth, color: style.borderTopColor };
+  });
+  expect(border.width).toBe('1px'); expect(border.color).toBe('rgb(237, 196, 203)');
+  await page.getByRole('button', { name: 'Enable user', exact: true }).click();
+  await expect(link).toBeVisible();
+  await page.getByRole('button', { name: 'Hide portfolio', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Publish portfolio', exact: true })).toBeVisible();
+  await expect(link).toHaveCount(0); await expect(row.locator('.workspace-badge.is-inactive')).toHaveText('Inactive');
+  await page.getByRole('button', { name: 'Dark theme', exact: true }).click();
+  await expect(row.locator('.workspace-badge.is-inactive')).toHaveCSS('border-top-width', '1px');
+  await page.getByRole('button', { name: 'Publish portfolio', exact: true }).click();
+  await expect(link).toBeVisible();
+  const popup = context.waitForEvent('page'); await link.click(); const portfolio = await popup;
+  await portfolio.waitForLoadState(); await expect(portfolio).toHaveURL(/\/portfolios\/SPARSE-STUDIO$/); await portfolio.close();
+});
+
+test('CV PDF uploads save and clearing a replacement preserves the existing document', async ({ page, context }) => {
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/basics/1/edit');
+  await expect(page.locator('.ck-editor__editable')).toHaveCount(3);
+  await page.getByLabel('Mobile *', { exact: true }).fill('01234567890');
+  await page.getByLabel('Address *', { exact: true }).fill('Synthetic test address');
+  await page.getByLabel('Gender *', { exact: true }).fill('Other');
+  await page.getByLabel('Marital status *', { exact: true }).fill('Single');
+  const pdf = { name: 'Kartic-Resume-SP.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF') };
+  await page.getByLabel('CV document', { exact: true }).setInputFiles(pdf);
+  const upload = page.waitForResponse(response => response.url().endsWith('/basics/1') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  expect((await upload).status()).toBe(200); await expect(page).toHaveURL(/\/basics$/);
+  await page.goto('/basics/1/edit');
+  const cv = page.locator('.workspace-existing-media[data-storage-field="cv_path"]');
+  await expect(cv).toBeVisible(); const savedPath = await cv.locator('small').innerText(); expect(savedPath).toMatch(/.+\.pdf$/);
+  const pdfLink = cv.getByRole('link', { name: 'Open CV document PDF', exact: true });
+  await expect(pdfLink).toHaveAttribute('target', '_blank');
+  const pdfResponse = await page.request.get((await pdfLink.getAttribute('href'))!); expect(pdfResponse.headers()['content-type']).toBe('application/pdf');
+  expect(pdfResponse.headers()['content-disposition']).toMatch(/^inline;/);
+  // Headless Chromium downloads PDFs instead of providing the desktop PDF viewer.
+  const requested = context.waitForEvent('request', request => request.url().endsWith('/workspace/media/basics/1/cv_path'));
+  const opened = context.waitForEvent('page'); await pdfLink.click(); const document = await opened;
+  await requested; await document.close();
+  await page.getByLabel('CV document', { exact: true }).setInputFiles({ ...pdf, name: 'replacement.pdf' });
+  await page.getByLabel('CV document', { exact: true }).setInputFiles([]);
+  const save = page.waitForResponse(response => response.url().endsWith('/basics/1') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  const response = await save; expect(response.status()).toBe(200); expect(response.request().postData()).not.toContain('name="uploaded_cv"');
+  await expect(page).toHaveURL(/\/basics$/); await page.goto('/basics/1/edit');
+  await expect(cv.locator('small')).toHaveText(savedPath);
+  const removed = page.waitForResponse(response => response.url().endsWith('/basics-file-delete') && response.request().method() === 'POST');
+  await cv.getByRole('button', { name: 'Remove file', exact: true }).click(); expect((await removed).status()).toBe(200);
+  await expect(cv).toHaveCount(0);
+});
+
+test('all image uploads preview selections and saved files with consistent validation', async ({ page, isMobile }, testInfo) => {
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  const png = { name: 'preview.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=', 'base64') };
+  const title = `Image preview QA ${isMobile ? 'mobile' : 'desktop'}`;
+  for (const [path, labels] of [['/posts/create', ['Cover image']], ['/projects/1/edit', ['Project screenshot']], ['/basics/1/edit', ['Banner image', 'Profile photo']]] as const) {
+    await page.goto(path);
+    if (path === '/posts/create') {
+      await page.getByLabel('Title *', { exact: true }).fill(title); await page.getByLabel('Category *', { exact: true }).selectOption({ label: 'Laravel' });
+      await page.getByRole('textbox', { name: 'Body *', exact: true }).fill('Synthetic image upload verification.');
+      await page.getByLabel('Cover image', { exact: true }).setInputFiles({ name: 'invalid.txt', mimeType: 'text/plain', buffer: Buffer.from('invalid') });
+      await expect(page.getByRole('alert')).toContainText('Choose a JPG, PNG or WebP image.');
+      await page.getByLabel('Cover image', { exact: true }).setInputFiles({ name: 'oversized.png', mimeType: 'image/png', buffer: Buffer.alloc(2048 * 1024 + 1) });
+      await expect(page.getByRole('alert')).toContainText('2,048 KB');
+    }
+    if (path === '/basics/1/edit') {
+      await page.getByLabel('Mobile *', { exact: true }).fill('01234567890'); await page.getByLabel('Address *', { exact: true }).fill('Synthetic test address');
+      await page.getByLabel('Gender *', { exact: true }).fill('Other'); await page.getByLabel('Marital status *', { exact: true }).fill('Single');
+    }
+    for (const label of labels) {
+      await page.getByLabel(label, { exact: true }).setInputFiles(png);
+      await expect(page.getByRole('img', { name: `Selected ${label} preview`, exact: true })).toBeVisible();
+    }
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(page).toHaveURL(path.startsWith('/posts') ? /\/posts$/ : path.startsWith('/projects') ? /\/projects$/ : /\/basics$/);
+    if (path === '/posts/create') await page.getByRole('link', { name: `Edit ${title}`, exact: true }).click();
+    else await page.goto(path);
+    for (const label of labels) {
+      const preview = page.getByRole('img', { name: `${label} preview`, exact: true });
+      await expect(preview).toBeVisible(); await expect.poll(() => preview.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBeTruthy();
+      expect(await preview.getAttribute('src')).toContain('/workspace/media/');
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath(`saved-upload-${path.split('/')[1]}.png`), fullPage: true });
+    if (path === '/posts/create') {
+      await page.goto('/posts'); await page.getByRole('button', { name: `Delete ${title}`, exact: true }).click(); await page.getByRole('button', { name: 'Delete record', exact: true }).click(); await expect(page.getByRole('button', { name: `Delete ${title}`, exact: true })).toHaveCount(0);
+    } else {
+      for (const label of labels) {
+        const attachment = page.locator('.workspace-existing-media').filter({ has: page.getByRole('img', { name: `${label} preview`, exact: true }) });
+        await attachment.getByRole('button', { name: 'Remove file', exact: true }).click(); await expect(page.getByRole('img', { name: `${label} preview`, exact: true })).toHaveCount(0);
+      }
+    }
+  }
+});
+
+test('portfolio banners align and crop across all templates and device previews', async ({ page }, testInfo) => {
+  test.setTimeout(60000);
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  async function image(width: number, height: number) {
+    const data = await page.evaluate(({ width, height }) => {
+      const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+      const context = canvas.getContext('2d')!;
+      context.fillStyle = '#7040cf'; context.fillRect(0, 0, width, height);
+      context.fillStyle = '#d6f576'; context.fillRect(width / 3, 0, width / 3, height);
+      context.fillStyle = '#18152c'; context.fillRect(0, height * 0.7, width, height * 0.3);
+      return canvas.toDataURL('image/png').split(',')[1];
+    }, { width, height });
+    return { name: `banner-${width}-${height}.png`, mimeType: 'image/png', buffer: Buffer.from(data, 'base64') };
+  }
+  async function upload(file: Awaited<ReturnType<typeof image>>, photo = false) {
+    await page.goto('/basics/1/edit'); await expect(page.locator('.ck-editor__editable')).toHaveCount(3);
+    await page.getByLabel('Mobile *', { exact: true }).fill('01234567890'); await page.getByLabel('Address *', { exact: true }).fill('Synthetic address');
+    await page.getByLabel('Gender *', { exact: true }).fill('Other'); await page.getByLabel('Marital status *', { exact: true }).fill('Single');
+    await page.getByLabel('Banner image', { exact: true }).setInputFiles(file);
+    if (photo) await page.getByLabel('Profile photo', { exact: true }).setInputFiles(await image(200, 200));
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click(); await expect(page).toHaveURL(/\/basics$/);
+  }
+  async function check(root: ReturnType<typeof page.locator>) {
+    await expect(root.locator('.pf-banner img')).toBeVisible();
+    const dimensions = await root.evaluate(element => {
+      const banner = element.querySelector('.pf-banner')!.getBoundingClientRect();
+      const header = element.querySelector('.pf-local-header')!.getBoundingClientRect();
+      const footer = element.querySelector('.pf-signature')!.getBoundingClientRect();
+      const hero = element.querySelector('.pf-hero')!.getBoundingClientRect();
+      const image = element.querySelector<HTMLImageElement>('.pf-banner img')!;
+      return { ratio: banner.width / banner.height, expected: element.clientWidth <= 680 ? 2 : 4, left: banner.left - header.left, right: banner.right - header.right,
+        footerLeft: banner.left - footer.left, footerRight: banner.right - footer.right, aboveHero: banner.bottom <= hero.top,
+        objectFit: getComputedStyle(image).objectFit, loaded: image.complete && image.naturalWidth > 0 };
+    });
+    expect(Math.abs(dimensions.ratio - dimensions.expected)).toBeLessThan(0.02);
+    for (const edge of [dimensions.left, dimensions.right, dimensions.footerLeft, dimensions.footerRight]) expect(Math.abs(edge)).toBeLessThan(1);
+    expect(dimensions.aboveHero).toBeTruthy(); expect(dimensions.loaded).toBeTruthy(); expect(dimensions.objectFit).toBe('cover');
+  }
+  const landscape = await image(1600, 400); await upload(landscape, true);
+  for (const name of ['Executive', 'Blueprint', 'Editorial', 'Spotlight', 'Studio']) {
+    await page.goto('/workspace/portfolio-templates'); await page.locator('.template-choice').getByText(name, { exact: true }).click();
+    const root = page.getByRole('region', { name: `${name} portfolio preview` }).locator('.portfolio-view');
+    for (const device of ['Desktop preview', 'Mobile preview']) { await page.getByRole('button', { name: device, exact: true }).click(); await check(root); }
+    const save = page.getByRole('button', { name: 'Save template', exact: true });
+    if (await save.isEnabled()) { await save.click(); await expect(page.locator('.workspace-notice[role="status"]')).toContainText('Portfolio template saved.'); }
+    await page.goto('/portfolios/TESTPROFILE'); await check(page.locator('.portfolio-view'));
+    await expect(page.locator('.pf-portrait')).toBeVisible();
+    expect((await (await page.request.get((await page.locator('.pf-banner img').getAttribute('src'))!)).body()).equals(landscape.buffer)).toBeTruthy();
+    await page.screenshot({ path: testInfo.outputPath(`banner-${name.toLowerCase()}.png`), fullPage: true });
+  }
+  for (const [width, height] of [[400, 1200], [600, 600]]) {
+    await upload(await image(width, height)); await page.goto('/portfolios/TESTPROFILE'); await check(page.locator('.portfolio-view'));
+  }
+  await page.route('**/uploads/profiles/images/banner_images/**', route => route.fulfill({ status: 404, body: '' }));
+  await page.goto('/portfolios/TESTPROFILE'); await expect(page.locator('.pf-banner')).toHaveCount(0);
+  await page.unroute('**/uploads/profiles/images/banner_images/**');
+  await page.goto('/basics/1/edit');
+  for (const storage of ['banner_image_path', 'profile_image_path']) {
+    const attachment = page.locator(`.workspace-existing-media[data-storage-field="${storage}"]`);
+    await attachment.getByRole('button', { name: 'Remove file', exact: true }).click(); await expect(attachment).toHaveCount(0);
+  }
+  await page.goto('/portfolios/TESTPROFILE'); await expect(page.locator('.pf-banner')).toHaveCount(0);
+});
+
+test('contact inquiry opens as an organized theme-aware message', async ({ page, isMobile }, testInfo) => {
+  const name = `Message reader ${isMobile ? 'mobile' : 'desktop'}`;
+  const subject = `Engineering & scope? ${'LongSubject'.repeat(12)}`;
+  const message = `Hello Test Engineer,\n\nPlease review our project & requirements.\n<script>alert("unsafe")</script>\n\n${'LongMessage'.repeat(100)}\n\nKind regards,\nSynthetic sender`;
+  await page.goto('/contact/info');
+  await page.getByLabel('Your name', { exact: true }).fill(name);
+  await page.getByLabel('Email address', { exact: true }).fill('reader+tag@example.test');
+  await page.getByLabel('What can we help with?').fill(subject);
+  await page.getByLabel('Tell us a little about it').fill(message);
+  await page.getByRole('button', { name: 'Send inquiry', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Your inquiry has been received');
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/contacts');
+  const row = page.getByRole('row').filter({ hasText: name });
+  await page.getByRole('combobox', { name: 'Filter by status', exact: true }).selectOption('0');
+  await page.getByRole('searchbox', { name: 'Search Contact inquiries', exact: true }).fill(name);
+  await expect(page.getByLabel('Applied filters')).toContainText(`Search: ${name}`);
+  await page.getByRole('button', { name: 'Sort by Subject', exact: true }).click();
+  await expect(row).toHaveClass('is-unread-inquiry');
+  await expect(row.getByText('Unread', { exact: true })).toHaveClass('workspace-badge is-unread');
+  for (const theme of ['Light', 'Dark']) {
+    await page.getByRole('button', { name: `${theme} theme`, exact: true }).click();
+    const dot = row.locator('.workspace-badge.is-unread>span');
+    await expect(dot).toBeVisible();
+    await expect(dot).toHaveCSS('width', '5px');
+    await expect(dot).toHaveCSS('height', '5px');
+    await expect(dot).toHaveCSS('flex-shrink', '0');
+    await expect(dot).toHaveCSS('border-radius', '50%');
+    const dotColor = await dot.evaluate(element => { const probe = document.createElement('span'); probe.style.color = 'var(--ws-accent)'; element.append(probe); const color = getComputedStyle(probe).color; probe.remove(); return { color, background: getComputedStyle(element).backgroundColor }; });
+    expect(dotColor.background).toBe(dotColor.color);
+    const normal = await row.evaluate(element => {
+      const cell = element.querySelector('td')!;
+      return { background: getComputedStyle(element).backgroundColor, marker: getComputedStyle(cell).boxShadow,
+        senderWeight: getComputedStyle(element.querySelector('.table-record-title')!).fontWeight,
+        subjectWeight: getComputedStyle(element.querySelector('.table-inquiry-subject')!).fontWeight };
+    });
+    expect(normal.background).not.toBe('rgba(0, 0, 0, 0)'); expect(normal.marker).not.toBe('none');
+    expect(normal.senderWeight).toBe('400'); expect(normal.subjectWeight).toBe('400');
+    await row.hover();
+    expect(await row.evaluate(element => getComputedStyle(element.querySelector('td')!).boxShadow)).toBe(normal.marker);
+    await page.screenshot({ path: testInfo.outputPath(`unread-inquiry-${theme.toLowerCase()}.png`), fullPage: true });
+  }
+  await page.getByRole('button', { name: 'Reset filters', exact: true }).click();
+  await row.getByRole('link', { name: `View ${name}`, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Contact inquiry');
+  const article = page.getByRole('article', { name: subject, exact: true });
+  await expect(article).toBeVisible();
+  await expect(article.locator('.workspace-message-body')).toHaveText(message);
+  expect(await article.locator('script').count()).toBe(0);
+  expect(await article.getByRole('link', { name: 'Reply', exact: true }).getAttribute('href')).toBe(`mailto:reader%2Btag@example.test?subject=${encodeURIComponent(`Re: ${subject}`)}`);
+  await expect(article.locator('time')).toBeVisible();
+  await expect(page.locator('.workspace-record-details')).toHaveCount(0);
+  for (const width of [390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const theme of ['Light', 'Dark']) {
+      await page.getByRole('button', { name: `${theme} theme`, exact: true }).click();
+      await expect(page.locator('.workspace')).toHaveAttribute('data-theme', theme.toLowerCase());
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+      const layout = await article.evaluate(element => {
+        const body = element.querySelector('.workspace-message-body')!;
+        const style = getComputedStyle(body);
+        return { padding: style.paddingLeft, color: style.color, expected: getComputedStyle(element).getPropertyValue('--ws-ink').trim(), wraps: style.whiteSpace };
+      });
+      expect(layout.padding).toBe(width < 640 ? '16px' : '24px'); expect(layout.wraps).toBe('pre-wrap');
+      const reply = article.getByRole('link', { name: 'Reply', exact: true });
+      await reply.focus(); await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab'); await expect(reply).toBeFocused();
+      expect(await reply.evaluate(element => getComputedStyle(element).outlineStyle)).toBe('solid');
+      if (width === (isMobile ? 390 : 1440)) await page.screenshot({ path: testInfo.outputPath(`contact-message-${theme.toLowerCase()}.png`), fullPage: true });
+    }
+  }
+  await page.getByRole('link', { name: 'Back to contact inquiries', exact: true }).click();
+  await expect(row).toContainText('Read');
+  await expect(row).not.toHaveClass(/is-unread-inquiry/);
+  await expect(row.getByText('Read', { exact: true })).toHaveClass('table-read-status');
+  for (const selector of ['.table-record-title', '.table-inquiry-subject']) await expect(row.locator(selector)).toHaveCSS('font-weight', '400');
+  await expect(row.locator('.workspace-badge')).toHaveCount(0);
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const theme of ['Light', 'Dark']) {
+      await page.getByRole('button', { name: `${theme} theme`, exact: true }).click();
+      const readDot = row.locator('.table-read-status>span');
+      await expect(readDot).toBeVisible();
+      await expect(readDot).toHaveCSS('width', '5px');
+      await expect(readDot).toHaveCSS('height', '5px');
+      await expect(readDot).toHaveCSS('flex-shrink', '0');
+      await expect(readDot).toHaveCSS('border-radius', '50%');
+      const colors = await readDot.evaluate(element => ({ dot: getComputedStyle(element).backgroundColor, text: getComputedStyle(element.parentElement!).color }));
+      expect(colors.dot).toBe(colors.text);
+    }
+  }
+  await page.getByRole('combobox', { name: 'Filter by status', exact: true }).selectOption('0');
+  await expect(row).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Filter by status', exact: true }).selectOption('1');
+  await expect(row).toBeVisible();
+  await row.getByRole('button', { name: `Delete ${name}`, exact: true }).click(); await page.getByRole('button', { name: 'Delete record', exact: true }).click(); await expect(row).toHaveCount(0);
+});
+
+test('social sign-in buttons and connected accounts support provider redirects and cancellation', async ({ page }, testInfo) => {
+  let providerRedirect = '';
+  await page.route('**/login/{google,linkedin,github}', async route => {
+    const response = await route.fetch({ maxRedirects: 0 });
+    expect(response.status()).toBe(302);
+    providerRedirect = response.headers().location;
+    await route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Synthetic consent</title><p id=provider-redirect>Provider redirect captured.</p>' });
+  });
+  for (const host of ['accounts.google.com', 'github.com', 'www.linkedin.com']) {
+    await page.route(`https://${host}/**`, route => route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Synthetic OAuth consent</title><p>Provider redirect intercepted for this test.</p>' }));
+  }
+  for (const path of ['/login', '/register']) {
+    await page.goto(path);
+    for (const name of ['Google', 'LinkedIn', 'GitHub']) await expect(page.getByRole('link', { name: `Continue with ${name}`, exact: true })).toHaveAttribute('href', `/login/${name.toLowerCase()}`);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    const center = await page.locator('main form').evaluate(form => { const box = form.parentElement!.getBoundingClientRect(); return box.left + box.width / 2 - innerWidth / 2; });
+    expect(Math.abs(center)).toBeLessThan(1);
+    expect(await page.content()).not.toContain('browser-test-secret');
+    await page.screenshot({ path: testInfo.outputPath(`social-${path.slice(1)}.png`), fullPage: true });
+  }
+  for (const [name, host] of [['Google', 'accounts.google.com'], ['LinkedIn', 'www.linkedin.com'], ['GitHub', 'github.com']]) {
+    await page.goto('/login');
+    await page.getByRole('link', { name: `Continue with ${name}`, exact: true }).click();
+    await expect(page.locator('#provider-redirect')).toBeVisible();
+    expect(new URL(providerRedirect).hostname).toBe(host);
+    expect(new URL(providerRedirect).searchParams.get('state')).toBeTruthy();
+    await page.goto(`/login/${name.toLowerCase()}/callback?error=access_denied`);
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole('alert')).toContainText('cancelled or declined');
+  }
+  await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/account/settings');
+  const connections = page.locator('section.account-card').filter({ has: page.getByRole('heading', { name: 'Connected accounts', exact: true }) });
+  await expect(connections.getByText('Connected', { exact: true })).toHaveCount(1);
+  await expect(connections.getByRole('button', { name: 'Connect Google', exact: true })).toHaveCount(0);
+  await expect(connections.getByRole('button', { name: 'Connect LinkedIn', exact: true })).toBeVisible();
+  await expect(connections.getByRole('button', { name: 'Connect GitHub', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  expect(await page.content()).not.toContain('browser-google-identity');
+  await page.screenshot({ path: testInfo.outputPath('connected-accounts.png'), fullPage: true });
+  await connections.getByRole('button', { name: 'Connect GitHub', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).hostname).toBe('github.com');
+  await page.goto('/login/github/callback?error=access_denied');
+  await expect(page).toHaveURL(/\/account\/settings$/);
+  await expect(connections.getByRole('alert')).toContainText('cancelled or declined');
 });

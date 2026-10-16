@@ -12,7 +12,7 @@ The legacy portfolio-capable `/inquiries` and `/contacts` handlers retain their 
 
 ## Both email templates
 
-The personal and business inquiry emails share a new table-based layout with inline styles, a dark header, sender/email/subject summary, a complete escaped message body, a reply button and an inbox link. Each includes a plain-text MIME alternative. Newlines are retained in the message. No external fonts or images are required to read the notification.
+The personal and business inquiry emails share a new table-based layout with inline styles, a dark header, sender/email/subject summary, a complete escaped message body, a reply button and an inbox link. Each includes a plain-text MIME alternative. Newlines are retained in the message. No external fonts or images are required to read the notification. Both inquiry variants fill the available email pane without a maximum width, inside 12px outer padding on every side (equivalent to `p-3`). Header, content and footer use 24px internal padding, reduced to 16px on mobile (600px or below), with wrapping for long sender details and message text.
 
 - **Personal portfolio:** the header identifies the portfolio user; copy describes their personal inquiry and contains no iTechOrbit marketing branding. From uses the configured mail address with the portfolio owner's display name. The sole destination is the portfolio owner.
 - **Business:** the header identifies iTechOrbit; copy describes a business website inquiry. The destination remains the site's configured business owner.

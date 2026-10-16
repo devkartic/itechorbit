@@ -7,6 +7,11 @@ const directory = mkdtempSync(join(tmpdir(), 'itechorbit-browser-'));
 for (const name of ['sessions', 'cache']) mkdirSync(join(directory, name));
 const database = join(directory, 'database.sqlite'); writeFileSync(database, '');
 const env = { ...process.env, APP_ENV: 'testing', APP_DEBUG: 'false', APP_KEY: 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', APP_URL: 'http://127.0.0.1:8010', DB_CONNECTION: 'sqlite', DB_DATABASE: database, DATABASE_URL: '', CACHE_DRIVER: 'file', CACHE_STORE: 'file', CACHE_PATH: join(directory, 'cache'), SESSION_DRIVER: 'file', SESSION_FILES: join(directory, 'sessions'), SESSION_COOKIE: 'itechorbit_browser_test', SESSION_SECURE_COOKIE: 'false', QUEUE_CONNECTION: 'sync', MAIL_MAILER: 'array', SITE_OWNER_ID: '1', INERTIA_SSR_ENABLED: 'true', INERTIA_SSR_THROW_ON_ERROR: 'true', INERTIA_DEVTOOLS_ENABLED: 'false' };
+// Synthetic OAuth configuration enables UI/redirect coverage; browser tests intercept provider hosts.
+for (const provider of ['GOOGLE', 'GITHUB', 'LINKEDIN']) {
+  env[`${provider}_CLIENT_ID`] = 'browser-test-client'; env[`${provider}_CLIENT_SECRET`] = 'browser-test-secret';
+  env[`${provider}_REDIRECT_URI`] = `http://127.0.0.1:8010/login/${provider.toLowerCase()}/callback`;
+}
 const result = spawnSync('php', ['tests/browser/prepare.php'], { env, stdio: 'inherit' });
 if (result.status !== 0) { rmSync(directory, { recursive: true }); process.exit(result.status ?? 1); }
 const ssr = spawn('node', ['bootstrap/ssr/ssr.js'], { env, stdio: 'inherit' });

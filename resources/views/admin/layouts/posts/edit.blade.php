@@ -3,7 +3,7 @@
 @section('bread_camp', 'Post Edit')
 @section('action_url', url('posts/'.$post->id))
 @include('admin.includes.select2')
-@include('admin.includes.tinymce_editor')
+
 @include('admin.includes.custom_file_input')
 @section('content')
 <div class="card">

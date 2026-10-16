@@ -198,7 +198,7 @@ class ProjectController extends Controller
             'client_name' => ['required', 'string', 'max:255'],
             'skill_id' => ['required', 'integer', Rule::exists('skills', 'id')->where('user_id', $user_id)],
             'about_project' => ['required', 'string', 'max:255'],
-            'uploaded_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:1024'],
+            'uploaded_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'project_url' => ['nullable', 'url:http,https', 'max:255'],
             'order_number' => ['integer', 'nullable', 'max:100'],
         ]);

@@ -2,7 +2,7 @@
 @section('page_title', 'Privacy & Policy Create')
 @section('bread_camp', 'Privacy & Policy Create')
 @section('action_url', url('privacy-policies'))
-@include('admin.includes.tinymce_editor')
+
 @section('content')
 <div class="card">
     <!-- /.card-header -->

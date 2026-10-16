@@ -133,3 +133,11 @@ No database, dependency or environment changes are required. Build client and SS
 Project, experience, capability, overview and skill cards share restrained theme-aware depth and refined borders. Project contributions have a distinct accent rule, technology tags use subtle surfaces, and the project action has its own footer divider. Real uploaded thumbnails remain compact and uncropped. Six-column expertise and personal sticky navigation are preserved.
 
 Inline portfolio contact uses an open two-column composition with one form surface, replacing the enclosing colored parent card. The form inherits each theme, including Blueprint dark mode, and uses visible labels, focus rings, field errors and the existing submission status. The separate personal inquiry page is unchanged. Messages still target the portfolio owner; previews stay disabled. No dependency, database or environment changes are required.
+
+### Optional portfolio banner (2026-10-17)
+
+The existing **Basic information → Banner image** upload now appears below the personal navigation and above the introduction in all five templates. Public pages and private desktop/mobile previews share the same banner component and active-profile payload. The cover aligns with the header, content and footer, with borders and corners adapted to each theme. The profile photo remains separate.
+
+The display uses a 4:1 cover above 680px container width and 2:1 on smaller containers. Images are centered and cropped with `object-fit: cover`, without stretching or modifying the original upload. Any image dimensions are accepted under the existing JPG/PNG/WebP and 2,048 KB validation. Absent, removed, inactive or missing banners leave no cover area; browser image-load failures also remove the cover, including failures before React hydration. No migration or dependency changes are required.
+
+Regression coverage exercises every template and both preview widths, public desktop/mobile alignment, landscape/portrait/square uploads, original-file preservation, replacements, removal and failed-image fallback. PHP coverage checks shared preview/public data and inactive/missing-file handling.

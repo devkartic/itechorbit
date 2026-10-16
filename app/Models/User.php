@@ -88,6 +88,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return (int) Auth::user()->role_id === Role::$default_admin;
     }
 
+    public static function can_view_all_user_portfolios(): bool
+    {
+        return in_array((int) Auth::user()?->role_id, [Role::$default_admin, Role::$admin], true);
+    }
+
     public static function verify_ownership($created_by): bool
     {
         if (! Auth::check()) {

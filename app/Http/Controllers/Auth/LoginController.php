@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
+use App\Services\SocialProviders;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -35,7 +36,7 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-        return Inertia::render('Auth', ['mode' => 'login', 'googleEnabled' => filled(config('services.google.client_id'))]);
+        return Inertia::render('Auth', ['mode' => 'login', 'socialProviders' => app(SocialProviders::class)->available()]);
     }
 
     /**

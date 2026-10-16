@@ -2,7 +2,7 @@
 @section('page_title', 'Contact Edit')
 @section('bread_camp', 'Contact Edit')
 @section('action_url', url('contact-info/'.$contactInfo->id))
-@include('admin.includes.tinymce_editor')
+
 @section('content')
 <div class="card">
     <!-- /.card-header -->

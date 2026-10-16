@@ -6,7 +6,9 @@ use App\Models\Admin\Basic;
 use App\Services\PortfolioPresentation;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
 use Tests\TestCase;
@@ -63,6 +65,31 @@ class PortfolioTemplateTest extends TestCase
             $this->get('/workspace/portfolio-templates')->assertInertia(fn (Assert $page) => $page->where('template', $template)->where('publishedUrl', '/portfolios/DESIGNS'));
             $this->get('/portfolios/DESIGNS')->assertInertia(fn (Assert $page) => $page->component('Portfolio')->where('template', $template)->where('seo.noindex', false)->where('seo.canonical', config('app.url').'/portfolios/DESIGNS'));
             $this->get('/portfolios')->assertInertia(fn (Assert $page) => $page->where('template', $template));
+        }
+    }
+
+    public function test_banner_is_shared_by_public_templates_and_previews_with_safe_missing_file_fallback(): void
+    {
+        $user = $this->user(4, ['portfolio_status' => 1, 'portfolio_id' => 'BANNER']);
+        $name = 'banner-qa-'.Str::uuid().'.png';
+        UploadedFile::fake()->image('banner.png', 400, 1200)->move(public_path('uploads'), $name);
+        $basic = Basic::create(['user_id' => $user->id, 'first_name' => 'Test', 'last_name' => 'Engineer', 'designation' => 'Engineer',
+            'mobile' => '', 'address' => '', 'service_offering_title' => '', 'career_objective' => 'Software engineering.',
+            'experience_year' => 0, 'birth_date' => '1990-01-01', 'gender' => '', 'marital_status' => '', 'status' => 1,
+            'banner_image_path' => 'uploads/'.$name]);
+        try {
+            foreach (array_keys(PortfolioPresentation::TEMPLATES) as $template) {
+                $user->forceFill(['portfolio_template' => $template])->save();
+                $this->actingAs($user)->get('/workspace/portfolio-templates')->assertOk()->assertInertia(fn (Assert $page) => $page
+                    ->where('profile.banner', '/uploads/'.$name)->where('profile.image', null));
+                $this->get('/portfolios/BANNER')->assertOk()->assertInertia(fn (Assert $page) => $page->where('profile.banner', '/uploads/'.$name));
+            }
+            $basic->update(['banner_image_path' => 'uploads/missing-banner-qa.png']);
+            $this->get('/portfolios/BANNER')->assertInertia(fn (Assert $page) => $page->where('profile.banner', null));
+            $basic->update(['banner_image_path' => 'uploads/'.$name, 'status' => 0]);
+            $this->get('/portfolios/BANNER')->assertInertia(fn (Assert $page) => $page->where('profile.banner', null));
+        } finally {
+            @unlink(public_path('uploads/'.$name));
         }
     }
 

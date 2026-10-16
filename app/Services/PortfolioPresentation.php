@@ -32,6 +32,7 @@ class PortfolioPresentation
                 'designation' => $basic?->designation, 'introduction' => $this->content->html($basic?->self_introduction),
                 'objective' => $this->content->html($basic?->career_objective), 'additional' => $this->content->html($basic?->additional_information),
                 'image' => $this->content->media($basic?->profile_image_path),
+                'banner' => $this->content->media($basic?->banner_image_path),
                 'cv' => $basic?->cv_public_status ? $this->content->media($basic?->cv_path) : null,
                 'skills' => $user->skills->pluck('name'),
                 'services' => $user->services->map(fn ($service) => [...$service->only(['name', 'title']), 'about_service' => $this->content->html($service->about_service)]),

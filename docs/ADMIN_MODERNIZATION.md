@@ -79,3 +79,74 @@ The existing authenticated server-side endpoint continues to handle debounced se
 51 PHP tests / 1,104 assertions, 3 frontend tests and all 34 browser checks pass, as do TypeScript, ESLint, Pint and client/SSR production builds. Reviewed synthetic captures include [dark table](assets/admin-table-dark-desktop.png), [light table](assets/admin-table-desktop.png), [dark editor](assets/admin-editor-dark-desktop.png) and [mobile editor](assets/admin-editor-dark-mobile.png). Tests verify actual AJAX requests, sorting/search/pagination and error recovery, persistence of both themes, permission-sensitive flows and safe formatting round trips. No Lighthouse score is claimed.
 
 Deploy the matching PHP/config files and rebuilt client/SSR assets using the existing approved staging workflow; refresh the configuration cache if used and restart SSR. There are no new environment variables, migrations or external services. Revert this change and rebuild matching assets/config cache to roll back; saved rich content remains intact, though an older release will omit the new font-size/font-family presentation. No data rollback is required. Production deployment was not performed.
+
+
+## CKEditor replacement — 2026-10-17
+
+The shared ResourceForm now uses self-hosted CKEditor 5 (49.0.0) through the official React integration. Tiptap packages, its custom toolbar/formatting extension, and retired Blade TinyMCE/Summernote bootstraps have been removed. Every configured rich-text field uses the same CKEditor component, including portfolio basics, projects, experience, services, testimonials, article bodies, About, Services information, Privacy policy and Contact information. Plain code inputs remain plain text.
+
+The toolbar provides headings, font size/family, bold/italic/underline/strike, native links, lists, quotes, inline/block code, tables, clear formatting, source editing and undo/redo. The editor is loaded only in the browser on content forms; SSR renders a loading placeholder. HTML fallback preserves editing access if initialization fails. Source-mode edits synchronize on blur before a form save. Workspace light/dark tokens also style native CKEditor balloons. Existing bounded font attributes are converted into editor styles and back on save so public sanitization and previously stored formatting remain compatible. No existing content records are migrated.
+
+Licensing: this integration uses `licenseKey: 'GPL'` and only the open-source `ckeditor5` package; it uses no premium package, trial, account, CDN or usage-metered cloud plan. Its installed GPL distribution has no subscription expiry or editor-load quota. Free use requires compliance with GPL 2 or later; it is not an unrestricted proprietary lifetime license or a promise about future releases/support. The application's own license has not been changed. Resolve the application's GPL compliance before distributing/deploying this integration. Official references: [CKEditor licensing](https://ckeditor.com/docs/ckeditor5/latest/getting-started/licensing/license-and-legal.html), [activation](https://ckeditor.com/docs/ckeditor5/latest/getting-started/licensing/license-key-and-activation.html), and [React self-hosted installation](https://ckeditor.com/docs/ckeditor5/latest/getting-started/installation/self-hosted/react/react-default-npm.html).
+
+The CKEditor browser regressions cover desktop/mobile native link insertion and unlink/undo/redo, fonts and headings, validation, saved public rendering, reopening legacy formatting, HTML source saves, table persistence and every rich-text resource. Test data is isolated from application records.
+
+Validation: all 36 desktop/mobile browser tests passed, including CKEditor formatting/link/source/table persistence and multi-resource coverage. TypeScript, ESLint, client/SSR builds, and the three text-formatting sanitizer tests (15 assertions) passed. npm installation reported zero vulnerabilities.
+
+
+## Long privacy policy saves — 2026-10-17
+
+MySQL logs showed privacy-policy updates failing with SQLSTATE 22001 / error 1406 because pasted rich HTML exceeded the 65,535-byte TEXT column. Migration `2026_10_17_000001_expand_privacy_policy_content` widens only `privacy_policies.descriptions` to LONGTEXT and preserves existing rows. Its rollback intentionally retains the wider column to avoid truncating saved policies. Both create and update now validate a maximum of 1,000,000 content characters; the admin marks the policy description required to match server validation.
+
+The migration was previewed and applied to the local `php-workspace-itechorbit-1` application container after confirming APP_ENV=local. Other environments need this migration before accepting long pasted policies. No policy text or publication state was overwritten. Seven AdminWorkspace tests (304 assertions), two desktop/mobile long-policy save/reopen browser checks, Pint and ESLint passed. Browser fixtures exercise content above the old TEXT byte limit; MySQL column widening was checked separately because SQLite does not enforce that limit.
+
+
+## Upload validation and saved previews — 2026-10-17
+
+All five upload fields share explicit accepted extensions and size hints: article covers, project screenshots, profile banners and profile photos accept JPG/PNG/WebP up to 2,048 KB, and CVs accept PDF up to 5,000 KB. Create/edit image limits now match. Optional file inputs are not serialized as empty form fields; clearing a replacement preserves the existing file. Selection checks show field errors immediately, while server image/MIME checks remain authoritative and reject renamed non-image/non-PDF content.
+
+The shared upload component shows selected image previews and saved image thumbnails. Saved PDFs have an Open PDF link with target=_blank and inline file headers. Existing files appear on edit/detail screens where supported. Missing or unsupported stored files show an unavailable message. Preview metadata is derived from allowlisted model fields and verified files, not client-supplied paths.
+
+`/workspace/media/{resource}/{record}/{field}` requires authentication, a valid account, resource index/edit permission and ownership (or existing super-admin privileges). It serves only the allowlisted stored upload fields for posts/projects/basics, resolves files inside uploads, checks the stored MIME type and sends private/no-store/noindex responses. Opening a CV through the admin preview does not toggle its public-download setting.
+
+Verification includes all four image fields, malformed/oversized uploads, image persistence and previews, existing CV preservation, PDF link/new-tab requests, permission/ownership checks and path-traversal rejection. Browser tests use synthetic uploads and delete their own files.
+
+### Contact inquiry reading view — 2026-10-17
+
+Contact detail pages now use a dedicated message card with subject, sender initials/name/email, received date/time in UTC, and a full-width readable message body. A compact Reply link opens the email application with an encoded destination and reply subject. Raw record fields and numeric operational statuses are omitted from this view. Other resource detail pages retain their existing layout.
+
+The card uses workspace theme tokens for light/dark mode, 24px internal padding on tablet/desktop and 16px on mobile. Long text wraps, newlines are preserved, and message HTML is escaped. Missing fields have clear fallbacks; invalid saved email addresses do not produce reply links. No API, schema, delivery or permission changes are required. Opening an inquiry still marks it read through the existing controller.
+
+Verification includes component safety/fallback tests and isolated browser flows at 390px, 768px and 1440px in both themes, covering reply encoding, keyboard focus, wrapping, read status and existing deletion. Screenshots use synthetic inquiries only.
+
+### Social sign-in and connected accounts — 2026-10-17
+
+Login and registration offer Google, LinkedIn and GitHub when each provider has complete configuration and the `social_accounts` migration has run. The centered form uses compact outlined provider links. Account settings shows connection status and Connect actions. Existing users must sign in using an existing method and explicitly connect a matching-email provider; email matching alone does not grant access. If they previously used Google through a password account without a recorded provider ID, they can use password recovery and then connect Google.
+
+The shared controller retains `/login/google` and its `login.google` route name. Public starts use `GET /login/{provider}`, callbacks use `GET /login/{provider}/callback`, and connection starts use authenticated, CSRF-protected `POST /account/connections/{provider}`. Only `google`, `linkedin`, and `github` are accepted; LinkedIn maps to Socialite's `linkedin-openid` driver. `Auth` receives public `socialProviders` entries (`id`, `name`, `url`) instead of `googleEnabled`; Account settings additionally receives a `connected` boolean. No client secrets, identity IDs or access tokens are included in these props.
+
+Connections store user ID, provider and provider user ID, with unique constraints on provider/identity and user/provider. MySQL/MariaDB identity matching uses a binary collation. The migration backfills nonempty legacy Google `users.provider_id` values, retains that column, and refuses duplicate legacy identities before creating the table. New registrations are active role-4 users with verified provider email, random password hashes and portfolio publication disabled. Google/LinkedIn registration and linking require a verified email claim; GitHub's default `user:email` scope resolves the verified primary email. Returning connections authenticate by stable provider identity, not the current provider email. Linking preserves local email, role and publication settings. Missing or unverified email prompts use of normal registration instead. Users can set a usable local password through password recovery. Disconnecting providers is not implemented.
+
+OAuth state checking stays enabled, callback context expires after ten minutes and is consumed once, connection callbacks bind to the initiating authenticated user, disabled accounts are rejected, and successful logins regenerate the session. Database transactions and unique constraints prevent duplicate connection writes. Provider errors are shown without exposing response bodies/tokens. No provider access or refresh tokens are stored.
+
+#### Provider application setup
+
+Create OAuth applications under the site's organization accounts and configure only the providers you intend to enable. In each environment, set its server-only client ID, secret and exact callback URL using the placeholders in `.env.example`:
+
+| Provider | Environment settings | Production callback |
+| --- | --- | --- |
+| Google | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | `https://itechorbit.com/login/google/callback` |
+| LinkedIn | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REDIRECT_URI` | `https://itechorbit.com/login/linkedin/callback` |
+| GitHub | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI` | `https://itechorbit.com/login/github/callback` |
+
+Use the canonical host's exact casing/hostname in both provider and app configuration. Local/staging applications need their own exact callback URLs. Google needs a Web application OAuth client with the application's origins and callback registered, and its consent screen configured for the desired audience. LinkedIn needs **Sign In with LinkedIn using OpenID Connect** enabled with `openid`, `profile`, and `email` scopes; email claims may be unavailable for some accounts. GitHub uses an OAuth App with its authorization callback configured; the app requests only the default `user:email` scope. References: [Google web-server OAuth](https://developers.google.com/identity/protocols/oauth2/web-server), [LinkedIn OIDC](https://learn.microsoft.com/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2), [GitHub OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app), [Laravel Socialite](https://laravel.com/framework/docs/socialite).
+
+#### Deployment and verification
+
+Back up the database with the normal deployment procedure. Deploy PHP code, run `php artisan migrate --path=database/migrations/2026_10_17_000002_create_social_accounts_table.php`, configure credentials on the server, rebuild client/SSR assets, refresh configuration caches through the normal deployment process, and restart SSR/long-running workers. The providers remain unavailable before the table exists. A migration error about duplicate legacy identities requires resolving those specific duplicates before retrying. No existing accounts are deleted or assigned different roles.
+
+To disable a provider, remove its server-side client credentials and refresh the config cache. Preserve `social_accounts` when rolling back presentation code; dropping it would discard connections, and the old Google-only controller does not implement the explicit linking policy. Do not roll back the connection table as a routine disable operation.
+
+Automated coverage uses mocked provider user data/Guzzle responses for all three providers, legacy migration and identity uniqueness, email collisions, explicit connection, disabled accounts, expiry/replay/cancellation, session regeneration and GitHub verified-primary-email selection. Browser coverage uses synthetic OAuth credentials, captures login redirect responses before navigating to real providers, intercepts connection consent navigation, and checks buttons, errors, connected state and responsive centering. Live consent and token exchange still require staging verification with real provider applications; automated results do not certify provider-console configuration.
+
+Local development verification: `APP_ENV=local` was confirmed inside `php-workspace-itechorbit-1`. The social-account migration was reviewed with `--pretend`, applied successfully to the local MariaDB database, and recorded as batch 5 / Ran. No production migration was performed. Automated verification passed 67 PHP tests / 1,780 assertions, 5 frontend tests, and 8 affected desktop/mobile browser regressions (6 existing authentication/account checks plus 2 social sign-in checks), along with TypeScript, ESLint, Pint and client/SSR builds.

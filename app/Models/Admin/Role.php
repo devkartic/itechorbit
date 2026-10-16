@@ -18,6 +18,8 @@ class Role extends Model
 
     public static int $default_admin = 1;
 
+    public static int $admin = 2;
+
     /**
      * Get the users for the role.
      */

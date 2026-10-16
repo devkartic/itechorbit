@@ -2,7 +2,7 @@
 @section('page_title', 'About Create')
 @section('bread_camp', 'About Create')
 @section('action_url', url('about-info'))
-@include('admin.includes.tinymce_editor')
+
 @section('content')
 <div class="card">
     <!-- /.card-header -->

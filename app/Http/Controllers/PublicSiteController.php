@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Requests\ContactRequest;
 use App\Jobs\ContactMailerJob;
 use App\Models\Admin\AboutInfo;
 use App\Models\Admin\Category;
 use App\Models\Admin\ContactInfo;
+use App\Models\Admin\Link;
+use App\Models\Admin\Permission;
 use App\Models\Admin\Post;
 use App\Models\Admin\PrivacyPolicy;
 use App\Models\Admin\Project;
@@ -121,9 +124,16 @@ class PublicSiteController extends Controller
     public function portfolio(?string $key = null)
     {
         $user = $key ? User::where('portfolio_id', $key)->firstOrFail() : User::findOrFail(config('site.owner_id'));
-        abort_unless($user->status && $user->portfolio_status, 403, 'This portfolio is not available.');
+        $adminPreview = ! ($user->status && $user->portfolio_status);
+        if ($adminPreview) {
+            abort_unless(User::can_view_all_user_portfolios(), 403, 'This portfolio is not available.');
+            PermissionController::initial_verification(request()->user());
+            abort_unless(Permission::has_permission(Link::where('url', 'users')->value('id'), 'index'), 403);
+        }
 
-        return $this->page('Portfolio', $user->name.' — Engineering portfolio', 'Published engineering work and professional experience.', app(PortfolioPresentation::class)->data($user));
+        return $this->page('Portfolio', $user->name.' — Engineering portfolio', 'Published engineering work and professional experience.', [
+            ...app(PortfolioPresentation::class)->data($user), 'adminPreview' => $adminPreview,
+        ], noindex: $adminPreview);
     }
 
     public function offerings()

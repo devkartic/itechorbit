@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateAccountPasswordRequest;
 use App\Http\Requests\UpdateAccountRequest;
+use App\Models\SocialAccount;
+use App\Services\SocialProviders;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -35,6 +37,7 @@ class AccountController extends Controller
     {
         return Inertia::render('Account', [
             'mode' => $mode,
+            'socialProviders' => collect(app(SocialProviders::class)->available())->map(fn ($provider) => [...$provider, 'connected' => SocialAccount::where('user_id', $request->user()->id)->where('provider', $provider['id'])->exists()])->all(),
             'account' => [...$request->user()->only(['name', 'email']), 'verified' => $request->user()->hasVerifiedEmail(), 'joined' => $request->user()->created_at?->toDateString()],
         ]);
     }

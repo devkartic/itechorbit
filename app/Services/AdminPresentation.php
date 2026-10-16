@@ -71,6 +71,26 @@ class AdminPresentation
         return $values;
     }
 
+    private function attachments(string $resource, Model $record, array $fields): array
+    {
+        $attachments = [];
+        foreach ($fields as $field) {
+            $storage = $field['storage'] ?? null;
+            if (! $storage || ! $record->{$storage}) {
+                continue;
+            }
+            $path = MediaFiles::resolve($record->{$storage});
+            $mime = $path ? mime_content_type($path) : null;
+            $type = match ($mime) {
+                'application/pdf' => 'pdf', 'image/jpeg', 'image/png', 'image/webp' => 'image', default => 'unavailable'
+            };
+            $attachments[$storage] = ['label' => $field['label'], 'name' => basename($record->{$storage}), 'type' => $type,
+                'url' => $type !== 'unavailable' ? route('workspace.media', ['resource' => $resource, 'record' => $record->id, 'field' => $storage], false) : null];
+        }
+
+        return $attachments;
+    }
+
     public function render(string $resource, string $action, array $data = [])
     {
         $module = config('admin.'.$resource);
@@ -119,6 +139,7 @@ class AdminPresentation
         return Inertia::render('Admin/Resource', [
             'resource' => $resource, 'title' => $module['title'], 'action' => $action,
             'fields' => $fields, 'options' => $options, 'record' => $values,
+            'attachments' => $record ? $this->attachments($resource, $record, $fields) : [],
             'previews' => $action === 'show' ? collect($fields)->where('type', 'richtext')->mapWithKeys(fn ($field) => [$field['name'] => app(PublicContent::class)->html($values[$field['name']] ?? '')])->all() : [],
             'records' => $records, 'filters' => $filters, 'columns' => $table->columns($resource),
             'abilities' => $this->abilities($resource), 'navigation' => $this->navigation(),

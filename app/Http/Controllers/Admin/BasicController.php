@@ -165,7 +165,7 @@ class BasicController extends Controller
             'marital_status' => ['required', 'string', 'max:10'],
             'uploaded_banner_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'uploaded_profile_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
-            'uploaded_cv' => ['mimes:pdf', 'max:5000'],
+            'uploaded_cv' => ['nullable', 'file', 'mimes:pdf', 'max:5000'],
         ]);
     }
 
@@ -305,7 +305,7 @@ class BasicController extends Controller
             'marital_status' => ['required', 'string', 'max:10'],
             'uploaded_banner_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'uploaded_profile_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
-            'uploaded_cv' => ['mimes:pdf', 'max:5000'],
+            'uploaded_cv' => ['nullable', 'file', 'mimes:pdf', 'max:5000'],
         ]);
     }
 

@@ -6,11 +6,17 @@ import type { Project } from '@/lib/types';
 import { dateLabel } from '@/lib/utils';
 
 export type PortfolioTemplate = 'studio' | 'executive' | 'blueprint' | 'editorial' | 'spotlight';
-export type Profile = { name: string; portfolioId: string | null; designation?: string | null; introduction: string; objective?: string; additional: string; image: string | null; cv: string | null; skills: string[]; services: { name: string; title: string; about_service: string }[]; experiences: { designation: string; organization: string; responsibilities: string; join_date: string | null; resign_date: string | null; descriptions: string }[]; socials: { name: string; url: string }[] };
+export type Profile = { name: string; portfolioId: string | null; designation?: string | null; introduction: string; objective?: string; additional: string; image: string | null; banner: string | null; cv: string | null; skills: string[]; services: { name: string; title: string; about_service: string }[]; experiences: { designation: string; organization: string; responsibilities: string; join_date: string | null; resign_date: string | null; descriptions: string }[]; socials: { name: string; url: string }[] };
 export type PortfolioData = { profile: Profile; projects: Project[]; template: PortfolioTemplate };
 const names = { studio: 'Studio', executive: 'Executive', blueprint: 'Blueprint', editorial: 'Editorial', spotlight: 'Spotlight' };
 const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('');
 
+function Banner({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  // An SSR image can fail before React attaches its error handler; check it when the ref mounts too.
+  return <div className="pf-banner" aria-hidden="true"><img ref={image => { if (image?.complete && image.naturalWidth === 0) setFailed(true); }} src={src} alt="" width={1600} height={400} fetchPriority="high" onError={() => setFailed(true)} /></div>;
+}
 function Rich({ html, className = '' }: { html?: string; className?: string }) {
   return html ? <div className={`pf-rich ${className}`} dangerouslySetInnerHTML={{ __html: html }} /> : null;
 }
@@ -91,6 +97,7 @@ export function PortfolioView({ profile, projects, template, preview = false }: 
   const hero = <Hero profile={profile} projects={projects} variant={style}>{projects.length > 0 && <a href="#projects" className="pf-scroll-link"><span><ArrowDown size={15} /></span>Explore the work</a>}</Hero>;
   return <div ref={canvas} id="portfolio-top" className={`portfolio-view pf-${style}`} data-template={style} onClick={preview ? event => { if ((event.target as Element).closest('a')) event.preventDefault(); } : undefined}>
     <SectionNav profile={profile} projects={projects} /><div className="shell pf-shell">
+      {profile.banner && <Banner key={profile.banner} src={profile.banner} />}
       {style === 'executive' ? <div className="pf-executive-stage">{hero}<div className="pf-executive-signoff"><span>ENGINEERING / PERSPECTIVE / EXECUTION</span><Fingerprint size={22} strokeWidth={1} /></div></div>
         : style === 'blueprint' ? <><div className="pf-terminal-bar"><span><span className="pf-terminal-dot" /> engineer.profile</span><span>HUMAN AT THE CORE / ENGINEERING AT THE EDGES</span></div>{hero}</>
         : style === 'editorial' ? <><div className="pf-editorial-masthead"><span>THE ENGINEERING EDITION</span><span>INDEPENDENT THINKING. INTENTIONAL CRAFT.</span></div>{hero}</>

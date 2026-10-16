@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactInfoController;
 use App\Http\Controllers\Admin\ExperienceController;
 use App\Http\Controllers\Admin\LinkController;
+use App\Http\Controllers\Admin\MediaPreviewController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -24,11 +25,11 @@ use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ContactController;
-use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\SocialLoginController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,10 +48,13 @@ Route::get('/', [PublicSiteController::class, 'home'])->name('blogs.view');
 
 Auth::routes(['verify' => true]);
 
-//  For Google
-Route::get('/login/google', [GoogleController::class, 'login'])->name('login.google');
-Route::get('/login/google/callback', [GoogleController::class, 'callback']);
+Route::get('/login/google', [SocialLoginController::class, 'login'])->defaults('provider', 'google')->middleware(['guest', 'throttle:20,1'])->name('login.google');
+Route::get('/login/{provider}', [SocialLoginController::class, 'login'])->whereIn('provider', ['linkedin', 'github'])->middleware(['guest', 'throttle:20,1'])->name('login.social');
+Route::get('/login/{provider}/callback', [SocialLoginController::class, 'callback'])->whereIn('provider', ['google', 'linkedin', 'github'])->middleware('throttle:20,1')->name('login.social.callback');
+Route::post('/account/connections/{provider}', [SocialLoginController::class, 'connect'])->whereIn('provider', ['google', 'linkedin', 'github'])->middleware(['auth', 'throttle:10,1'])->name('account.connections');
 Route::get('/workspace/data/{resource}', TableController::class)->middleware('auth')->whereIn('resource', array_keys(config('admin')))->name('workspace.data');
+
+Route::get('/workspace/media/{resource}/{record}/{field}', MediaPreviewController::class)->middleware('auth')->whereIn('resource', ['posts', 'projects', 'basics'])->whereNumber('record')->where('field', '[a-z_]+')->name('workspace.media');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/workspace/portfolio-templates', [PortfolioTemplateController::class, 'index'])->name('workspace.portfolio-templates');

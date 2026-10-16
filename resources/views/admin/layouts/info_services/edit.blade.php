@@ -2,7 +2,7 @@
 @section('page_title', 'Service Edit')
 @section('bread_camp', 'Service Edit')
 @section('action_url', url('service-info/'.$serviceInfo->id))
-@include('admin.includes.tinymce_editor')
+
 @section('content')
 <div class="card">
     <!-- /.card-header -->

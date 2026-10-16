@@ -181,7 +181,7 @@ class PostController extends Controller
             'title' => ['required', 'string', 'max:200'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'body' => ['required', 'string', 'max:1000000'],
-            'uploaded_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:1024'],
+            'uploaded_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
         ]);
     }
 

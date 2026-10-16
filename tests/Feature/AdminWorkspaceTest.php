@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin\Basic;
 use App\Models\Admin\Category;
 use App\Models\Admin\Link;
 use App\Models\Admin\Permission;
 use App\Models\Admin\Post;
+use App\Models\Admin\PrivacyPolicy;
 use App\Models\Admin\Project;
 use App\Models\Admin\Route;
 use App\Models\Admin\Skill;
@@ -54,6 +56,58 @@ class AdminWorkspaceTest extends TestCase
         $this->deleteJson('/categories/'.$category->id)->assertUnprocessable();
         $this->deleteJson('/posts/'.$post->id)->assertOk();
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+    }
+
+    public function test_large_privacy_policies_save_and_oversized_input_has_a_field_error(): void
+    {
+        $this->actingAs($this->user(1));
+        $paragraph = '<p>At iTechOrbit.com, one of our main priorities is the privacy of our visitors. If you have additional questions, do not hesitate to contact us.</p>';
+        $html = '<h2>Privacy Policy</h2>'.str_repeat($paragraph, 600)."<h2>Children's Information</h2><p>We protect children's privacy.</p>";
+        $this->assertGreaterThan(65535, strlen($html));
+        $data = ['title' => 'Privacy policy', 'subtitle' => 'How we handle personal information', 'descriptions' => $html, 'is_checked' => 'true'];
+        $this->postJson('/privacy-policies', $data)->assertOk();
+        $policy = PrivacyPolicy::firstOrFail();
+        $this->assertSame($html, $policy->descriptions);
+        $this->get('/privacy-n-policy')->assertOk()->assertInertia(fn (Assert $page) => $page->where('content', fn ($content) => html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8') === $html));
+
+        $updated = $html.'<h2>Consent</h2><p>By using our website, you consent to our Privacy Policy.</p>';
+        $this->putJson('/privacy-policies/'.$policy->id, [...$data, 'descriptions' => $updated])->assertOk();
+        $this->assertSame($updated, $policy->fresh()->descriptions);
+        $this->putJson('/privacy-policies/'.$policy->id, [...$data, 'descriptions' => str_repeat('x', 1000001)])->assertUnprocessable()->assertJsonValidationErrors('descriptions');
+        $this->assertSame($updated, $policy->fresh()->descriptions);
+        $this->postJson('/privacy-policies', [...$data, 'descriptions' => ''])->assertUnprocessable()->assertJsonValidationErrors('descriptions');
+    }
+
+    public function test_cv_upload_accepts_pdf_and_optional_uploads_preserve_the_existing_file(): void
+    {
+        $this->actingAs($this->user(1));
+        $data = ['first_name' => 'Test', 'last_name' => 'Engineer', 'designation' => 'Engineer', 'mobile' => '0123456789',
+            'career_objective' => 'Build software.', 'self_introduction' => 'A test profile.', 'service_offering_title' => 'Engineering',
+            'additional_information' => 'Test details.', 'address' => 'Test address', 'birth_date' => '1990-01-01',
+            'experience_year' => 5, 'gender' => 'Other', 'marital_status' => 'Single', 'is_checked' => 'true', 'cv_public_status' => 'false'];
+        $this->postJson('/basics', [...$data, 'uploaded_cv' => null])->assertOk();
+        $basic = Basic::firstOrFail();
+        $this->assertNull($basic->cv_path);
+        $pdf = UploadedFile::fake()->createWithContent('Kartic-Resume-SP.pdf', "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF");
+        $upload = new UploadedFile($pdf->getRealPath(), 'Kartic-Resume-SP.pdf', 'application/octet-stream', null, true);
+        $this->put('/basics/'.$basic->id, [...$data, 'uploaded_cv' => $upload], ['Accept' => 'application/json'])->assertOk();
+        $path = $basic->fresh()->cv_path;
+        $this->assertNotNull($path);
+        $this->assertStringEndsWith('.pdf', $path);
+        $this->assertFileExists(public_path($path));
+        try {
+            $this->putJson('/basics/'.$basic->id, [...$data, 'uploaded_cv' => null])->assertOk();
+            $this->assertSame($path, $basic->fresh()->cv_path);
+            $this->putJson('/basics/'.$basic->id, $data)->assertOk();
+            $this->assertSame($path, $basic->fresh()->cv_path);
+            $fake = UploadedFile::fake()->createWithContent('renamed.pdf', 'This is plain text, not a PDF document.');
+            $fakeUpload = new UploadedFile($fake->getRealPath(), 'renamed.pdf', 'application/pdf', null, true);
+            $this->put('/basics/'.$basic->id, [...$data, 'uploaded_cv' => $fakeUpload], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('uploaded_cv');
+            $this->assertSame($path, $basic->fresh()->cv_path);
+            $this->put('/basics/'.$basic->id, [...$data, 'uploaded_cv' => UploadedFile::fake()->create('large.pdf', 5001, 'application/pdf')], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('uploaded_cv');
+        } finally {
+            @unlink(public_path($path));
+        }
     }
 
     public function test_permissions_and_ownership_apply_to_existing_actions(): void

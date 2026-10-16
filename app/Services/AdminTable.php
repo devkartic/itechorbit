@@ -49,7 +49,7 @@ class AdminTable
         if ($module['owner'] && ! User::verify_default_admin()) {
             $query->where('user_id', request()->user()->id);
         }
-        if ($resource === 'users' && ! User::verify_default_admin()) {
+        if ($resource === 'users' && ! User::can_view_all_user_portfolios()) {
             $query->where('id', request()->user()->id);
         }
 
@@ -75,10 +75,20 @@ class AdminTable
         if ($sort !== 'id') {
             $query->orderBy('id', 'desc');
         }
+        $portfolios = $resource === 'users' && User::can_view_all_user_portfolios();
         $columns = array_values(array_unique(['id', ...$this->columns($resource), ...($resource === 'posts' ? ['is_private'] : [])]));
+        $selected = [...$columns, ...($portfolios ? ['portfolio_id'] : [])];
 
         // List responses never include rich bodies, passwords, provider IDs or tokens.
-        return $query->select($columns)->paginate($filters['per_page'] ?: 20)->withQueryString()->through(fn ($item) => $item->only($columns));
+        return $query->select($selected)->paginate($filters['per_page'] ?: 20)->withQueryString()->through(function ($item) use ($columns, $portfolios) {
+            $row = $item->only($columns);
+            if ($portfolios) {
+                $row['public_portfolio'] = filled($item->portfolio_id)
+                    ? '/portfolios/'.rawurlencode($item->portfolio_id) : null;
+            }
+
+            return $row;
+        });
     }
 
     public function response(Request $request, string $resource)
