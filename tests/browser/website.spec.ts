@@ -295,8 +295,10 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect(page.getByRole('button', { name: 'Mobile preview', exact: true })).toHaveAttribute('aria-pressed', 'true');
     expect(await preview.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBeTruthy();
     await page.getByRole('button', { name: 'Desktop preview', exact: true }).click();
-    await page.getByRole('button', { name: 'Save template', exact: true }).click();
-    await expect(page.locator('.workspace-notice[role="status"]')).toContainText('Portfolio template saved.');
+    if (await page.getByRole('button', { name: 'Save template', exact: true }).isEnabled()) {
+      await page.getByRole('button', { name: 'Save template', exact: true }).click();
+      await expect(page.locator('.workspace-notice[role="status"]')).toContainText('Portfolio template saved.');
+    }
     await page.reload();
     await expect(page.getByRole('radio', { name: new RegExp(name) })).toBeChecked();
     await page.goto('/portfolios/TESTPROFILE');
@@ -418,6 +420,7 @@ test('portfolio template studio previews five layouts and persists the public se
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.getByRole('link', { name: 'Main site', exact: true })).toBeInViewport();
     await page.screenshot({ path: testInfo.outputPath(`portfolio-${name.toLowerCase()}.png`), fullPage: true });
+    await page.locator('.pf-connect').screenshot({ path: testInfo.outputPath(`contact-${name.toLowerCase()}.png`) });
     await page.getByRole('link', { name: 'Main site', exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Build, Modernize');

@@ -479,3 +479,5 @@
 @container(max-width:800px) { .pf-connect { grid-template-columns:1fr; gap:26px; padding-top:30px; } .pf-connect-copy { padding:0; } .pf-connect-details { max-width:none; margin-top:22px; padding-top:18px; } .pf-connect h2 { font-size:40px; } .pf-connect-icon { width:46px; height:46px; margin-bottom:20px; } }
 @container(max-width:680px) { .pf-connect-form { padding:22px; border-radius:18px; } .pf-connect-form .form-control { font-size:16px; } .pf-connect-form fieldset>.grid { grid-template-columns:1fr; gap:20px; } .portfolio-view :is(.pf-experience-body,.pf-services>article) { padding:22px; } .portfolio-view .pf-experience h3,.portfolio-view .pf-services h3 { font-size:21px; } .portfolio-view .pf-profile-row .pf-skills>span { padding:12px; gap:8px; } }
 @media(prefers-reduced-motion:reduce) { .portfolio-view :is(.pf-experience-body,.pf-services>article,.pf-text-link svg) { transition:none; } }
+
+.portfolio-view .pf-project:is(:hover,:focus-within) { border-color:color-mix(in srgb,var(--pf-accent) 40%,var(--pf-line)); box-shadow:0 6px 12px color-mix(in srgb,var(--pf-ink) 5%,transparent),0 20px 42px color-mix(in srgb,var(--pf-ink) 12%,transparent); }

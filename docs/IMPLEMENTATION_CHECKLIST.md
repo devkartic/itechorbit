@@ -272,4 +272,4 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Inspect existing card styles and nested dark contact container; retain real screenshots, five themes, six-column expertise and sticky header.
 - [x] Refine project, experience, capability, overview and skill surfaces, typography, contribution labels, tags and restrained hover depth.
 - [x] Replace the enclosing contact panel with an open two-column composition and one theme-aware form card; preserve personal recipients and validation.
-- [ ] Verify types, lint, builds, five-theme desktop/mobile layouts, contact submission and screenshots; review final captures.
+- [x] Types, lint, client/SSR builds and all 6 affected desktop/mobile browser scenarios pass: five-theme navigation, contrast sampling, card hover, personal inquiry submission and screenshot upload. Review and refresh captures. Fix project hover specificity; prevent template tests from saving an unchanged selection after a preceding failed scenario.

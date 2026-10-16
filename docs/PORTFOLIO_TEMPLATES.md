@@ -127,3 +127,9 @@ The Technology & expertise grid uses six equal columns above 1,023px, three from
 The template chooser includes an expandable content-preparation guide using existing public preview data. It checks presence of role, objective, skills, projects and a publicly visible CV; this is not a quality score or a promise of interviews. Existing registration, email verification, permission configuration and administrator-controlled publication still apply. Self-service automatic publication is not implemented by this presentation change.
 
 No database, dependency or environment changes are required. Build client and SSR assets and restart the existing SSR process as part of the documented deployment workflow. Revert this presentation commit and rebuild to roll back; no data rollback is needed.
+
+
+### Card and contact surfaces (2026-10-16)
+Project, experience, capability, overview and skill cards share restrained theme-aware depth and refined borders. Project contributions have a distinct accent rule, technology tags use subtle surfaces, and the project action has its own footer divider. Real uploaded thumbnails remain compact and uncropped. Six-column expertise and personal sticky navigation are preserved.
+
+Inline portfolio contact uses an open two-column composition with one form surface, replacing the enclosing colored parent card. The form inherits each theme, including Blueprint dark mode, and uses visible labels, focus rings, field errors and the existing submission status. The separate personal inquiry page is unchanged. Messages still target the portfolio owner; previews stay disabled. No dependency, database or environment changes are required.
