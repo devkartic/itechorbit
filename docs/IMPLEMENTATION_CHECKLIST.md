@@ -282,8 +282,4 @@ Status legend: [x] implemented/verified, [ ] pending. Updated continuously; inco
 - [x] Refine server-side list presentation, status badges, action states, filter summaries/reset and live feedback; retain authenticated, scoped endpoints.
 - [x] Verify 51 PHP tests / 1,104 assertions, 3 frontend tests, all 34 desktop/mobile browser checks, TypeScript, lint, Pint and client/SSR builds. Formatting survives save/reopen/public display; unsafe formatting is rejected; both themes persist through reload/navigation. Review and save light/dark captures. Initial category-label assertion caught the new marker text being combined with the group name; keep the group name in its own span.
 
-
-## Sidebar collapsed by default — 2026-10-16
-- [x] Remove desktop-only forced-open sidebar and reserved left margin. Start collapsed on every viewport with a visible menu toggle and matching aria-controls.
-- [x] Reuse the navigation drawer, close button, overlay, Escape dismissal and focus trap/restoration for desktop and mobile.
-- [x] All 8 affected desktop/mobile browser scenarios pass, including default collapse, drawer controls, Escape/focus restoration, navigation, CRUD, tables, editor and template chooser. Types, lint and client/SSR builds pass. Initial desktop checks exposed the remaining legacy forced-open rule; remove it and rerun successfully. Refresh captures.
+- [x] Restore previous sidebar behavior at user request: expanded desktop navigation and collapsed mobile drawer. Four affected desktop/mobile CRUD/table browser checks, types, lint and client/SSR builds pass.
