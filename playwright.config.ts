@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+process.env.ITECHORBIT_TEST_MAILBOX_PATH ??= join(mkdtempSync(join(tmpdir(), 'itechorbit-mailbox-')), 'messages.jsonl');
 export default defineConfig({
   testDir: './tests/browser', fullyParallel: false, workers: 1, retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],

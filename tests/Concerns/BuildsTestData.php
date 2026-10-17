@@ -37,7 +37,7 @@ trait BuildsTestData
         $menu = Menu::firstOrCreate(['name' => 'Test workspace'], ['status' => 1]);
         $module = Module::firstOrCreate(['name' => 'Management'], ['menu_id' => $menu->id, 'status' => 1]);
         foreach ([...array_keys(config('admin')), 'permissions'] as $slug) {
-            Link::firstOrCreate(['url' => $slug], ['name' => $slug, 'module_id' => $module->id, 'status' => 1]);
+            Link::updateOrCreate(['url' => $slug], ['name' => config('admin.'.$slug.'.title', 'Roles & permissions'), 'module_id' => $module->id, 'status' => 1]);
         }
         foreach (['index', 'create', 'edit', 'destroy'] as $name) {
             Route::firstOrCreate(['name' => $name], ['status' => 1]);

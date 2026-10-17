@@ -6,7 +6,7 @@ No production deployment or migration has been performed. Local tests use synthe
 
 Laravel 13 requires PHP >=8.3. The target runtime is the latest stable PHP 8.5 patch, with Composer platform checks and the full regression suite on staging. This workstation runs PHP 8.3.3; do not use that old patch in production. PHP's official support table lists 8.5 as actively supported: https://www.php.net/supported-versions.php. Node 24 LTS is used locally and in CI. Use the locked Composer/npm dependencies, not unbounded updates during deployment.
 
-Preserve the existing database engine, APP_KEY, uploads and environment configuration. Confirm actual MySQL/MariaDB version, collation, SQL mode and schema before release. Supply mbstring, DOM/XML, fileinfo, PDO MySQL, OpenSSL and GD; PDO SQLite is needed for tests. Redis is optional and must have its PHP driver if enabled. Existing contact mail uses database queues; supervise the worker. No scheduled application tasks were found, so no scheduler service is introduced.
+Preserve the existing database engine, APP_KEY, uploads and environment configuration. Confirm actual MySQL/MariaDB version, collation, SQL mode and schema before release. Supply mbstring, DOM/XML, fileinfo, PDO MySQL, OpenSSL and GD; PDO SQLite is needed for tests. Redis is optional and must have its PHP driver if enabled. Existing contact mail uses database queues; supervise the worker. Email notices also require the dedicated worker and scheduler described below.
 
 Use `public/` as document root. Example Nginx and Supervisor configurations are in `deploy/`; adapt paths, PHP socket, service users, HTTPS and logging retention to the operator's infrastructure. Bind SSR to loopback port 13714 and supervise it. `/healthz` proves the HTTP application boots; it does not prove database, mail, queue or SSR readiness. Check a public page for actual rendered `<h1>` and canonical tags to monitor SSR.
 
@@ -43,3 +43,19 @@ The application now has a standalone Git repository at `/Users/karticgharami/Wor
 ## Browser history encryption and local HTTP
 
 Inertia history encryption requires `window.crypto.subtle` in a secure browser context (https://inertiajs.com/docs/v3/security/history-encryption). Custom development origins such as `http://itechorbit.local` do not have that API. Configuration now defaults encryption off for local/testing and on for APP_ENV=production; `INERTIA_HISTORY_ENCRYPT` can explicitly override it. Use HTTPS and trusted-proxy configuration in production, preserving its default privacy protection. After changing environment/configuration, clear/rebuild the configuration cache as appropriate and reload the page. Do not patch vendor JavaScript or disable CSRF/authentication to work around this error. Locally the configuration cache was cleared and client/SSR assets rebuilt.
+
+## Administrative email notices
+
+Apply `2026_10_17_000004_register_workspace_navigation.php` with this release. It registers the previously hardcoded Overview, Portfolio templates and email notice links in the existing navigation tables, and fills absent resource entries. Existing navigation records and permission assignments are preserved. The sidebar follows the names, parent groups/modules, active states and order numbers managed through Navigation groups, Navigation modules and Navigation links. Overview and Portfolio templates initially appear under Workspace → General. Hiding an entry changes navigation visibility; page access remains governed by the existing authorization checks. Email notices retain their Admin/Super Admin restriction regardless of sidebar configuration. The data migration intentionally retains records on rollback because administrators may have edited them or assigned permissions.
+
+Review and apply the additive `2026_10_17_000003_create_mail_notices_tables.php` migration during deployment. Configure a real mail transport and sender using the existing `MAIL_*` environment variables. An asynchronous `QUEUE_CONNECTION` is required; log/array mailers and synchronous queues disable sending. `NOTICE_MAIL_PER_MINUTE` defaults to 30; match it to the provider's limits. Accepted means the provider accepted the message, not that it reached an inbox.
+
+Run the dedicated database worker in `deploy/supervisor.conf.example`: `php artisan queue:work mail_notices --queue=mail-notices --sleep=1 --tries=3 --timeout=60 --max-time=3600`. This connection deliberately uses the application's default database so that enqueueing and marking each recipient as dispatched commit together. Keep the regular queue worker for other application mail. Restart both workers after deployment.
+
+Run Laravel's scheduler every minute, for example with this crontab entry (adapt the path and PHP binary):
+
+```cron
+* * * * * cd /srv/itechorbit/current && /usr/bin/php artisan schedule:run >> /var/log/itechorbit-scheduler.log 2>&1
+```
+
+The scheduler dispatches remaining recipient batches and recovers undispatched records after interruptions. `php artisan notices:dispatch` can also resume them manually. Use a shared cache for the global mail rate limiter when workers run on multiple hosts. Monitor the notices ledger, failed jobs and worker logs. Only confirmed failures can be retried from the page; unconfirmed outcomes require checking provider logs to avoid sending duplicate messages. Templates can be changed or deleted without altering past campaign snapshots. Use synthetic recipients and a non-relaying SMTP sink for local verification; do not validate a deployment by broadcasting to real users.

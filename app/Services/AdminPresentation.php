@@ -16,36 +16,7 @@ class AdminPresentation
 {
     public function navigation(): array
     {
-        $links = Link::with('module.menu')->get()->keyBy('url');
-        $modules = [...config('admin'), 'permissions' => ['title' => 'Roles & permissions']];
-
-        return collect($modules)->filter(fn ($module, $resource) => Permission::has_permission($links[$resource]->id ?? null, 'index'))
-            ->map(function ($module, $resource) use ($links) {
-                $link = $links[$resource] ?? null;
-                $fallback = in_array($resource, ['posts', 'categories', 'tags', 'about-info', 'service-info', 'contact-info', 'privacy-policies']) ? 'Content' : (in_array($resource, ['menus', 'modules', 'links', 'roles', 'users', 'permissions']) ? 'Administration' : 'Portfolio & inquiries');
-
-                return ['label' => $module['title'], 'url' => '/'.$resource, 'group' => $link?->module?->menu?->name ?? $fallback, 'module' => $link?->module?->name ?? 'Manage', 'order' => $link?->order_number,
-                    '_ordering' => [$link?->module?->menu?->order_number, $link?->module?->order_number, $link?->order_number]];
-            })->sort(function ($left, $right) {
-                foreach (['group', 'module', 'label'] as $level => $name) {
-                    $leftOrder = $left['_ordering'][$level];
-                    $rightOrder = $right['_ordering'][$level];
-                    // Explicit numbers (including zero) precede unset values at each level.
-                    $comparison = (($leftOrder === null) <=> ($rightOrder === null))
-                        ?: ((int) $leftOrder <=> (int) $rightOrder)
-                        ?: strnatcasecmp($left[$name], $right[$name])
-                        ?: strcmp($left[$name], $right[$name]);
-                    if ($comparison !== 0) {
-                        return $comparison;
-                    }
-                }
-
-                return strcmp($left['url'], $right['url']);
-            })->map(function ($item) {
-                unset($item['_ordering']);
-
-                return $item;
-            })->values()->all();
+        return app(SidebarNavigation::class)->items();
     }
 
     private function abilities(string $resource): array

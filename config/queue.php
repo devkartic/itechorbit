@@ -30,6 +30,12 @@ return [
 
     'connections' => [
 
+        // Notice outbox writes and job inserts share the default DB transaction.
+        'mail_notices' => [
+            'driver' => 'database', 'connection' => null, 'table' => 'jobs',
+            'queue' => 'mail-notices', 'retry_after' => 120, 'after_commit' => false,
+        ],
+
         'sync' => [
             'driver' => 'sync',
         ],

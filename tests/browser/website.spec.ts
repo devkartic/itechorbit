@@ -232,7 +232,7 @@ test('workspace tables load server-side search sorting pagination and recover fr
   await expect(page.getByRole('navigation', { name: 'Workspace navigation' }).getByText('Test workspace', { exact: true })).toBeVisible();
   await expect(page.locator('.workspace-module-label').first()).toHaveText('Module');
   await expect(page.locator('.workspace-nav-group>p small').first()).toHaveText('Category');
-  const sidebarLabels = await page.locator('.workspace-nav-module .workspace-nav-link span:first-of-type').allTextContents();
+  const sidebarLabels = await page.locator('.workspace-nav-module').filter({ hasText: 'Management' }).locator('.workspace-nav-link span:first-of-type').allTextContents();
   expect(sidebarLabels.length).toBeGreaterThan(1);
   expect(sidebarLabels).toEqual([...sidebarLabels].sort((left, right) => left.localeCompare(right, 'en', { numeric: true, sensitivity: 'base' })));
   await page.getByLabel('Find a module').fill('Articles');
@@ -911,4 +911,241 @@ test('social sign-in buttons and connected accounts support provider redirects a
   await page.goto('/login/github/callback?error=access_denied');
   await expect(page).toHaveURL(/\/account\/settings$/);
   await expect(connections.getByRole('alert')).toContainText('cancelled or declined');
+});
+
+test('admins compose reusable notices and the queue delivers individually to selected users', async ({ page }, testInfo) => {
+  test.setTimeout(60000);
+  const { readFileSync } = await import('node:fs');
+  const captured = () => readFileSync(process.env.ITECHORBIT_TEST_MAILBOX_PATH!, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line) as { to: string[]; body: string });
+  const name = `Synthetic notice ${testInfo.project.name}`;
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/workspace/email-notices');
+  await expect(page).toHaveURL(/\/workspace\/email-notices\/compose$/);
+  if (testInfo.project.name === 'mobile') await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  const order = await page.getByRole('navigation', { name: 'Workspace navigation', exact: true }).evaluate(nav => [...nav.children].slice(0, 3).map(element => element.textContent));
+  expect(order[0]).toContain('Overview'); expect(order[0]).toContain('Portfolio templates'); expect(order[1]).toContain('Administration');
+  const sidebar = page.getByRole('navigation', { name: 'Workspace navigation', exact: true });
+  await expect(sidebar.getByRole('link', { name: 'Compose', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(sidebar.getByRole('link', { name: 'Templates', exact: true })).toHaveCount(1);
+  await expect(sidebar.getByRole('link', { name: 'Send history', exact: true })).toHaveCount(1);
+  if (testInfo.project.name === 'mobile') await page.getByRole('button', { name: 'Close workspace navigation', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Email notice pages', exact: true }).getByRole('link', { name: 'Templates', exact: true }).click();
+  await page.getByLabel('Template name', { exact: true }).fill(name);
+  await page.getByLabel('Template subject', { exact: true }).fill(name);
+  await expect(page.locator('.ck-editor__editable')).toHaveCount(1);
+  await page.locator('.ck-editor__editable').fill('A synthetic update for selected accounts.\nSecond paragraph.');
+  await page.getByRole('button', { name: 'Save template', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Template saved.');
+  const template = page.locator('.notice-template-list>li').filter({ hasText: name });
+  await template.getByRole('button', { name: 'Use template', exact: true }).click();
+  await expect(page).toHaveURL(/\/workspace\/email-notices\/compose\?template=\d+$/);
+  await expect(page.getByLabel('Subject', { exact: true })).toHaveValue(name);
+  await page.getByRole('radio', { name: 'Selected users', exact: true }).check();
+  await page.getByLabel('Find users by name or email', { exact: true }).fill('notice-studio@');
+  await expect(page.locator('.notice-recipient-list')).toContainText('notice-studio@example.test');
+  await page.locator('.notice-recipient-list').getByRole('checkbox').check();
+  await page.getByLabel('Find users by name or email', { exact: true }).fill('notice-blueprint@');
+  await expect(page.locator('.notice-recipient-list')).toContainText('notice-blueprint@example.test');
+  await page.locator('.notice-recipient-list').getByRole('checkbox').check();
+  await expect(page.locator('.notice-recipient-count')).toContainText('2 recipients selected');
+  let releasePreview!: () => void;
+  const previewGate = new Promise<void>(resolve => { releasePreview = resolve; });
+  await page.route('**/workspace/email-notices/preview', async route => { await previewGate; await route.continue(); }, { times: 1 });
+  await page.getByRole('button', { name: 'Preview email', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Previewing…', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Send notice', exact: true })).toBeDisabled();
+  releasePreview();
+  await expect(page.frameLocator('iframe[title="Notice email preview"]').getByRole('heading', { name, exact: true })).toBeVisible();
+  await expect(page.frameLocator('iframe[title="Notice email preview"]').getByText('Dear iTechOrbit member,', { exact: true })).toBeVisible();
+  await expect(page.frameLocator('iframe[title="Notice email preview"]').getByText('The iTechOrbit Team', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send notice', exact: true })).toBeEnabled();
+  await expect(page.locator('.notice-compose-feedback')).toContainText('Ready to send.');
+  await page.getByLabel('Subject', { exact: true }).fill(name + ' updated');
+  await expect(page.locator('.notice-compose-feedback')).toContainText('Preview again before sending.');
+  await expect(page.getByRole('button', { name: 'Send notice', exact: true })).toBeDisabled();
+  await page.getByLabel('Subject', { exact: true }).fill(name);
+  for (const theme of ['Light', 'Dark']) {
+    await page.getByRole('button', { name: `${theme} theme`, exact: true }).click();
+    await expect(page.locator('.workspace')).toHaveAttribute('data-theme', theme.toLowerCase());
+    await page.locator('.notice-compose-action').evaluateAll(async buttons => {
+      await Promise.all(buttons.flatMap(button => button.getAnimations().map(animation => animation.finished.catch(() => {}))));
+    });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    for (const action of ['Preview email', 'Send notice']) {
+      await page.getByRole('button', { name: action, exact: true }).hover();
+      await expect.poll(() => page.getByRole('button', { name: action, exact: true }).evaluate(button => {
+        const luminance = (color: string) => {
+          const rgb = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(value => { const channel = value / 255; return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4; });
+          return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+        };
+        const style = getComputedStyle(button); const foreground = luminance(style.color); const background = luminance(style.backgroundColor);
+        return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+      })).toBeGreaterThanOrEqual(4.5);
+    }
+    await page.getByRole('button', { name: 'Preview email', exact: true }).focus();
+    const sendButton = page.getByRole('button', { name: 'Send notice', exact: true });
+    for (let attempt = 0; attempt < 4 && !await sendButton.evaluate(button => button === document.activeElement); attempt++) await page.keyboard.press('Tab');
+    await expect(sendButton).toBeFocused();
+    await expect(sendButton).toHaveCSS('outline-style', 'solid');
+    await page.screenshot({ path: testInfo.outputPath(`notice-compose-${theme.toLowerCase()}.png`), fullPage: true, animations: 'disabled' });
+  }
+  let releaseSend!: () => void;
+  const sendGate = new Promise<void>(resolve => { releaseSend = resolve; });
+  await page.route('**/workspace/email-notices/send', async route => { await sendGate; await route.continue(); }, { times: 1 });
+  await page.getByRole('button', { name: 'Send notice', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Sending…', exact: true })).toBeDisabled();
+  releaseSend();
+  await expect(page).toHaveURL(/\/workspace\/email-notices\/history\?campaign=\d+$/);
+  await expect(page.getByRole('status')).toContainText('Notice queued.');
+  await expect.poll(() => captured().filter(mail => mail.body.includes(name)).length, { timeout: 20000 }).toBe(2);
+  const messages = captured().filter(mail => mail.body.includes(name));
+  for (const message of messages) {
+    const recipientName = message.to[0] === 'notice-studio@example.test' ? 'Studio' : 'Blueprint';
+    const unfoldedBody = message.body.replace(/=\r\n/g, '');
+    expect(unfoldedBody).toContain(`Dear Notice recipient ${recipientName},`);
+    expect(unfoldedBody).toContain('Kind regards,');
+    expect(unfoldedBody).toContain('The iTechOrbit Team');
+    expect(unfoldedBody).not.toContain('Hello Recipient name');
+  }
+  expect(messages.map(mail => mail.to[0]).sort()).toEqual(['notice-blueprint@example.test', 'notice-studio@example.test']);
+  expect(messages.every(mail => mail.to.length === 1 && !/\r\n(?:Cc|Bcc):/i.test(mail.body))).toBeTruthy();
+  await expect.poll(() => page.locator('.notice-counts>div').filter({ hasText: 'Sent' }).innerText(), { timeout: 15000 }).toContain('2');
+  await expect(page.getByRole('table', { name: 'Recipient send results', exact: true })).toContainText('Sent');
+  await page.screenshot({ path: testInfo.outputPath('notice-send-history.png'), fullPage: true });
+  await page.getByRole('navigation', { name: 'Email notice pages', exact: true }).getByRole('link', { name: 'Templates', exact: true }).click();
+  await template.getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.getByLabel('Template subject', { exact: true }).fill(name + ' revised');
+  await page.getByRole('button', { name: 'Save template', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Template saved.');
+  await template.getByRole('button', { name: `Delete template ${name}`, exact: true }).click();
+  await page.getByRole('button', { name: 'Delete template', exact: true }).click();
+  await expect(template).toHaveCount(0);
+  await page.getByRole('navigation', { name: 'Email notice pages', exact: true }).getByRole('link', { name: 'Send history', exact: true }).click();
+  await expect(page.locator('.notice-history-list')).toContainText(name);
+  expect(captured().filter(mail => mail.body.includes(name)).length).toBe(2);
+  await page.getByRole('navigation', { name: 'Email notice pages', exact: true }).getByRole('link', { name: 'Compose', exact: true }).click();
+  await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('');
+  await page.getByRole('radio', { name: 'All eligible users (3)', exact: true }).check();
+  await page.getByLabel('Subject', { exact: true }).fill(`${name} everyone`);
+  await page.locator('.ck-editor__editable').fill('A synthetic update for all eligible accounts.');
+  await page.getByRole('button', { name: 'Preview email', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Send notice', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Send notice', exact: true }).click();
+  await expect.poll(() => captured().filter(mail => mail.body.includes(`${name} everyone`)).length, { timeout: 20000 }).toBe(3);
+  expect(captured().filter(mail => mail.body.includes(`${name} everyone`)).map(mail => mail.to[0]).sort()).toEqual(['admin@example.test', 'notice-blueprint@example.test', 'notice-studio@example.test']);
+});
+
+test('email notice pages preserve drafts during navigation and support direct refresh', async ({ page, isMobile }, testInfo) => {
+  await page.goto('/login');
+  await page.getByLabel('Email address').fill('admin@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/workspace/email-notices/compose');
+  const pages = page.getByRole('navigation', { name: 'Email notice pages', exact: true });
+  await expect(page.getByRole('heading', { name: 'Compose', level: 1, exact: true })).toBeVisible();
+  await page.getByLabel('Subject', { exact: true }).fill('Unfinished notice');
+  await page.locator('.ck-editor__editable').fill('Preserve this compose draft.');
+  await pages.getByRole('link', { name: 'Templates', exact: true }).click();
+  await expect(page).toHaveURL(/\/email-notices\/templates$/);
+  await expect(page.getByRole('heading', { name: 'Templates', level: 1, exact: true })).toBeVisible();
+  await pages.getByRole('link', { name: 'Compose', exact: true }).click();
+  await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unfinished notice');
+  await pages.getByRole('link', { name: 'Templates', exact: true }).click();
+  await page.getByLabel('Template name', { exact: true }).fill('Unfinished template');
+  await page.getByLabel('Template subject', { exact: true }).fill('Draft template subject');
+  await page.locator('.ck-editor__editable').fill('Preserve this template draft.');
+  await pages.getByRole('link', { name: 'Send history', exact: true }).click();
+  await expect(page).toHaveURL(/\/email-notices\/history$/);
+  await expect(page.locator('.ck-editor__editable')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Send history', level: 1, exact: true })).toBeVisible();
+  await pages.getByRole('link', { name: 'Compose', exact: true }).click();
+  await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unfinished notice');
+  await expect(page.locator('.ck-editor__editable')).toContainText('Preserve this compose draft.');
+  await pages.getByRole('link', { name: 'Templates', exact: true }).click();
+  await expect(page.getByLabel('Template name', { exact: true })).toHaveValue('Unfinished template');
+  await expect(page.getByLabel('Template subject', { exact: true })).toHaveValue('Draft template subject');
+  await expect(page.locator('.ck-editor__editable')).toContainText('Preserve this template draft.');
+  await page.goBack();
+  await expect(page.getByLabel('Subject', { exact: true })).toHaveValue('Unfinished notice');
+  await page.goForward();
+  await expect(page.getByLabel('Template name', { exact: true })).toHaveValue('Unfinished template');
+  for (const section of ['Compose', 'Templates', 'Send history']) {
+    if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+    const sidebar = page.getByRole('navigation', { name: 'Workspace navigation', exact: true });
+    await sidebar.getByRole('link', { name: section, exact: true }).click();
+    if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+    await expect(sidebar.locator('a[aria-current="page"]')).toHaveCount(1);
+    await expect(sidebar.getByRole('link', { name: section, exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(sidebar.getByText('Email notices', { exact: true })).toBeVisible();
+    if (isMobile) await page.getByRole('button', { name: 'Close workspace navigation', exact: true }).click();
+    for (const theme of ['Light', 'Dark']) {
+      await page.getByRole('button', { name: `${theme} theme`, exact: true }).click();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+      await page.screenshot({ path: testInfo.outputPath(`notices-${section.toLowerCase().replace(' ', '-')}-${theme.toLowerCase()}.png`), fullPage: true });
+    }
+  }
+  for (const [path, title] of [['compose', 'Compose'], ['templates', 'Templates'], ['history', 'Send history']]) {
+    await page.goto(`/workspace/email-notices/${path}`);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: title, level: 1, exact: true })).toBeVisible();
+  }
+});
+
+test('sidebar groups modules and links follow navigation management changes', async ({ page, isMobile }, testInfo) => {
+  const suffix = testInfo.project.name;
+  const group = `Synthetic section ${suffix}`;
+  const module = `Synthetic module ${suffix}`;
+  const link = `Write an update ${suffix}`;
+  await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
+  await page.goto('/menus/create');
+  await page.getByLabel('Name *', { exact: true }).fill(group);
+  await page.getByLabel('Order number', { exact: true }).fill('2');
+  await page.getByLabel('Published / active', { exact: true }).check();
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page).toHaveURL(/\/menus$/);
+  const groupEdit = await page.getByRole('link', { name: `Edit ${group}`, exact: true }).getAttribute('href');
+  await page.goto('/modules/create');
+  await page.getByLabel('Name *', { exact: true }).fill(module);
+  await page.getByLabel('Menu *', { exact: true }).selectOption({ label: group });
+  await page.getByLabel('Published / active', { exact: true }).check();
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page).toHaveURL(/\/modules$/);
+  const moduleEdit = await page.getByRole('link', { name: `Edit ${module}`, exact: true }).getAttribute('href');
+  await page.goto('/links/create');
+  await page.getByLabel('Name *', { exact: true }).fill(link);
+  await page.getByLabel('Resource path *', { exact: true }).fill('workspace/email-notices/compose');
+  await page.getByLabel('Module *', { exact: true }).selectOption({ label: module });
+  await page.getByLabel('Published / active', { exact: true }).check();
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page).toHaveURL(/\/links$/);
+  await page.getByRole('searchbox', { name: 'Search Navigation links', exact: true }).fill(link);
+  const linkEdit = await page.getByRole('link', { name: `Edit ${link}`, exact: true }).getAttribute('href');
+  if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  await page.getByLabel('Find a module', { exact: true }).fill(link);
+  const sidebar = page.getByRole('navigation', { name: 'Workspace navigation', exact: true });
+  await expect(sidebar.getByText(group, { exact: true })).toBeVisible();
+  await expect(sidebar.getByText(module, { exact: true })).toBeVisible();
+  await sidebar.getByRole('link', { name: link, exact: true }).click();
+  await expect(page).toHaveURL(/\/workspace\/email-notices\/compose$/);
+  await expect(page.getByRole('heading', { name: 'Compose', level: 1, exact: true })).toBeVisible();
+  await page.goto(groupEdit!);
+  await page.getByLabel('Name *', { exact: true }).fill(group + ' renamed');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page).toHaveURL(/\/menus$/);
+  if (isMobile) await page.getByRole('button', { name: 'Open workspace navigation', exact: true }).click();
+  await expect(sidebar.getByText(group + ' renamed', { exact: true })).toBeVisible();
+  if (isMobile) await page.getByRole('button', { name: 'Close workspace navigation', exact: true }).click();
+  await page.goto(moduleEdit!);
+  await page.getByLabel('Published / active', { exact: true }).uncheck();
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page).toHaveURL(/\/modules$/);
+  await expect(sidebar.getByRole('link', { name: link, exact: true })).toHaveCount(0);
+  await page.goto('/workspace/email-notices/compose');
+  await expect(page.getByRole('heading', { name: 'Compose', level: 1, exact: true })).toBeVisible();
+  const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+  for (const path of [linkEdit, moduleEdit, groupEdit]) {
+    const response = await page.request.delete(path!.replace(/\/edit$/, ''), { headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrf! } });
+    expect(response.status()).toBe(200);
+  }
 });

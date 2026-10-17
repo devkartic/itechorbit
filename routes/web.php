@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactInfoController;
 use App\Http\Controllers\Admin\ExperienceController;
 use App\Http\Controllers\Admin\LinkController;
+use App\Http\Controllers\Admin\MailNoticeController;
 use App\Http\Controllers\Admin\MediaPreviewController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\ModuleController;
@@ -52,6 +53,24 @@ Route::get('/login/google', [SocialLoginController::class, 'login'])->defaults('
 Route::get('/login/{provider}', [SocialLoginController::class, 'login'])->whereIn('provider', ['linkedin', 'github'])->middleware(['guest', 'throttle:20,1'])->name('login.social');
 Route::get('/login/{provider}/callback', [SocialLoginController::class, 'callback'])->whereIn('provider', ['google', 'linkedin', 'github'])->middleware('throttle:20,1')->name('login.social.callback');
 Route::post('/account/connections/{provider}', [SocialLoginController::class, 'connect'])->whereIn('provider', ['google', 'linkedin', 'github'])->middleware(['auth', 'throttle:10,1'])->name('account.connections');
+Route::prefix('workspace/email-notices')->controller(MailNoticeController::class)->group(function () {
+    Route::get('/', 'index')->name('workspace.email-notices');
+    Route::get('/compose', 'compose')->name('workspace.email-notices.compose');
+    Route::get('/templates', 'templatePage')->name('workspace.email-notices.templates');
+    Route::get('/history', 'history')->name('workspace.email-notices.history');
+    Route::get('/recipients', 'recipients');
+    Route::get('/data/templates', 'templates');
+    Route::post('/templates', 'saveTemplate')->middleware('throttle:20,1,notice-templates');
+    Route::get('/templates/{template}', 'template')->whereNumber('template');
+    Route::put('/templates/{template}', 'saveTemplate')->whereNumber('template')->middleware('throttle:20,1,notice-templates');
+    Route::delete('/templates/{template}', 'deleteTemplate')->whereNumber('template')->middleware('throttle:20,1,notice-templates');
+    Route::post('/preview', 'preview')->middleware('throttle:30,1,notice-preview');
+    Route::post('/send', 'send')->middleware('throttle:5,1,notice-send');
+    Route::get('/campaigns', 'campaigns');
+    Route::get('/campaigns/{campaign}', 'campaign')->whereNumber('campaign');
+    Route::post('/campaigns/{campaign}/retry', 'retry')->whereNumber('campaign')->middleware('throttle:5,1,notice-retry');
+});
+
 Route::get('/workspace/data/{resource}', TableController::class)->middleware('auth')->whereIn('resource', array_keys(config('admin')))->name('workspace.data');
 
 Route::get('/workspace/media/{resource}/{record}/{field}', MediaPreviewController::class)->middleware('auth')->whereIn('resource', ['posts', 'projects', 'basics'])->whereNumber('record')->where('field', '[a-z_]+')->name('workspace.media');

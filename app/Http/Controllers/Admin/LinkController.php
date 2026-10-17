@@ -72,7 +72,7 @@ class LinkController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:links,name'],
-            'link_url' => ['required', 'string', 'max:255', 'regex:/^[a-z][a-z0-9-]*$/'],
+            'link_url' => ['required', 'string', 'max:255', 'regex:#^[a-z][a-z0-9-]*(?:/[a-z0-9-]+)*$#D'],
             'module_id' => ['required', 'integer', 'exists:modules,id'],
             'order_number' => ['integer', 'nullable', 'max:100'],
         ]);
@@ -124,7 +124,7 @@ class LinkController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255', "unique:links,name, $link->id"],
-            'link_url' => ['required', 'string', 'max:255', 'regex:/^[a-z][a-z0-9-]*$/'],
+            'link_url' => ['required', 'string', 'max:255', 'regex:#^[a-z][a-z0-9-]*(?:/[a-z0-9-]+)*$#D'],
             'module_id' => ['required', 'integer', 'exists:modules,id'],
             'order_number' => ['integer', 'nullable', 'max:100'],
         ]);

@@ -1,14 +1,17 @@
 import '../../css/admin.css';
 import { BrandLogo } from '@/components/BrandLogo';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowUpRight, Bell, BriefcaseBusiness, ChevronDown, ChevronRight, FileText, FolderKanban, Globe, Home, Inbox, LayoutDashboard, ListTree, LogOut, Menu, Palette, Search, Settings2, Sun, Moon, FolderOpen, ShieldCheck, Tags, UserRound, Users, X } from 'lucide-react';
+import { ArrowUpRight, Bell, BriefcaseBusiness, ChevronDown, ChevronRight, FileText, FolderKanban, Globe, Home, Inbox, LayoutDashboard, ListTree, LogOut, Menu, Mail, Palette, Search, Send, Settings2, Sun, Moon, FolderOpen, ShieldCheck, Tags, UserRound, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { SiteLink } from '@/components/SiteLink';
 import { useWorkspaceTheme } from '@/lib/workspace-theme';
 import type { Shared } from '@/lib/types';
-export type Navigation = { label: string; url: string; group?: string; module?: string }[];
-const icons: Record<string, typeof FileText> = { posts: FileText, categories: ListTree, tags: Tags, projects: FolderKanban, users: Users, contacts: Inbox, basics: UserRound, roles: ShieldCheck, permissions: ShieldCheck, experiences: BriefcaseBusiness, menus: Menu, modules: ListTree, links: Globe };
+export type Navigation = { id?: number; label: string; url: string; group?: string; groupId?: number; groupIcon?: string | null; module?: string; moduleId?: number; moduleIcon?: string | null; icon?: string | null }[];
+type NavModule = { name: string; icon?: string | null; items: Navigation };
+type NavGroup = { name: string; icon?: string | null; modules: Map<string, NavModule> };
+const icons: Record<string, typeof FileText> = { posts: FileText, categories: ListTree, tags: Tags, projects: FolderKanban, users: Users, contacts: Inbox, 'workspace/email-notices/compose': Send, 'workspace/email-notices/templates': FileText, 'workspace/email-notices/history': Mail, basics: UserRound, roles: ShieldCheck, permissions: ShieldCheck, experiences: BriefcaseBusiness, menus: Menu, modules: ListTree, links: Globe };
+const configuredIcons: Record<string, typeof FileText> = { house: LayoutDashboard, home: LayoutDashboard, palette: Palette, 'paper-plane': Send, 'file-lines': FileText, 'file-text': FileText, envelope: Mail, mail: Mail, users: Users, user: UserRound, lock: ShieldCheck, 'shield-check': ShieldCheck, folder: FolderOpen, 'folder-open': FolderOpen, list: ListTree, tags: Tags, briefcase: BriefcaseBusiness, globe: Globe, cog: Settings2, gears: Settings2, inbox: Inbox, blog: FileText, 'circle-info': FileText };
 export default function AdminLayout({ children, title, navigation }: { children: ReactNode; title: string; navigation: Navigation }) {
   const { theme, setTheme } = useWorkspaceTheme();
   const { auth } = usePage<Shared>().props; const { url } = usePage();
@@ -48,27 +51,36 @@ export default function AdminLayout({ children, title, navigation }: { children:
     window.addEventListener('resize', revealActiveLink);
     return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', revealActiveLink); };
   }, [url, open, search, expandedModules]);
-  const groups = new Map<string, Map<string, Navigation>>();
+  const groups = new Map<string, NavGroup>();
   for (const item of navigation.filter(item => `${item.label} ${item.group ?? ''} ${item.module ?? ''}`.toLowerCase().includes(search.toLowerCase()))) {
-    const group = item.group ?? 'Workspace'; const module = item.module ?? 'Manage';
-    if (!groups.has(group)) groups.set(group, new Map());
-    const modules = groups.get(group)!;
-    if (!modules.has(module)) modules.set(module, []);
-    modules.get(module)!.push(item);
+    const groupKey = String(item.groupId ?? item.group ?? 'Workspace');
+    const moduleKey = String(item.moduleId ?? item.module ?? 'Manage');
+    if (!groups.has(groupKey)) groups.set(groupKey, { name: item.group ?? 'Workspace', icon: item.groupIcon, modules: new Map() });
+    const group = groups.get(groupKey)!;
+    if (!group.modules.has(moduleKey)) group.modules.set(moduleKey, { name: item.module ?? 'Manage', icon: item.moduleIcon, items: [] });
+    group.modules.get(moduleKey)!.items.push(item);
   }
-  const current = url.split('?')[0].split('/')[1];
+  const activePath = url.split('?')[0];
+  const isActive = (item: Navigation[number]) => activePath === item.url || activePath.startsWith(`${item.url}/`);
   const initials = auth.user?.name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase();
+  const renderGroup = ([groupId, group]: [string, NavGroup]) => {
+    const GroupIcon = group.icon ? configuredIcons[group.icon] : null;
+    return <div className="workspace-nav-group" key={groupId}><p>{GroupIcon ? <GroupIcon size={13} aria-hidden="true" /> : <span className="workspace-group-marker" aria-hidden="true" />}<span>{group.name}</span><small>Category</small></p>{[...group.modules].map(([moduleId, module]) => {
+      const moduleKey = JSON.stringify([groupId, moduleId, search, activePath]);
+      const expanded = expandedModules[moduleKey] ?? (!!search || module.items.some(isActive));
+      const ModuleIcon = (module.icon && configuredIcons[module.icon]) || FolderOpen;
+      return <details key={moduleId} open={expanded} className="workspace-nav-module"><summary onClick={event => { event.preventDefault(); setExpandedModules(previous => ({ ...previous, [moduleKey]: !expanded })); }}><ModuleIcon size={15} aria-hidden="true" /><span>{module.name}</span><small className="workspace-module-label">Module</small><ChevronDown size={14} /></summary><div>{module.items.map(item => {
+        const Icon = (item.icon && configuredIcons[item.icon]) || icons[item.url.slice(1)] || Settings2;
+        return <Link key={item.id ?? item.url} href={item.url} onClick={() => setOpen(false)} className={`workspace-nav-link ${isActive(item) ? 'is-current' : ''}`} aria-current={isActive(item) ? 'page' : undefined}><Icon size={17} /><span>{item.label}</span>{isActive(item) && <span className="workspace-active-dot" />}</Link>;
+      })}</div></details>;
+    })}</div>;
+  };
   return <div className="workspace" data-theme={theme}><Head title={`${title} | iTechOrbit workspace`}><meta name="robots" content="noindex,nofollow" /></Head><a className="skip-link" href="#main">Skip to content</a>
     {open && <button className="workspace-overlay" aria-label="Close workspace overlay" onClick={() => { setOpen(false); trigger.current?.focus(); }} />}
     <aside ref={aside} className={`workspace-sidebar ${open ? 'is-open' : ''}`} role={open ? 'dialog' : undefined} aria-modal={open || undefined} aria-label="Workspace sidebar"><div className="workspace-sidebar-brand"><Link href="/home" className="brand workspace-brand" aria-label="iTechOrbit workspace" onClick={() => setOpen(false)}><BrandLogo /></Link><button className="workspace-mobile-close workspace-icon-button" aria-label="Close workspace navigation" onClick={() => { setOpen(false); trigger.current?.focus(); }}><X size={19} /></button></div>
       <div className="workspace-sidebar-context"><span className="workspace-context-icon"><LayoutDashboard size={18} /></span><div><strong>Studio workspace</strong><span>Content & operations</span></div></div>
       <label className="workspace-sidebar-search"><Search size={16} aria-hidden="true" /><input aria-label="Find a module" value={search} onChange={event => setSearch(event.target.value)} placeholder="Find a module…" /></label>
-      <nav ref={navigationPanel} className="workspace-navigation" aria-label="Workspace navigation"><Link href="/home" onClick={() => setOpen(false)} className={`workspace-nav-link ${current === 'home' ? 'is-current' : ''}`} aria-current={current === 'home' ? 'page' : undefined}><LayoutDashboard size={18} /><span>Overview</span></Link><Link href="/workspace/portfolio-templates" onClick={() => setOpen(false)} className={`workspace-nav-link ${url.startsWith('/workspace/portfolio-templates') ? 'is-current' : ''}`} aria-current={url.startsWith('/workspace/portfolio-templates') ? 'page' : undefined}><Palette size={18} /><span>Portfolio templates</span></Link>
-        {[...groups].map(([group, modules]) => <div className="workspace-nav-group" key={group}><p><span className="workspace-group-marker" aria-hidden="true" /><span>{group}</span><small>Category</small></p>{[...modules].map(([module, items]) => {
-          const moduleKey = JSON.stringify([group, module, search, url.split('?')[0]]);
-          const expanded = expandedModules[moduleKey] ?? (!!search || items.some(item => item.url.split('/')[1] === current));
-          return <details key={module} open={expanded} className="workspace-nav-module"><summary onClick={event => { event.preventDefault(); setExpandedModules(previous => ({ ...previous, [moduleKey]: !expanded })); }}><FolderOpen size={15} aria-hidden="true" /><span>{module}</span><small className="workspace-module-label">Module</small><ChevronDown size={14} /></summary><div>{items.map(item => { const slug = item.url.slice(1); const Icon = icons[slug] ?? Settings2; return <Link key={item.url} href={item.url} onClick={() => setOpen(false)} className={`workspace-nav-link ${current === slug ? 'is-current' : ''}`} aria-current={current === slug ? 'page' : undefined}><Icon size={17} /><span>{item.label}</span>{current === slug && <span className="workspace-active-dot" />}</Link>; })}</div></details>;
-        })}</div>)}
+      <nav ref={navigationPanel} className="workspace-navigation" aria-label="Workspace navigation">{[...groups].map(renderGroup)}
         {!groups.size && <p className="workspace-nav-empty">No matching modules.</p>}
       </nav><div className="workspace-sidebar-footer"><SiteLink href="/" className="workspace-nav-link"><Globe size={17} /><span>Visit public website</span><ArrowUpRight size={15} /></SiteLink><div><ShieldCheck size={15} /><span>Engineering with AI</span></div></div>
     </aside>

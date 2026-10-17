@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             MenuSeeder::class,
             ModuleSeeder::class,
             LinkSeeder::class,
+            WorkspaceNavigationSeeder::class,
             RouteSeeder::class,
             CategorySeeder::class,
             PostSeeder::class,

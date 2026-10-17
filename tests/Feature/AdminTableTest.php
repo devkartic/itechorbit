@@ -30,7 +30,7 @@ class AdminTableTest extends TestCase
         Permission::create(['role_id' => 4, 'link_id' => Link::where('url', 'users')->value('id'), 'route_id' => Route::where('name', 'index')->value('id')]);
         $this->getJson('/workspace/data/users')->assertOk()->assertJsonCount(1, 'records.data')->assertJsonPath('records.data.0.id', $owner->id)->assertJsonMissingPath('records.data.0.password');
         $this->getJson('/workspace/data/unknown')->assertNotFound();
-        $this->get('/home')->assertOk()->assertInertia(fn (Assert $page) => $page->has('navigation', 2)->where('navigation.0.group', 'Test workspace')->where('navigation.0.module', 'Management')->where('navigation.0.url', '/posts')->where('canCreateArticle', false));
+        $this->get('/home')->assertOk()->assertInertia(fn (Assert $page) => $page->has('navigation', 4)->where('navigation.0.url', '/home')->where('navigation.1.url', '/workspace/portfolio-templates')->where('navigation.2.group', 'Test workspace')->where('navigation.2.module', 'Management')->where('navigation.2.url', '/posts')->where('canCreateArticle', false));
         $owner->update(['status' => 0]);
         $this->getJson('/workspace/data/posts')->assertForbidden();
     }
