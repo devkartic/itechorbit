@@ -43,14 +43,14 @@ Use the actual canonical host, configured mail transport, database credentials a
    php artisan view:cache
    ```
 
-5. Switch the release atomically and restart PHP/SSR services and queue workers. Start SSR with `php artisan inertia:start-ssr`; supervise it and `php artisan queue:work`. Keep SSR on loopback. Queue `retry_after` must exceed the worker timeout. Use `php artisan queue:restart` for existing workers. No application scheduler is currently required.
+5. Switch the release atomically and restart PHP/SSR services and queue workers. Start SSR with `php artisan inertia:start-ssr`; supervise it and `php artisan queue:work`. Keep SSR on loopback. Queue `retry_after` must exceed the worker timeout. Use `php artisan queue:restart` for existing workers. Run the scheduler every minute and supervise the dedicated email notice worker as described below.
 6. Smoke-test public pages and server-rendered headings, metadata/canonicals, sign-in, account permissions, admin CRUD, uploads/PDF previews, all portfolio designs, contact forms, and email delivery/retry using staging accounts. `/healthz` confirms application boot only; separately verify database, SSR and queue readiness.
 
 Do not deploy `.git`, test reports, local logs, development databases or credentials in public directories. Tests and CI remain in the source branch for maintenance; they are not runtime dependencies.
 
 ## Database migrations and data preservation
 
-Keep all migrations, even when their names are historical: they define valid installation and upgrade paths. Review pending changes against the existing schema. Current upgrades include the nullable Sanctum token expiry, portfolio template preference, widened privacy-policy content and social-account connections.
+Keep all migrations, even when their names are historical: they define valid installation and upgrade paths. Review pending changes against the existing schema. Current upgrades include the nullable Sanctum token expiry, portfolio template preference, widened privacy-policy content, social-account connections, email notice tables and database-managed workspace navigation.
 
 The privacy-policy migration widens content to LONGTEXT and intentionally does not shrink it on rollback. The social-account migration retains `users.provider_id`, copies known Google identities and refuses duplicate legacy identities before creating its table. Resolve identified duplicate identities before retrying; do not delete user accounts to make the migration pass. Portfolio template values default safely to Studio when unset.
 
@@ -79,6 +79,22 @@ Configure and verify the actual SMTP/mail transport and `MAIL_FROM_*` values. In
 Image uploads accept JPG/PNG/WebP up to 2,048 KB; CVs accept PDF up to 5,000 KB. Existing image/PDF previews retain permission and ownership checks. A private admin CV preview does not enable public download. Banner covers appear in all five portfolio templates; originals remain unchanged, with display-only cropping at 4:1 desktop and 2:1 mobile.
 
 CKEditor is self-hosted with `licenseKey: 'GPL'`, using the open-source package without premium/cloud features. Its GPL distribution requires GPL 2-or-later compliance; it is not an unrestricted proprietary lifetime license. Preserve dependency license notices and confirm licensing requirements for distribution/deployment. The application's own license has not been changed.
+
+## Administrative email notices
+
+Apply `2026_10_17_000004_register_workspace_navigation.php` with this release. It registers the previously hardcoded Overview, Portfolio templates and email notice links in the existing navigation tables, and fills absent resource entries. Existing navigation records and permission assignments are preserved. The sidebar follows the names, parent groups/modules, active states and order numbers managed through Navigation groups, Navigation modules and Navigation links. Overview and Portfolio templates initially appear under Workspace → General. Hiding an entry changes navigation visibility; page access remains governed by the existing authorization checks. Email notices retain their Admin/Super Admin restriction regardless of sidebar configuration. The data migration intentionally retains records on rollback because administrators may have edited them or assigned permissions.
+
+Review and apply the additive `2026_10_17_000003_create_mail_notices_tables.php` migration during deployment. Configure a real mail transport and sender using the existing `MAIL_*` environment variables. An asynchronous `QUEUE_CONNECTION` is required; log/array mailers and synchronous queues disable sending. `NOTICE_MAIL_PER_MINUTE` defaults to 30; match it to the provider's limits. Accepted means the provider accepted the message, not that it reached an inbox.
+
+Run the dedicated database worker in `deploy/supervisor.conf.example`: `php artisan queue:work mail_notices --queue=mail-notices --sleep=1 --tries=3 --timeout=60 --max-time=3600`. This connection deliberately uses the application's default database so that enqueueing and marking each recipient as dispatched commit together. Keep the regular queue worker for other application mail. Restart both workers after deployment.
+
+Run Laravel's scheduler every minute, for example with this crontab entry (adapt the path and PHP binary):
+
+```cron
+* * * * * cd /srv/itechorbit/current && /usr/bin/php artisan schedule:run >> /var/log/itechorbit-scheduler.log 2>&1
+```
+
+The scheduler dispatches remaining recipient batches and recovers undispatched records after interruptions. `php artisan notices:dispatch` can also resume them manually. Use a shared cache for the global mail rate limiter when workers run on multiple hosts. Monitor the notices ledger, failed jobs and worker logs. Only confirmed failures can be retried from the page; unconfirmed outcomes require checking provider logs to avoid sending duplicate messages. Templates can be changed or deleted without altering past campaign snapshots. Use synthetic recipients and a non-relaying SMTP sink for local verification; do not validate a deployment by broadcasting to real users.
 
 ## Rollback and monitoring
 

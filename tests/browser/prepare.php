@@ -33,6 +33,10 @@ foreach ([1 => 'Administrator', 4 => 'Member'] as $id => $name) {
 }
 $user = User::create(['name' => 'Test Engineer', 'email' => 'admin@example.test', 'password' => Hash::make('Browser-test-password-42'), 'role_id' => 1, 'status' => 1, 'portfolio_status' => 1, 'portfolio_id' => 'TESTPROFILE']);
 $user->forceFill(['email_verified_at' => now()])->save();
+foreach (['studio', 'blueprint'] as $recipient) {
+    $noticeUser = User::create(['name' => 'Notice recipient '.ucfirst($recipient), 'email' => 'notice-'.$recipient.'@example.test', 'password' => Hash::make('Synthetic-only-password-42'), 'role_id' => 4, 'status' => 1]);
+    $noticeUser->forceFill(['email_verified_at' => now()])->save();
+}
 SocialAccount::create(['user_id' => $user->id, 'provider' => 'google', 'provider_user_id' => 'browser-google-identity']);
 Basic::create(['user_id' => $user->id, 'first_name' => 'Test', 'last_name' => 'Engineer', 'designation' => 'Full-stack software engineer', 'mobile' => '', 'address' => '', 'service_offering_title' => 'Software engineering', 'career_objective' => 'Thoughtful architecture. Reliable applications. Software built to make a difference.', 'self_introduction' => '<p>I turn complex requirements into clear, maintainable applications. My work connects domain thinking, reliable APIs and carefully considered user experiences.</p>', 'additional_information' => '<p>I value readable code, practical architecture and clear communication throughout delivery.</p>', 'experience_year' => 0, 'birth_date' => '1990-01-01', 'gender' => '', 'marital_status' => '', 'status' => 1]);
 Experience::create(['user_id' => $user->id, 'designation' => 'Software engineer', 'organization' => 'Synthetic engineering team', 'join_date' => '2022-01-01', 'responsibilities' => '<p>Application architecture, API delivery and code review.</p>', 'descriptions' => '<p>A synthetic experience entry for portfolio layout verification.</p>', 'status' => 1]);
@@ -40,7 +44,7 @@ Service::create(['user_id' => $user->id, 'name' => 'Application development', 't
 $menu = Menu::create(['name' => 'Test workspace', 'status' => 1]);
 $module = Module::create(['name' => 'Management', 'menu_id' => $menu->id, 'status' => 1]);
 foreach ([...array_keys(config('admin')), 'permissions'] as $slug) {
-    Link::create(['name' => $slug, 'url' => $slug, 'module_id' => $module->id, 'status' => 1]);
+    Link::updateOrCreate(['url' => $slug], ['name' => config('admin.'.$slug.'.title', 'Roles & permissions'), 'module_id' => $module->id, 'status' => 1]);
 }
 foreach (['index', 'create', 'edit', 'destroy'] as $action) {
     Route::create(['name' => $action, 'status' => 1]);

@@ -20,3 +20,15 @@ killasgroup=true
 stopwaitsecs=90
 redirect_stderr=true
 stdout_logfile=/var/log/itechorbit-queue.log
+
+[program:itechorbit-mail-notices]
+directory=/srv/itechorbit/current
+command=/usr/bin/php artisan queue:work mail_notices --queue=mail-notices --sleep=1 --tries=3 --timeout=60 --max-time=3600
+user=www-data
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stopwaitsecs=90
+redirect_stderr=true
+stdout_logfile=/var/log/itechorbit-mail-notices.log
