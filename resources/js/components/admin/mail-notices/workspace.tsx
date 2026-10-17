@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type Dispatch, type SetStateAction, type ReactNode } from 'react';
 import { Link, router, usePage, useRemember } from '@inertiajs/react';
 import { FileText, Mail, Send } from 'lucide-react';
-import AdminLayout, { type Navigation } from '@/layouts/AdminLayout';
+import AdminLayout, { type Navigation } from '@/layouts/admin/AdminLayout';
 import { Notice } from '@/components/admin/Notice';
 import { RequestError } from '@/lib/http';
 import type { Shared } from '@/lib/types';

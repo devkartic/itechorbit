@@ -48,7 +48,7 @@ class Handler extends ExceptionHandler
         $response = parent::render($request, $e);
         $status = $response->getStatusCode();
         if (! $request->expectsJson() && (in_array($status, [403, 404, 503]) || ($status === 500 && ! config('app.debug')))) {
-            return Inertia::render('Error', ['status' => $status, 'seo' => [
+            return Inertia::render('Shared/Error', ['status' => $status, 'seo' => [
                 'title' => $status.' | iTechOrbit', 'description' => 'The requested page is unavailable.',
                 'canonical' => rtrim(config('app.url'), '/').$request->getPathInfo(), 'noindex' => true,
             ]])->toResponse($request)->setStatusCode($status);

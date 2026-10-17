@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\MailNotices;
+use App\Services\Admin\MailNotices;
 use Illuminate\Console\Command;
 
 class DispatchMailNotices extends Command

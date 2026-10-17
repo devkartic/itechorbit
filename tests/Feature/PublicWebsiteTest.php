@@ -7,7 +7,7 @@ use App\Jobs\ContactMailerJob;
 use App\Models\Admin\Project;
 use App\Models\Admin\Skill;
 use App\Models\Contact;
-use App\Services\PublicContent;
+use App\Services\Shared\PublicContent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -20,7 +20,7 @@ class PublicWebsiteTest extends TestCase
 
     public function test_public_pages_have_components_and_canonical_metadata(): void
     {
-        foreach (['/' => 'Home', '/blogs' => 'Blog', '/work' => 'Work', '/about/info' => 'About', '/service/info' => 'Services', '/contact/info' => 'Contact', '/privacy-n-policy' => 'Content', '/services/laravel-development' => 'Service', '/services/ai-workflow-integration' => 'Service'] as $url => $component) {
+        foreach (['/' => 'Website/Home', '/blogs' => 'Website/Blog', '/work' => 'Website/Work', '/about/info' => 'Website/About', '/service/info' => 'Website/Services', '/contact/info' => 'Website/Contact', '/privacy-n-policy' => 'Website/Content', '/services/laravel-development' => 'Website/Service', '/services/ai-workflow-integration' => 'Website/Service'] as $url => $component) {
             $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page->component($component)->where('seo.canonical', rtrim(config('app.url'), '/').$url)->has('seo.description'));
         }
         $this->get('/about')->assertRedirect('/about/info')->assertStatus(301);
@@ -34,7 +34,7 @@ class PublicWebsiteTest extends TestCase
     {
         $article = $this->article(['tags' => json_encode(['Laravel']), 'body' => '<h2>Domain model</h2><p>engineering needle</p><script>alert(1)</script><a href="javascript:alert(1)">bad</a><img src="x" onerror="alert(1)">']);
         $this->article(['is_private' => 1]);
-        $this->get('/blogs/'.$article->id)->assertOk()->assertInertia(fn (Assert $page) => $page->component('Article')->where('article.id', $article->id)->where('article.readingMinutes', 1)->where('article.toc.0.title', 'Domain model')->where('article.body', fn ($body) => ! str_contains($body, '<script') && ! str_contains($body, 'onerror') && ! str_contains($body, 'javascript:')));
+        $this->get('/blogs/'.$article->id)->assertOk()->assertInertia(fn (Assert $page) => $page->component('Website/Article')->where('article.id', $article->id)->where('article.readingMinutes', 1)->where('article.toc.0.title', 'Domain model')->where('article.body', fn ($body) => ! str_contains($body, '<script') && ! str_contains($body, 'onerror') && ! str_contains($body, 'javascript:')));
         $this->assertSame(1, $article->fresh()->view_times);
         $this->get('/blogs?key=needle')->assertOk()->assertInertia(fn (Assert $page) => $page->has('articles.data', 1)->where('seo.noindex', true));
         $this->post('/blogs/search', ['key' => 'needle'])->assertOk();
@@ -61,8 +61,8 @@ class PublicWebsiteTest extends TestCase
         $user = $this->user(4, ['portfolio_id' => 'TESTPROFILE', 'portfolio_status' => 1]);
         $skill = Skill::create(['name' => 'Laravel', 'user_id' => $user->id, 'status' => 1]);
         $project = Project::create(['user_id' => $user->id, 'name' => 'Test application', 'client_name' => 'Private client', 'skill_id' => $skill->id, 'about_project' => 'Published project overview.', 'status' => 1]);
-        $this->get('/portfolios/TESTPROFILE')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Portfolio')->where('profile.name', $user->name)->missing('profile.email')->missing('profile.password')->missing('profile.birth_date')->missing('profile.mobile'));
-        $this->get('/work/'.$project->id)->assertOk()->assertInertia(fn (Assert $page) => $page->component('Project')->missing('project.client_name'));
+        $this->get('/portfolios/TESTPROFILE')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Portfolio/Show')->where('profile.name', $user->name)->missing('profile.email')->missing('profile.password')->missing('profile.birth_date')->missing('profile.mobile'));
+        $this->get('/work/'.$project->id)->assertOk()->assertInertia(fn (Assert $page) => $page->component('Website/Project')->missing('project.client_name'));
         $user->update(['portfolio_status' => 0]);
         $this->get('/work/'.$project->id)->assertNotFound();
         $this->get('/portfolios/TESTPROFILE')->assertForbidden();
@@ -115,7 +115,7 @@ class PublicWebsiteTest extends TestCase
     public function test_public_security_headers_and_error_pages(): void
     {
         $this->get('/')->assertHeader('X-Content-Type-Options', 'nosniff')->assertHeader('X-Frame-Options', 'DENY');
-        $this->get('/not-a-real-page')->assertNotFound()->assertInertia(fn (Assert $page) => $page->component('Error')->where('seo.noindex', true));
+        $this->get('/not-a-real-page')->assertNotFound()->assertInertia(fn (Assert $page) => $page->component('Shared/Error')->where('seo.noindex', true));
         $this->assertNull(app(PublicContent::class)->externalUrl('javascript:alert(1)'));
     }
 

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\About;
 use App\Models\Admin\AboutInfo;
-use App\Services\AdminPresentation;
+use App\Services\Admin\AdminPresentation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 

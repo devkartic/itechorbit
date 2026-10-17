@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import AdminLayout, { type Navigation } from '@/layouts/AdminLayout';
+import AdminLayout, { type Navigation } from '@/layouts/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { DataTable } from '@/components/admin/DataTable';

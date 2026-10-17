@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Category;
-use App\Services\AdminPresentation;
+use App\Services\Admin\AdminPresentation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 

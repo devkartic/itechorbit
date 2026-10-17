@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Admin\Project;
-use App\Services\PublicContent;
+use App\Services\Shared\PublicContent;
 use PHPUnit\Framework\TestCase;
 
 class TextFormattingTest extends TestCase

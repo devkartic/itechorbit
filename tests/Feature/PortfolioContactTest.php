@@ -23,7 +23,7 @@ class PortfolioContactTest extends TestCase
         $business = $this->user(1);
         config(['site.owner_id' => $business->id]);
         $owner = $this->user(4, ['name' => 'Portfolio Engineer', 'portfolio_id' => 'PERSONAL', 'portfolio_status' => 1]);
-        $this->get('/portfolios/PERSONAL/contact')->assertOk()->assertInertia(fn (Assert $page) => $page->component('PortfolioContact')->where('recipient.name', $owner->name)->missing('recipient.email')->where('seo.noindex', true));
+        $this->get('/portfolios/PERSONAL/contact')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Portfolio/Contact')->where('recipient.name', $owner->name)->missing('recipient.email')->where('seo.noindex', true));
         $data = ['name' => 'Recruiter', 'email' => 'recruiter@example.test', 'subject' => 'Engineering role', 'message' => "Hello!\nLet us discuss a role.", 'portfolio_id' => 'SOMEONE-ELSE', 'user_id' => $business->id, 'recipient_email' => $business->email];
         $this->from('/portfolios/PERSONAL')->post('/portfolios/PERSONAL/inquiries', $data)->assertRedirect('/portfolios/PERSONAL')->assertSessionHas('success');
         $this->assertDatabaseHas('contacts', ['user_id' => $owner->id, 'subject' => $data['subject']]);

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
-use App\Services\SocialProviders;
+use App\Services\Auth\SocialProviders;
 use Illuminate\Foundation\Auth\ConfirmsPasswords;
 use Inertia\Inertia;
 
@@ -25,7 +25,7 @@ class ConfirmPasswordController extends Controller
 
     public function showConfirmForm()
     {
-        return Inertia::render('Auth', ['mode' => 'confirm', 'socialProviders' => app(SocialProviders::class)->available()]);
+        return Inertia::render('Auth/Index', ['mode' => 'confirm', 'socialProviders' => app(SocialProviders::class)->available()]);
     }
 
     /**

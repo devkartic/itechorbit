@@ -1,32 +1,43 @@
-# Architecture
+# Project structure
 
-## Existing system
-Laravel monolith with legacy HTTP/Console kernels and providers; session auth + Sanctum API guard; database-driven role/link/action permission matrix; owner-scoped portfolio modules. Blade public blog/profile and AdminLTE admin. Keep existing schema, IDs, data and upload references.
+The application has three areas: the public company website, public user portfolios, and the private administration workspace. Authentication and account screens are separate supporting areas. Laravel's standard bootstrap, configuration, migrations, middleware, providers, commands, jobs and mail conventions remain in place.
 
-## Target
-Laravel 13, retaining the supported legacy application structure. React 19 + TypeScript + Inertia 3 pages; Vite 8 + Tailwind 4, Lucide and small shadcn-compatible UI primitives. Public request DTOs whitelist fields (never serialize full users/profiles). Server selects published data, eager-loads associations and paginates. Public HTML requires Inertia SSR with a supervised Node process and fail-closed rendering in production; verify crawler responses before release.
+## Application code
 
-Public pages share typography, navigation, cards, breadcrumbs, pagination and contact form. Existing `/blogs/{id}` and `/portfolios/{key}` remain. New services use `/services/{slug}` because `/services` is an existing admin resource. About/Contact retain old URLs; friendly aliases redirect permanently. Admin migration is incremental: React management pages preserve existing resource URLs and custom server permissions; legacy capabilities remain available until equivalent operations are verified. No database replacement or production migration is authorized.
+| Area | Controllers | Services | React pages |
+| --- | --- | --- | --- |
+| Website, articles, services, work, SEO | `app/Http/Controllers/Website/` | `app/Services/Shared/PublicContent.php` | `resources/js/pages/Website/` |
+| Public portfolios and personal inquiries | `app/Http/Controllers/Portfolio/` | `app/Services/Portfolio/` | `resources/js/pages/Portfolio/` |
+| Admin resources, navigation, permissions, notices | `app/Http/Controllers/Admin/` | `app/Services/Admin/` | `resources/js/pages/Admin/` |
+| Sign-in, registration, provider connections | `app/Http/Controllers/Auth/` | `app/Services/Auth/` | `resources/js/pages/Auth/` |
+| Account profile and settings | `app/Http/Controllers/Account/` | Shared services | `resources/js/pages/Account/` |
+| Shared public rendering and error pages | `app/Http/Controllers/Shared/` | `app/Services/Shared/` | `resources/js/pages/Shared/` |
 
-Security: session/CSRF protection, server authentication and permission middleware, ownership checks, published scope, HTML sanitization at rendering, bounded validation, safe media paths, form throttling. Jobs report delivery only after successful mail. File cache works by default; Redis remains opt-in after infrastructure verification. No real data is used in tests: forced SQLite memory database with migrated schema and synthetic fixtures.
+`Shared/PublicPageController` supplies the existing SEO envelope and inquiry dispatch behavior to the website and portfolio controllers. Admin authorization remains in the existing server checks. Sidebar configuration controls navigation visibility, not access rights.
 
-## Implemented modules
-PublicSiteController handles agency/public pages, legacy article/profile URLs and profile-specific inquiry recipients. PublicContent sanitizes rich HTML and whitelists public data. SitemapController owns XML/robots. AdminPresentation supplies server-scoped pagination, options and permissions to React management pages while existing controllers retain mutations. Auth screens use the existing laravel/ui sessions/reset/verification backend.
+`routes/web.php` loads `website.php`, `auth.php`, `admin.php`, and `portfolio.php`. The website service routes must load before the admin service resource routes because they share the `/services` prefix. All URL paths, route names, middleware, constraints and permissions retain their existing behavior. `routes/api.php` and Laravel's console/channel routes retain their standard locations.
 
-AdminTable now centralizes the initial and AJAX listing queries, sort/filter validation, owner scopes and compact list serialization. The authenticated TableController exposes its JSON response. Admin navigation retains menu/module grouping from the database. Private CSS and the lazy-loaded Tiptap editor are isolated from public page dependencies. Rich admin previews and portfolio fields use PublicContent sanitization. See [admin implementation notes](ADMIN_MODERNIZATION.md).
+## Frontend
 
-Page components load independently; article highlighting loads only on article pages. Tailwind scans React and the root view. Retired public Blade views, unused blog/portfolio controllers and models, their theme scripts/styles/vendors and old Mix outputs were removed during the website cleanup. Legacy public images remain available for existing content references. Admin Blade views/assets, mail templates and pagination overrides are retained for the separate admin review. Git history provides recovery for removed code. CSS motion respects reduced-motion preferences. See [cleanup evidence](CLEANUP.md).
+- `resources/js/pages/`: Inertia entry pages grouped by application area; the server returns names such as `Website/Blog`, `Portfolio/Show`, and `Admin/Resource`.
+- `resources/js/components/website/`, `portfolio/`, `admin/`, `auth/`: components owned by an area.
+- `resources/js/components/shared/`: branding, SEO, links, and the contact form reused across areas. `components/ui/` contains reusable UI primitives.
+- `resources/js/layouts/website/` and `layouts/admin/`: company website and private workspace shells. Portfolio layouts belong to `components/portfolio/PortfolioView.tsx` and remain independent of the company shell.
+- `resources/css/app.css`: Tailwind entry, base tokens, and shared/company styling. `resources/css/admin/admin.css` and `resources/css/portfolio/portfolio.css` contain scoped area styles.
+- `resources/js/lib/` and `hooks/`: shared types, HTTP helpers, utilities, and hooks. `app.tsx` and `ssr.tsx` resolve the same page tree for browser hydration and server rendering.
 
-## Portfolio template studio
+## Public files and stored data
 
-`PortfolioPresentation` supplies the same sanitized profile/project payload to the public portfolio and private template chooser. Five React layouts share content sections while changing structure, type and palette. The authenticated chooser writes only the current user’s allowlisted `portfolio_template` preference; a nullable users column defaults to Studio through presentation fallback. Preview uses the actual layout with container-query sizing. Existing portfolio routes, canonical URLs, publication status and contact routing are preserved. See [PORTFOLIO_TEMPLATES.md](PORTFOLIO_TEMPLATES.md) for deployment and validation.
+`public/` is the web server document root. It contains entry files, brand assets, generated `build/` files and publicly addressable media. It does not contain the current page source.
 
-The 2026-10-16 portfolio visual refresh adds shared identity artwork, section anchors and client-side project category filtering over the already-authorized project payload. Each design has its own composition and tokens; container queries on the portfolio root keep admin previews aligned with public rendering. All filter results remain available in SSR before hydration. No new API, dependencies or migrations are required.
+`public/blog/img/` and `public/portfolio/img/` are historical image URLs that stored articles and profiles may reference. `public/admin/` and `public/common_libraries/` support retained legacy views. Keep these URL paths stable; do not develop current pages there. New frontend code belongs in `resources/` and is built by Vite. Existing uploads and private media preview permissions remain unchanged.
 
-## Personal portfolio contact and inquiry email
+`resources/views/app.blade.php` is the active Inertia shell. Current email bodies live in `resources/views/mail/`. Retained older admin Blade templates live in `resources/views/legacy/admin/`; their includes, composer targets and old mail callers use the `legacy.admin.*` view names. They are compatibility code, not the current React workspace.
 
-Personal forms submit to `/portfolios/{key}/inquiries`; the URL resolves an active, published owner. The standalone owner contact page is separate from PublicLayout and agency content. Legacy portfolio-query contact links redirect to the owner page. ContactMailerJob selects the personal or business Mailable while preserving recipient ownership; both render a shared HTML frame and plain-text alternative. See CONTACT_AND_EMAIL.md.
+Models remain in `app/Models/` and `app/Models/Admin/` with their existing class identities and table mappings. Despite the historical Admin namespace, some models represent public content and portfolio records. Existing polymorphic comments store model class names, and queued jobs/mail can store serialized class names, so those identities are intentionally stable. Reorganizing them requires a separate data and queued-message compatibility migration. No database or stored-file migration is required for this directory refactor.
 
+## Verification and deployment
 
-### Workspace appearance and safe font formatting — 2026-10-16
-AdminLayout owns a workspace-only light/dark token palette, selected through useWorkspaceTheme with browser persistence and a deterministic SSR snapshot. Personal portfolio themes remain independent. Existing navigation permissions/order and AdminTable ownership/query validation continue to apply. TextFormatting extends the installed editor with bounded span attributes; the server-side TextFormattingSanitizer and shared CSS use the same size/font allowlist. Public project contributions now render only after PublicContent sanitization. No schema or dependency changes.
+Backend coverage lives in `tests/Feature/` and `tests/Unit/`; browser flows and synthetic assets live in `tests/browser/`. Tests use disposable SQLite data and a non-relaying local SMTP sink. Deployment examples live in `deploy/`; operational instructions are in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+After deploying moved classes, rebuild Composer's autoloader, clear/rebuild Laravel caches, rebuild client/SSR assets, and restart PHP, SSR and queue workers together. Keep the existing application key, database and media. No schema change is introduced by this refactor.

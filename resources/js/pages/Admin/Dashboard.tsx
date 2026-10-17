@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, CirclePlus, FileText, Inbox, Layers3, PenLine, ChevronRight, Clock3, Sparkles } from 'lucide-react';
-import AdminLayout, { type Navigation } from '@/layouts/AdminLayout';
+import AdminLayout, { type Navigation } from '@/layouts/admin/AdminLayout';
 import type { Shared } from '@/lib/types';
 import { dateLabel } from '@/lib/utils';
 type RecentArticle = { id: number; title: string; status: number; updated_at: string };

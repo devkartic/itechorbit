@@ -3,6 +3,8 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+// Inherit isolated cache and mailbox paths in workers and the web server.
+process.env.ITECHORBIT_BROWSER_CACHE_PATH ??= mkdtempSync(join(tmpdir(), 'itechorbit-browser-cache-'));
 process.env.ITECHORBIT_TEST_MAILBOX_PATH ??= join(mkdtempSync(join(tmpdir(), 'itechorbit-mailbox-')), 'messages.jsonl');
 export default defineConfig({
   testDir: './tests/browser', fullyParallel: false, workers: 1, retries: process.env.CI ? 1 : 0,

@@ -37,16 +37,8 @@ npm audit
 
 PHP tests force SQLite memory. Browser tests create a new temporary SQLite database, session/cache directories and synthetic fixtures, then clean them up. They need free localhost ports 8010 and 13714. Never point browser fixtures at a real database.
 
-## Operations and architecture
+## Project structure and operations
 
-- [Audit](docs/AUDIT.md), [architecture](docs/ARCHITECTURE.md), [migration plan](docs/MIGRATION_PLAN.md)
-- [Progress checklist](docs/IMPLEMENTATION_CHECKLIST.md)
-- [Deployment and rollback](docs/DEPLOYMENT.md)
-- [Verification report](docs/COMPLETION_REPORT.md)
-- [Website cleanup record](docs/CLEANUP.md)
-- [Admin workspace and editor](docs/ADMIN_MODERNIZATION.md)
+The public website, public portfolios and private admin workspace have separate route files, controllers and frontend page folders. Authentication, accounts and shared code are grouped separately. See the [developer structure guide](docs/ARCHITECTURE.md) for the directory map and compatibility rules, including why historical public image paths remain available.
 
-CI is supplied in `.github/workflows/modernization.yml`, using paths relative to this standalone application repository. No automatic deployment is configured.
-# itechorbit
-
-Portfolio design selection is available under **Workspace → Portfolio templates**. See [portfolio templates](docs/PORTFOLIO_TEMPLATES.md) for the five layouts, migration requirement, preview/save workflow and rollback.
+Follow [deployment and rollback](docs/DEPLOYMENT.md) for production setup. CI lives in `.github/workflows/modernization.yml`; deployment is manual.

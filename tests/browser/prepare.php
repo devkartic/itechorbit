@@ -14,7 +14,7 @@ use App\Models\Admin\Service;
 use App\Models\Admin\Skill;
 use App\Models\SocialAccount;
 use App\Models\User;
-use App\Services\PortfolioPresentation;
+use App\Services\Portfolio\PortfolioPresentation;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;

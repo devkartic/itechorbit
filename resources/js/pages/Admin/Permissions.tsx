@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import { LockKeyhole, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import AdminLayout, { type Navigation } from '@/layouts/AdminLayout';
+import AdminLayout, { type Navigation } from '@/layouts/admin/AdminLayout';
 import { Notice } from '@/components/admin/Notice';
 import { requestJson, RequestError } from '@/lib/http';
 type PermissionLink = { id: number; name: string; index: boolean; create: boolean; edit: boolean; destroy: boolean };

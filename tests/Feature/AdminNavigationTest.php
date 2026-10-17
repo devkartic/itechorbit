@@ -7,7 +7,7 @@ use App\Models\Admin\Menu;
 use App\Models\Admin\Module;
 use App\Models\Admin\Permission;
 use App\Models\Admin\Route;
-use App\Services\AdminPresentation;
+use App\Services\Admin\AdminPresentation;
 use Database\Seeders\WorkspaceNavigationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;

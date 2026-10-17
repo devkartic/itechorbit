@@ -27,7 +27,7 @@ class ViewServiceProvider extends ServiceProvider
     public function boot()
     {
         // Using class based composers...
-        View::composer('admin.compose.sidebar_menus', SidebarComposer::class);
-        View::composer('admin.compose.notifications', NotificationsComposer::class);
+        View::composer('legacy.admin.compose.sidebar_menus', SidebarComposer::class);
+        View::composer('legacy.admin.compose.notifications', NotificationsComposer::class);
     }
 }

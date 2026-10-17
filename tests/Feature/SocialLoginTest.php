@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\SocialAccount;
 use App\Models\User;
-use App\Services\SocialProviders;
+use App\Services\Auth\SocialProviders;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;

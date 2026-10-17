@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\AdminPresentation;
-use App\Services\PortfolioPresentation;
+use App\Services\Admin\AdminPresentation;
+use App\Services\Portfolio\PortfolioPresentation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;

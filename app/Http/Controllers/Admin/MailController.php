@@ -31,7 +31,7 @@ class MailController extends Controller
 
     public function send_mail()
     {
-        Mail::send('admin.mail_templates.mail', $this->data, function ($mail) {
+        Mail::send('legacy.admin.mail_templates.mail', $this->data, function ($mail) {
             $mail->to($this->mail_to_address, $this->mail_to_name)->subject($this->subject);
             $mail->from($this->mail_from_address, $this->mail_from_name);
         });
