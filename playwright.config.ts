@@ -1,4 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+// Inherit one disposable cache directory in workers and the isolated web server.
+process.env.ITECHORBIT_BROWSER_CACHE_PATH ??= mkdtempSync(join(tmpdir(), 'itechorbit-browser-cache-'));
 export default defineConfig({
   testDir: './tests/browser', fullyParallel: false, workers: 1, retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],

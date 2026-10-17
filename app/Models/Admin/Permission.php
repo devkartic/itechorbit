@@ -39,12 +39,11 @@ class Permission extends Model
 
     public static function has_permission($link_id, $route_name, $role_id = null): bool
     {
-        try {
-            if (empty($role_id)) {
-                $role_id = Auth::user()->role_id;
-            }
-        } catch (\Throwable $ex) {
-            redirect('admin.auth.login');
+        if (empty($role_id)) {
+            $role_id = Auth::user()?->role_id;
+        }
+        if (! $role_id) {
+            return false;
         }
 
         if ($role_id == Role::$default_admin) {
