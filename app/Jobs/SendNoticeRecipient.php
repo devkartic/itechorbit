@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Mail\SendMailNotice;
 use App\Models\MailNoticeCampaign;
 use App\Models\MailNoticeRecipient;
-use App\Services\MailNotices;
+use App\Services\Admin\MailNotices;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

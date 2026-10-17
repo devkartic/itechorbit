@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\AdminTable;
+use App\Services\Admin\AdminTable;
 use Illuminate\Http\Request;
 
 class TableController extends Controller

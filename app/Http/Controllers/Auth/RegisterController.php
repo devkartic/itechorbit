@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
-use App\Services\SocialProviders;
+use App\Services\Auth\SocialProviders;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -28,7 +28,7 @@ class RegisterController extends Controller
 
     public function showRegistrationForm()
     {
-        return Inertia::render('Auth', ['mode' => 'register', 'socialProviders' => app(SocialProviders::class)->available()]);
+        return Inertia::render('Auth/Index', ['mode' => 'register', 'socialProviders' => app(SocialProviders::class)->available()]);
     }
 
     /**

@@ -38,6 +38,6 @@ class SendPortfolioNotifications extends Mailable
         $message_body = "<span style='font-weight: bold;'>Congratulations!</span> and Welcome to $site_name. Your portfolio has been <span style='font-weight: bold;'>enabled</span> and Portfolio ID- $portfolio_link. Now you are eligible to create your own portfolio in our site. For more details you can visit <a style='font-weight: bold;' href=\"$site_url\" target='_blank'>$site_name</a> site.";
         $subject = 'User portfolio enabled successfully';
 
-        return $this->view('admin.mail_templates.mail', compact('name', 'message_body'))->subject($subject);
+        return $this->view('legacy.admin.mail_templates.mail', compact('name', 'message_body'))->subject($subject);
     }
 }

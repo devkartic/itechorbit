@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Services\SocialProviders;
+use App\Services\Auth\SocialProviders;
 use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
 use Inertia\Inertia;
 
@@ -24,6 +24,6 @@ class ForgotPasswordController extends Controller
 
     public function showLinkRequestForm()
     {
-        return Inertia::render('Auth', ['mode' => 'forgot', 'socialProviders' => app(SocialProviders::class)->available()]);
+        return Inertia::render('Auth/Index', ['mode' => 'forgot', 'socialProviders' => app(SocialProviders::class)->available()]);
     }
 }

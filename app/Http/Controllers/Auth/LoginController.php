@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
-use App\Services\SocialProviders;
+use App\Services\Auth\SocialProviders;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,7 +36,7 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-        return Inertia::render('Auth', ['mode' => 'login', 'socialProviders' => app(SocialProviders::class)->available()]);
+        return Inertia::render('Auth/Index', ['mode' => 'login', 'socialProviders' => app(SocialProviders::class)->available()]);
     }
 
     /**

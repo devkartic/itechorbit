@@ -27,7 +27,7 @@ class VerificationController extends Controller
     {
         return $request->user()->hasVerifiedEmail()
             ? redirect($this->redirectPath())
-            : Inertia::render('Auth', ['mode' => 'verify']);
+            : Inertia::render('Auth/Index', ['mode' => 'verify']);
     }
 
     /**

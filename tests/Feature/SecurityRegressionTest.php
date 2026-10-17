@@ -39,7 +39,7 @@ class SecurityRegressionTest extends TestCase
         $this->article(['status' => 0]);
         foreach (['/blogs?key=needle', '/blogs/search?key=needle'] as $url) {
             $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
-                ->component('Blog')
+                ->component('Website/Blog')
                 ->has('articles.data', 1)
                 ->where('articles.data.0.id', $public->id));
         }

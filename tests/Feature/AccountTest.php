@@ -25,7 +25,7 @@ class AccountTest extends TestCase
     {
         $user = $this->user(4, ['portfolio_status' => 1, 'portfolio_id' => 'OWNPROFILE']);
         $other = $this->user();
-        $this->actingAs($user)->get('/account/profile')->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertInertia(fn (Assert $page) => $page->component('Account')->where('account.email', $user->email)->missing('account.password')->missing('account.role_id')->where('auth.user.publicProfileUrl', '/portfolios/OWNPROFILE'));
+        $this->actingAs($user)->get('/account/profile')->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertInertia(fn (Assert $page) => $page->component('Account/Index')->where('account.email', $user->email)->missing('account.password')->missing('account.role_id')->where('auth.user.publicProfileUrl', '/portfolios/OWNPROFILE'));
         $this->get('/account/settings')->assertOk();
         $this->patch('/account/settings', ['name' => 'Updated member', 'email' => $user->email, 'user_id' => $other->id, 'role_id' => 1, 'status' => 0])->assertRedirect('/account/settings');
         $this->assertSame('Updated member', $user->fresh()->name);

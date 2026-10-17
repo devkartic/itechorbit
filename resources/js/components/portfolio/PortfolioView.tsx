@@ -1,7 +1,7 @@
-import '../../../css/portfolio.css';
+import '../../../css/portfolio/portfolio.css';
 import { Mail, ArrowDown, ArrowUpRight, Download, Code2, Braces, Layers3, MoveUpRight, Fingerprint, Workflow, Circle, ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ContactForm } from '@/components/ContactForm';
+import { ContactForm } from '@/components/shared/ContactForm';
 import type { Project } from '@/lib/types';
 import { dateLabel } from '@/lib/utils';
 

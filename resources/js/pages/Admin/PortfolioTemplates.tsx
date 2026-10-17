@@ -1,7 +1,7 @@
 import { useForm, usePage } from '@inertiajs/react';
 import { Check, Eye, Monitor, Smartphone, ArrowUpRight, Palette, Save } from 'lucide-react';
 import { useState } from 'react';
-import AdminLayout, { type Navigation } from '@/layouts/AdminLayout';
+import AdminLayout, { type Navigation } from '@/layouts/admin/AdminLayout';
 import { PortfolioView, type PortfolioData, type PortfolioTemplate } from '@/components/portfolio/PortfolioView';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/admin/Notice';

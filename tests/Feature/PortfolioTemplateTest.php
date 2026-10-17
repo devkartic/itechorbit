@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Admin\Basic;
-use App\Services\PortfolioPresentation;
+use App\Services\Portfolio\PortfolioPresentation;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -63,7 +63,7 @@ class PortfolioTemplateTest extends TestCase
         foreach (array_keys(PortfolioPresentation::TEMPLATES) as $template) {
             $this->actingAs($user)->patch('/workspace/portfolio-templates', ['template' => $template])->assertSessionHasNoErrors()->assertRedirect('/workspace/portfolio-templates');
             $this->get('/workspace/portfolio-templates')->assertInertia(fn (Assert $page) => $page->where('template', $template)->where('publishedUrl', '/portfolios/DESIGNS'));
-            $this->get('/portfolios/DESIGNS')->assertInertia(fn (Assert $page) => $page->component('Portfolio')->where('template', $template)->where('seo.noindex', false)->where('seo.canonical', config('app.url').'/portfolios/DESIGNS'));
+            $this->get('/portfolios/DESIGNS')->assertInertia(fn (Assert $page) => $page->component('Portfolio/Show')->where('template', $template)->where('seo.noindex', false)->where('seo.canonical', config('app.url').'/portfolios/DESIGNS'));
             $this->get('/portfolios')->assertInertia(fn (Assert $page) => $page->where('template', $template));
         }
     }

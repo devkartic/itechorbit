@@ -39,6 +39,8 @@ npm run test:browser
 
 PHP tests use isolated SQLite memory. Browser tests use a temporary SQLite database, synthetic uploads and intercepted OAuth navigation, requiring free ports 8010 and 13714. Do not point fixtures at an application database.
 
-## Production
+## Project structure and operations
 
-Follow the [deployment guide](docs/DEPLOYMENT.md) for configuration, migrations, OAuth, workers, licensing and rollback. Server examples are in `deploy/`. CI verifies changes without automatically deploying them.
+The public website, public portfolios and private admin workspace have separate route files, controllers and frontend page folders. Authentication, accounts and shared code are grouped separately. See the [developer structure guide](docs/ARCHITECTURE.md) for the directory map and compatibility rules, including why historical public image paths remain available.
+
+Follow [deployment and rollback](docs/DEPLOYMENT.md) for production setup. CI lives in `.github/workflows/modernization.yml`; deployment is manual.

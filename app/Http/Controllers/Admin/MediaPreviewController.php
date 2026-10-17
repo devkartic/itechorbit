@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Link;
 use App\Models\Admin\Permission;
 use App\Models\User;
-use App\Services\MediaFiles;
+use App\Services\Shared\MediaFiles;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 

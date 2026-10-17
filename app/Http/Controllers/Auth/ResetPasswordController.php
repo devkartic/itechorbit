@@ -25,7 +25,7 @@ class ResetPasswordController extends Controller
 
     public function showResetForm(Request $request)
     {
-        return Inertia::render('Auth', [
+        return Inertia::render('Auth/Index', [
             'mode' => 'reset',
             'token' => $request->route()->parameter('token'),
             'email' => $request->email,
