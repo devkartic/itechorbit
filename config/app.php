@@ -1,5 +1,6 @@
 <?php
 
+use App\AiPro\AiProServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\RouteServiceProvider;
@@ -215,6 +216,7 @@ return [
          * Application Service Providers...
          */
         AppServiceProvider::class,
+        AiProServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
         EventServiceProvider::class,

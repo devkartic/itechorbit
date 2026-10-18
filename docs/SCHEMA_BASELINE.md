@@ -2,6 +2,23 @@
 
 Source definitions only; live database unavailable. No migrations run against existing data.
 
+## Website offerings split
+
+Migration `2026_10_18_000004_separate_website_products.php` moves product records
+from `website_services` to `website_products`. Both retain descriptive, publishing,
+ordering and image columns. Neither final table has `service_type`; optional
+`price`, `currency` and `delivery_time` belong only to `website_products`.
+The portfolio `services` table is unchanged.
+
+## Website content table names
+
+Migration `2026_10_18_000003_rename_website_content_tables.php` renames
+`contact_infos` to `website_contact` and `about_infos` to `website_about`,
+preserving records and columns. The definitions below retain the original
+migration history. The `ContactInfo` and `AboutInfo` models explicitly use the
+new names; existing admin and public URLs remain unchanged. The separate
+`contacts` inquiry table is unchanged. Rollback restores the original names.
+
 ## 2014_10_12_000000_create_roles_table.php
 
 ```php

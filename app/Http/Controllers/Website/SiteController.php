@@ -11,6 +11,7 @@ use App\Models\Admin\Post;
 use App\Models\Admin\PrivacyPolicy;
 use App\Models\Admin\Project;
 use App\Models\Admin\ServiceInfo;
+use App\Models\Admin\WebsiteProduct;
 use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class SiteController extends PublicPageController
 
     private function services(): array
     {
-        return collect(config('site.services'))->map(fn ($service, $slug) => [...$service, 'slug' => $slug, 'url' => '/services/'.$slug])->values()->all();
+        return ServiceInfo::published()->get()->map(fn ($service) => $this->content->service($service))->all();
     }
 
     public function home(Request $request)
@@ -39,6 +40,7 @@ class SiteController extends PublicPageController
             'articles' => Post::public_posts()->with(['category', 'user'])->latest('id')->limit(3)->get()->map(fn ($post) => $this->content->article($post)),
             'projects' => $this->projects()->orderBy('order_number')->limit(3)->get()->map(fn ($project) => $this->content->project($project)),
             'services' => $this->services(),
+            'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product))->all(),
         ]);
     }
 
@@ -104,17 +106,33 @@ class SiteController extends PublicPageController
 
     public function offerings()
     {
-        $info = ServiceInfo::where('status', 1)->first();
-
-        return $this->page('Website/Services', 'Software engineering services', config('site.description'), ['services' => $this->services(), 'existingContent' => $this->content->html($info?->descriptions)]);
+        return $this->page('Website/Services', 'Software engineering services', config('site.description'), ['services' => $this->services()]);
     }
 
     public function service(string $slug)
     {
-        $service = collect($this->services())->firstWhere('slug', $slug);
-        abort_unless($service, 404);
+        $record = ServiceInfo::published()->where('slug', $slug)->first();
+        if (! $record && WebsiteProduct::published()->where('slug', $slug)->exists()) {
+            return redirect('/products/'.$slug, 301);
+        }
+        abort_unless($record, 404);
+        $service = $this->content->service($record);
 
         return $this->page('Website/Service', $service['title'], $service['summary'], ['service' => $service]);
+    }
+
+    public function products()
+    {
+        return $this->page('Website/Products', 'Website products', 'Purpose-built products to help your website serve visitors and support your business.', [
+            'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product))->all(),
+        ]);
+    }
+
+    public function product(string $slug)
+    {
+        $product = $this->content->product(WebsiteProduct::published()->where('slug', $slug)->firstOrFail());
+
+        return $this->page('Website/Product', $product['title'], $product['summary'], ['product' => $product]);
     }
 
     public function about()

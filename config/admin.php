@@ -18,6 +18,7 @@ use App\Models\Admin\Skill;
 use App\Models\Admin\SocialLink;
 use App\Models\Admin\Tag;
 use App\Models\Admin\Testimonial;
+use App\Models\Admin\WebsiteProduct;
 use App\Models\Contact;
 use App\Models\User;
 
@@ -180,11 +181,49 @@ return [
         ],
     ],
     'service-info' => [
-        'model' => ServiceInfo::class, 'title' => 'Service content', 'owner' => false,
+        'model' => ServiceInfo::class, 'title' => 'Website services', 'owner' => false,
         'fields' => [
             ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
-            ['name' => 'subtitle', 'label' => 'Subtitle', 'type' => 'text', 'required' => true],
-            ['name' => 'descriptions', 'label' => 'Descriptions', 'type' => 'richtext', 'required' => false],
+            ['name' => 'short_title', 'label' => 'Card title (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'slug', 'label' => 'URL slug', 'type' => 'text', 'required' => true],
+            ['name' => 'subtitle', 'label' => 'Summary', 'type' => 'textarea', 'required' => true],
+            ['name' => 'descriptions', 'label' => 'Description', 'type' => 'richtext', 'required' => true],
+            ['name' => 'display_order', 'label' => 'Display order', 'type' => 'number', 'required' => false],
+            ['name' => 'problem', 'label' => 'The challenge', 'type' => 'textarea', 'required' => false],
+            ['name' => 'solution', 'label' => 'The solution', 'type' => 'textarea', 'required' => false],
+            ['name' => 'deliverables', 'label' => 'Deliverables (one per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'technologies', 'label' => 'Technologies (one per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'approach', 'label' => 'Approach (one step per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'use_cases', 'label' => 'Use cases (one Title | Description per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'icon', 'label' => 'Icon', 'type' => 'select', 'required' => false, 'choices' => array_map(fn ($icon) => ['value' => $icon, 'label' => ucfirst($icon)], ['code', 'layers', 'refresh', 'network', 'building', 'database', 'gauge', 'shield', 'sparkles'])],
+            ['name' => 'uploaded_image', 'label' => 'Service image', 'storage' => 'image_path', 'max_kb' => 2048, 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
+            ['name' => 'remove_image', 'label' => 'Remove existing image', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'highlight', 'label' => 'Featured service', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
+    'product-info' => [
+        'model' => WebsiteProduct::class, 'title' => 'Website products', 'owner' => false,
+        'fields' => [
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'short_title', 'label' => 'Card title (optional)', 'type' => 'text', 'required' => false],
+            ['name' => 'slug', 'label' => 'URL slug', 'type' => 'text', 'required' => true],
+            ['name' => 'subtitle', 'label' => 'Summary', 'type' => 'textarea', 'required' => true],
+            ['name' => 'descriptions', 'label' => 'Description', 'type' => 'richtext', 'required' => true],
+            ['name' => 'display_order', 'label' => 'Display order', 'type' => 'number', 'required' => false],
+            ['name' => 'problem', 'label' => 'The challenge', 'type' => 'textarea', 'required' => false],
+            ['name' => 'solution', 'label' => 'The solution', 'type' => 'textarea', 'required' => false],
+            ['name' => 'deliverables', 'label' => 'Deliverables (one per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'technologies', 'label' => 'Technologies (one per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'approach', 'label' => 'Approach (one step per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'use_cases', 'label' => 'Use cases (one Title | Description per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'icon', 'label' => 'Icon', 'type' => 'select', 'required' => false, 'choices' => array_map(fn ($icon) => ['value' => $icon, 'label' => ucfirst($icon)], ['code', 'layers', 'refresh', 'network', 'building', 'database', 'gauge', 'shield', 'sparkles'])],
+            ['name' => 'price', 'label' => 'Package price (optional)', 'type' => 'number', 'required' => false, 'step' => '0.01'],
+            ['name' => 'currency', 'label' => 'Currency (3 uppercase letters, e.g. USD)', 'type' => 'text', 'required' => false],
+            ['name' => 'delivery_time', 'label' => 'Estimated delivery time', 'type' => 'text', 'required' => false],
+            ['name' => 'uploaded_image', 'label' => 'Product image', 'storage' => 'image_path', 'max_kb' => 2048, 'type' => 'file', 'required' => false, 'accept' => '.jpg,.jpeg,.png,.webp'],
+            ['name' => 'remove_image', 'label' => 'Remove existing image', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'highlight', 'label' => 'Featured product', 'type' => 'checkbox', 'required' => false],
             ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
         ],
     ],

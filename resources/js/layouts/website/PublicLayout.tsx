@@ -1,3 +1,4 @@
+import { ITechOrbitAiLauncher } from '@/components/ai-pro/ITechOrbitAiLauncher';
 import { BrandLogo } from '@/components/shared/BrandLogo';
 import { usePage } from '@inertiajs/react';
 import { SiteLink as Link } from '@/components/shared/SiteLink';
@@ -6,7 +7,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { HeaderAccount } from '@/components/website/HeaderAccount';
 import { Button } from '@/components/ui/button';
 import type { Shared } from '@/lib/types';
-const navigation = [['Home', '/'], ['Services', '/service/info'], ['AI solutions', '/services/ai-workflow-integration'], ['Work', '/work'], ['Insights', '/blogs'], ['About', '/about/info']];
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -20,18 +20,20 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
-  const { url } = usePage<Shared>();
+  const { url, props } = usePage<Shared>();
+  const aiService = props.site.aiService;
+  const navigation = [['Home', '/'], ['Services', '/service/info'], ['Products', '/products'], ...(aiService ? [['AI solutions', `/services/${aiService.slug}`]] : []), ['Work', '/work'], ['Insights', '/blogs'], ['About', '/about/info']];
   return <><a className="skip-link" href="#main">Skip to content</a>
     <header className={`site-header ${scrolled ? 'is-scrolled' : ''}`}><div className="shell header-inner">
       <Link href="/" className="brand" aria-label="iTechOrbit home"><BrandLogo /></Link>
-      <nav className="header-navigation hidden items-center gap-1 lg:flex" aria-label="Main navigation">{navigation.map(([label, path]) => <Link key={path} href={path} className={`nav-link ${path === '/services/ai-workflow-integration' ? 'nav-ai' : ''}`} aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
+      <nav className="header-navigation hidden items-center gap-1 lg:flex" aria-label="Main navigation">{navigation.map(([label, path]) => <Link key={path} href={path} className={`nav-link ${label === 'AI solutions' ? 'nav-ai' : ''}`} aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
       <div className="header-actions"><Button asChild className="header-project-cta hidden xl:inline-flex"><Link href="/contact/info">Let’s talk <ArrowUpRight size={16} /></Link></Button><HeaderAccount />
       <details className="mobile-menu lg:hidden">
         <summary role="button" aria-label="Open navigation" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 text-navy"><Menu className="menu-open-icon" size={21} /><X className="menu-close-icon" size={21} /></summary>
         <nav id="mobile-navigation" aria-label="Mobile navigation" className="shell grid gap-1 border-t border-slate-200 py-4">{[...navigation, ['Let’s talk', '/contact/info']].map(([label, path]) => <Link key={path} href={path} className="rounded-xl p-3 font-medium" aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
       </details>
     </div></div></header>
-    <main id="main">{children}</main>
+    <main id="main">{children}</main><ITechOrbitAiLauncher />
     <footer className="site-footer"><div className="shell grid gap-10 py-14 md:grid-cols-[2fr_1fr_1fr]">
       <div><Link href="/" className="brand"><BrandLogo dark /></Link><p className="mt-4 footer-copy max-w-sm text-sm leading-7">Thoughtful software engineering.<br />Built for your business. Ready for what’s next.</p></div>
       <div><p className="mb-4 text-sm font-semibold">Explore</p><nav aria-label="Footer navigation" className="footer-links grid gap-3 text-sm">{navigation.map(([label, path]) => <Link key={path} href={path}>{label}</Link>)}</nav></div>

@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [SiteController::class, 'home'])->name('blogs.view');
 
-Route::get('services/{slug}', [SiteController::class, 'service'])->whereIn('slug', array_keys(config('site.services')))->name('public.services.show');
+Route::get('products', [SiteController::class, 'products'])->name('public.products.index');
+Route::get('products/{slug}', [SiteController::class, 'product'])->where('slug', '(?!create$)[a-z][a-z0-9]*(?:-[a-z0-9]+)*')->name('public.products.show');
+
+Route::get('services/{slug}', [SiteController::class, 'service'])->where('slug', '(?!create$)[a-z][a-z0-9]*(?:-[a-z0-9]+)*')->name('public.services.show');
 
 Route::get('blogs', [SiteController::class, 'blog'])->name('blogs.index');
 

@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             RouteSeeder::class,
             CategorySeeder::class,
             PostSeeder::class,
+            ITechOrbitAiProductSeeder::class,
         ]);
 
     }

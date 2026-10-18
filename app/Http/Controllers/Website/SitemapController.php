@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Category;
 use App\Models\Admin\Post;
 use App\Models\Admin\Project;
+use App\Models\Admin\ServiceInfo;
+use App\Models\Admin\WebsiteProduct;
 use App\Models\User;
 
 class SitemapController extends Controller
@@ -31,9 +33,12 @@ class SitemapController extends Controller
 
     public function pages()
     {
-        $urls = ['/', '/blogs', '/work', '/about/info', '/service/info', '/contact/info', '/privacy-n-policy'];
-        foreach (array_keys(config('site.services')) as $slug) {
+        $urls = ['/', '/blogs', '/work', '/about/info', '/service/info', '/products', '/contact/info', '/privacy-n-policy'];
+        foreach (ServiceInfo::published()->pluck('slug') as $slug) {
             $urls[] = '/services/'.$slug;
+        }
+        foreach (WebsiteProduct::published()->pluck('slug') as $slug) {
+            $urls[] = '/products/'.$slug;
         }
         foreach (Category::where('status', 1)->whereHas('posts', fn ($q) => $q->where('status', 1)->where('is_private', 0))->pluck('id') as $id) {
             $urls[] = '/blogs/category/'.$id;
@@ -79,7 +84,7 @@ class SitemapController extends Controller
             $text .= 'Disallow: /'.$path."\n";
         }
         // /services/{slug} is public; allow those pages even though /services is a legacy admin endpoint.
-        foreach (array_keys(config('site.services')) as $slug) {
+        foreach (ServiceInfo::published()->pluck('slug') as $slug) {
             $text .= 'Allow: /services/'.$slug."\n";
         }
         $text .= "Disallow: /home\nDisallow: /account/\nDisallow: /permissions\nDisallow: /login\nDisallow: /register\nDisallow: /password/\nDisallow: /email/\nDisallow: /blogs/search\nDisallow: /*?key=\nDisallow: /get-\nDisallow: /healthz\nSitemap: ".rtrim(config('app.url'), '/')."/sitemap.xml\n";

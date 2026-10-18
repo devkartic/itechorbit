@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('notices:dispatch')->everyMinute()->withoutOverlapping();
+        $schedule->command('ai-pro:maintain')->daily()->withoutOverlapping();
     }
 
     /**

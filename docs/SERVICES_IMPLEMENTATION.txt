@@ -1,0 +1,127 @@
+Services module implementation
+
+Scope and findings
+- Website Services previously read nine offerings from config/site.php and displayed
+  the first active service_infos record as supplementary content.
+- The existing ServiceInfo model, ServiceInfoController and /service-info admin
+  resource were reused, including their action-specific permission checks.
+- Portfolio's services table, Service model, ServiceController and profile UI were
+  not modified. Existing numeric /services/{id} and /services/create admin routes
+  remain available; public service slugs start with a letter and exclude create.
+
+Database changes
+- New migration: 2026_10_18_000001_create_website_services_from_service_infos.php.
+- Renames service_infos to website_services, retaining every existing ID, title,
+  subtitle, HTML description, status and timestamp. Existing rows become custom
+  services and receive unique legacy-prefixed slugs.
+- Adds a unique non-null slug, indexed service_type (product/custom), short_title,
+  image_path, indexed display_order, icon, highlight, problem, solution, JSON
+  deliverables/technologies/approach/use_cases and nullable price/currency/delivery_time.
+- Imports the original nine static offerings once as Custom Services, preserving
+  their URLs, card titles, descriptions, approach, use cases and featured setting.
+- Product Services are created through admin.
+  Price, currency and estimated delivery are optional product fields.
+  Switching to custom clears product-only values.
+- Retains subtitle/descriptions column names for compatibility with the existing
+  architecture; admin labels them Summary and Description.
+- No new ownership relationship: these are shared website content, matching the
+  previous ServiceInfo resource. Existing admin roles control access.
+- Migration rollback retains all rows and restores the previous table structure,
+  removing the new fields. As with any schema rollback, those field values do not
+  survive rollback; imported rows remain in service_infos.
+
+Behavior
+- Admin CRUD uses /service-info, shared React forms and tables, existing permissions,
+  searchable titles, sortable type/display order and publication controls.
+- Common structured details use newline inputs; use cases use Title | Description
+  per line. Product-only inputs appear when Product Service is selected.
+- Images accept JPEG, PNG and WebP up to 2 MB, get generated filenames, preserve the
+  current file when omitted, and support replacement/removal with cleanup.
+  Failed database writes remove newly uploaded files.
+- Public listing groups Product Services and Custom Services in responsive grids.
+  Home cards, service details, AI promotion, AI navigation, sitemap and robots rules
+  read published database services. There is no static service-content fallback.
+- Detail URLs are /services/{slug}. Inactive, deleted and unknown services return
+  404. Slug changes take effect immediately; old slugs return 404.
+- Rich HTML is sanitized through the existing PublicContent sanitizer. Text, lists,
+  slugs, image uploads, booleans and package fields receive server validation.
+  Decimal package prices generate Offer metadata in Service structured data.
+
+Files added
+- app/Http/Requests/WebsiteServiceRequest.php: shared write validation and form normalization.
+- database/data/website_services.php: immutable snapshot of original static offerings.
+- database/migrations/2026_10_18_000001_create_website_services_from_service_infos.php:
+  schema upgrade, legacy preservation and one-time static-content import.
+- tests/Feature/WebsiteServicesTest.php: CRUD, publication, validation, authorization,
+  images, dynamic links and migration preservation/rollback tests.
+- tests/browser/services.spec.ts: desktop/mobile admin-to-public workflow and layout checks.
+- docs/SERVICES_IMPLEMENTATION.txt: this implementation and file summary.
+
+Files modified
+- app/Http/Controllers/Admin/ServiceInfoController.php: shared create/update persistence,
+  validated fields, image lifecycle and cleanup.
+- app/Http/Controllers/Admin/MediaPreviewController.php: respect the resource's owner
+  setting so shared website images use permissions without profile ownership checks.
+- app/Http/Controllers/Website/SiteController.php: published database service queries.
+- app/Http/Controllers/Website/SitemapController.php: published service URLs in XML/robots.
+- app/Http/Middleware/HandleInertiaRequests.php: published AI navigation data on website
+  routes; authentication/admin routes do not gain a Services database dependency.
+- app/Models/Admin/ServiceInfo.php: explicit website_services table, fields, casts and
+  ordered published scope.
+- app/Services/Admin/AdminPresentation.php: static select choices and service list-field
+  serialization for the existing shared editor.
+- app/Services/Admin/AdminTable.php: website service title/type/order/status columns.
+- app/Services/Shared/PublicContent.php: safe service payload and media presentation.
+- config/admin.php: website Services fields and product-only settings.
+- config/site.php: removes runtime static service definitions after import migration.
+- resources/js/components/admin/ResourceForm.tsx: conditional type-specific fields and
+  decimal number input support.
+- resources/js/components/admin/types.ts: shared field metadata for type conditions/steps.
+- resources/js/components/website/AiHighlight.tsx: database summary, URL and use cases;
+  promotion disappears when no featured AI service is published.
+- resources/js/components/website/Content.tsx: service images and generic featured label.
+- resources/js/layouts/website/PublicLayout.tsx: database-driven published AI navigation URL.
+- resources/js/lib/types.ts: service payload and shared AI navigation types.
+- resources/js/pages/Website/Home.tsx: database-driven AI promotion selection.
+- resources/js/pages/Website/Service.tsx: responsive details, image, lists and package metadata.
+- resources/js/pages/Website/Services.tsx: grouped product/custom listings and empty state.
+- routes/admin.php: allow permission-checked website service image previews.
+- routes/website.php: database-compatible public slugs without static route constraints.
+- tests/Feature/PublicWebsiteTest.php: unknown public service slugs now correctly return 404.
+
+Verification and environment
+- Laravel suite: 91 tests passed, including six Services feature tests.
+- JavaScript unit tests: five passed.
+- TypeScript, ESLint, Laravel Pint and production client/SSR builds passed.
+- Eight desktop/mobile browser checks passed: Services workflow, public navigation,
+  existing AI service and shared CKEditor regressions. Services screenshots were
+  visually reviewed.
+- Production build reports the existing large CKEditor bundle size warning.
+- Tests use isolated SQLite databases. No migrate:fresh or db:wipe commands were run.
+- The configured mariadb hostname cannot resolve from this environment. Live rows
+  could not be inspected and the application database migration is NOT applied.
+  Migration preservation and rollback were verified against an isolated database.
+- Once the intended database is reachable, apply the migration in the normal
+  deployment process with php artisan migrate, then restart the SSR worker after
+  deploying the rebuilt frontend.
+
+Website products split (2026-10-18)
+-----------------------------------
+website_services now stores website services only; website_products stores products.
+Neither table has a service_type column. Product pricing/currency/delivery time
+exist only on website_products. Portfolio services and their /services admin
+resource are unchanged.
+
+Public listings: /service/info and /products.
+Public details: /services/{slug} and /products/{slug}.
+Old product URLs under /services redirect permanently to /products.
+Website product and service slugs must be distinct across both tables.
+Admin resources: /service-info and /product-info under the existing Site Control module.
+Product access requires its own permissions; existing service permissions stay.
+
+Deployment: run migrations, then seed WebsiteNavigationSeeder. Existing product
+records are moved with IDs, image paths, content and timestamps preserved.
+ITechOrbitAiProductSeeder now targets website_products and preserves admin edits.
+Reload persistent AI workers and synchronize local website knowledge after migration.
+Rollback restores the combined table, but refuses conflicting IDs/slugs before
+changing schema or records. Resolve those conflicts before attempting rollback.

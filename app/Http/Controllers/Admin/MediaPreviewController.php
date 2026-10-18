@@ -20,7 +20,9 @@ class MediaPreviewController extends Controller
         $link = Link::where('url', $resource)->value('id');
         abort_unless(Permission::has_permission($link, 'index') || Permission::has_permission($link, 'edit'), 403);
         $item = $module['model']::findOrFail($record);
-        User::verify_ownership($item->user_id);
+        if ($module['owner']) {
+            User::verify_ownership($item->user_id);
+        }
         $path = MediaFiles::resolve($item->{$field});
         abort_unless($path, 404);
         $mime = mime_content_type($path);

@@ -27,7 +27,7 @@ class PublicWebsiteTest extends TestCase
         $this->get('/contact')->assertStatus(301);
         $this->get('/?page=2')->assertStatus(301)->assertRedirect('/blogs?page=2');
         $this->get('/services/create')->assertRedirect('/login');
-        $this->get('/services/unknown-service')->assertRedirect('/login'); // Existing admin dynamic route remains protected.
+        $this->get('/services/unknown-service')->assertNotFound();
     }
 
     public function test_published_article_urls_sanitization_reading_time_toc_and_search(): void

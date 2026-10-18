@@ -61,7 +61,7 @@ export default function AdminLayout({ children, title, navigation }: { children:
     group.modules.get(moduleKey)!.items.push(item);
   }
   const activePath = url.split('?')[0];
-  const isActive = (item: Navigation[number]) => activePath === item.url || activePath.startsWith(`${item.url}/`);
+  const isActive = (item: Navigation[number]) => { const path = item.url.split('?')[0]; return activePath === path || activePath.startsWith(`${path}/`); };
   const initials = auth.user?.name.trim().split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase();
   const renderGroup = ([groupId, group]: [string, NavGroup]) => {
     const GroupIcon = group.icon ? configuredIcons[group.icon] : null;

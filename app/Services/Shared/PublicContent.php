@@ -4,6 +4,8 @@ namespace App\Services\Shared;
 
 use App\Models\Admin\Post;
 use App\Models\Admin\Project;
+use App\Models\Admin\ServiceInfo;
+use App\Models\Admin\WebsiteProduct;
 use Illuminate\Support\Str;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
@@ -20,6 +22,33 @@ class PublicContent
             ->allowRelativeMedias()->withMaxInputLength(1500000);
 
         return (new HtmlSanitizer($config))->sanitize($html ?? '');
+    }
+
+    public function service(ServiceInfo $service): array
+    {
+        return [
+            'slug' => $service->slug,
+            'title' => $service->title, 'short' => $service->short_title ?: $service->title, 'summary' => $service->subtitle,
+            'description' => $this->html($service->descriptions), 'url' => '/services/'.$service->slug,
+            'image' => $this->media($service->image_path), 'icon' => $service->icon, 'highlight' => $service->highlight,
+            'problem' => $service->problem, 'solution' => $service->solution,
+            'deliverables' => $service->deliverables ?? [], 'technologies' => $service->technologies ?? [],
+            'approach' => $service->approach, 'useCases' => $service->use_cases,
+        ];
+    }
+
+    public function product(WebsiteProduct $service): array
+    {
+        return [
+            'slug' => $service->slug,
+            'title' => $service->title, 'short' => $service->short_title ?: $service->title, 'summary' => $service->subtitle,
+            'description' => $this->html($service->descriptions), 'url' => '/products/'.$service->slug,
+            'image' => $this->media($service->image_path), 'icon' => $service->icon, 'highlight' => $service->highlight,
+            'problem' => $service->problem, 'solution' => $service->solution,
+            'deliverables' => $service->deliverables ?? [], 'technologies' => $service->technologies ?? [],
+            'price' => $service->price, 'currency' => $service->currency, 'deliveryTime' => $service->delivery_time,
+            'approach' => $service->approach, 'useCases' => $service->use_cases,
+        ];
     }
 
     public function article(Post $post, bool $detail = false): array
