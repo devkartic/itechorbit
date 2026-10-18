@@ -30,6 +30,11 @@ return [
 
     'connections' => [
 
+        'ai_pro' => [
+            'driver' => 'database', 'connection' => null, 'table' => 'jobs',
+            'queue' => 'ai-pro', 'retry_after' => 660, 'after_commit' => true,
+        ],
+
         // Notice outbox writes and job inserts share the default DB transaction.
         'mail_notices' => [
             'driver' => 'database', 'connection' => null, 'table' => 'jobs',

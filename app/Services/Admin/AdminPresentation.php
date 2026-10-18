@@ -79,6 +79,9 @@ class AdminPresentation
         $records = $action === 'index' ? $table->records($resource, $filters) : null;
         $options = [];
         foreach (in_array($action, ['create', 'edit']) ? $fields : [] as $field) {
+            if (isset($field['choices'])) {
+                $options[$field['name']] = $field['choices'];
+            }
             if (empty($field['options'])) {
                 continue;
             }
@@ -103,6 +106,12 @@ class AdminPresentation
                     }
                     $values[$field] = $choices->pluck('id')->map(fn ($id) => (string) $id)->all();
                 }
+            }
+            if (in_array($resource, ['service-info', 'product-info'])) {
+                foreach (['deliverables', 'technologies', 'approach'] as $field) {
+                    $values[$field] = implode("\n", $record->{$field} ?? []);
+                }
+                $values['use_cases'] = implode("\n", array_map(fn ($item) => $item['title'].' | '.$item['description'], $record->use_cases ?? []));
             }
             $values['link_url'] = $values['url'] ?? '';
             $values['is_checked'] = (bool) $record->status;

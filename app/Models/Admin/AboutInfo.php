@@ -9,6 +9,8 @@ class AboutInfo extends Model
 {
     use HasFactory;
 
+    protected $table = 'website_about';
+
     protected $fillable = [
         'title',
         'subtitle',

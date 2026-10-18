@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\WebsiteServiceRequest;
 use App\Models\Admin\ServiceInfo;
 use App\Services\Admin\AdminPresentation;
-use Illuminate\Http\Request;
+use App\Services\Shared\MediaFiles;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ServiceInfoController extends Controller
 {
@@ -49,27 +52,11 @@ class ServiceInfoController extends Controller
      *
      * @return Response
      */
-    public function store(Request $request)
+    public function store(WebsiteServiceRequest $request)
     {
-        $this->create_validator($request);
-
-        ServiceInfo::create([
-            'title' => $request->input('title'),
-            'subtitle' => $request->input('subtitle'),
-            'descriptions' => $request->input('descriptions'),
-            'status' => filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN),
-        ]);
+        $this->saveService($request, new ServiceInfo);
 
         return response()->json(['success' => 'Service created successfully']);
-    }
-
-    private function create_validator($request)
-    {
-        $request->validate([
-            'title' => ['required', 'string', 'max:100'],
-            'subtitle' => ['required', 'string', 'max:255'],
-            'descriptions' => ['required', 'string'],
-        ]);
     }
 
     /**
@@ -97,25 +84,39 @@ class ServiceInfoController extends Controller
      *
      * @return Response
      */
-    public function update(Request $request, ServiceInfo $serviceInfo)
+    public function update(WebsiteServiceRequest $request, ServiceInfo $serviceInfo)
     {
-        $this->update_validator($request);
-        $serviceInfo->title = $request->input('title');
-        $serviceInfo->subtitle = $request->input('subtitle');
-        $serviceInfo->descriptions = $request->input('descriptions');
-        $serviceInfo->status = filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN);
-        $serviceInfo->save();
+        $this->saveService($request, $serviceInfo);
 
         return response()->json(['success' => 'Service updated successfully']);
     }
 
-    private function update_validator($request)
+    private function saveService(WebsiteServiceRequest $request, ServiceInfo $service): void
     {
-        $request->validate([
-            'title' => ['required', 'string', 'max:100'],
-            'subtitle' => ['required', 'string', 'max:255'],
-            'descriptions' => ['required', 'string'],
-        ]);
+        $data = $request->safe()->except(['uploaded_image', 'is_checked', 'remove_image']);
+        $data['status'] = $request->boolean('is_checked');
+        $data['highlight'] = $request->boolean('highlight');
+        $data['display_order'] = $data['display_order'] ?? 0;
+        $data['icon'] = $data['icon'] ?? 'code';
+        $previous = $service->image_path;
+        $uploaded = null;
+        if ($request->boolean('remove_image')) {
+            $data['image_path'] = null;
+        }
+        try {
+            if ($file = $request->file('uploaded_image')) {
+                $uploaded = 'uploads/website-services/'.Str::uuid().'.'.$file->extension();
+                $file->move(public_path('uploads/website-services'), basename($uploaded));
+                $data['image_path'] = $uploaded;
+            }
+            DB::transaction(fn () => $service->fill($data)->save());
+        } catch (\Throwable $exception) {
+            MediaFiles::delete($uploaded);
+            throw $exception;
+        }
+        if ($previous !== $service->image_path) {
+            MediaFiles::delete($previous);
+        }
     }
 
     /**
@@ -125,7 +126,9 @@ class ServiceInfoController extends Controller
      */
     public function destroy(ServiceInfo $serviceInfo)
     {
+        $image = $serviceInfo->image_path;
         $serviceInfo->delete();
+        MediaFiles::delete($image);
 
         return response()->json(['success' => 'Service deleted successfully']);
     }

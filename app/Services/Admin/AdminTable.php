@@ -16,6 +16,7 @@ class AdminTable
     {
         $fields = config('admin.'.$resource.'.fields', []);
         $columns = match ($resource) {
+            'service-info', 'product-info' => ['title', 'display_order', 'status'],
             'contacts' => ['name', 'email', 'subject', 'read_status'],
             'users' => ['name', 'email', 'status', 'portfolio_status'],
             default => [...collect($fields)->filter(fn ($field) => in_array($field['type'], ['text', 'email', 'date']) && $field['name'] !== 'fa_icon')->take(3)->pluck('name')->all(), 'status'],

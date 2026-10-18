@@ -363,3 +363,41 @@ span[data-font-size="14"] { font-size:14px; } span[data-font-size="16"] { font-s
 span[data-font-size="18"] { font-size:18px; } span[data-font-size="20"] { font-size:20px; }
 span[data-font-size="24"] { font-size:24px; } span[data-font-size="32"] { font-size:32px; }
 span[data-text-font="sans"] { font-family:Inter,sans-serif; } span[data-text-font="serif"] { font-family:Georgia,'Times New Roman',serif; } span[data-text-font="mono"] { font-family:ui-monospace,monospace; }
+
+/* Product showcases use their own visual language, independent of service cards. */
+.product-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px; }
+.product-card { display:flex; flex-direction:column; min-width:0; overflow:hidden; border:1px solid #e7e3ee; border-radius:24px; background:#fff; box-shadow:0 6px 24px -16px #27164a26; transition:box-shadow .22s,border-color .22s,transform .22s; }
+.product-card:hover { border-color:#be9fff; box-shadow:0 24px 55px -30px #4e27975c; transform:translateY(-3px); }
+.product-card:focus-visible { outline:3px solid #7040cf; outline-offset:5px; }
+.product-card-featured { border-color:#be9fff; }
+.product-card-visual { position:relative; display:grid; place-items:center; aspect-ratio:16/9; min-width:0; overflow:hidden; isolation:isolate; background:radial-gradient(ellipse at 70% 25%,#8752d37a,transparent 65%),radial-gradient(ellipse at 0% 100%,#4c5d884d,transparent 60%),#211938; }
+.product-card-visual::after { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(135deg,#ffffff0d,transparent 55%); }
+.product-card-visual.has-image { background:#f4f1ff; }
+.product-card-visual img { width:100%; height:100%; position:absolute; inset:0; object-fit:cover; transition:transform .35s; }
+.product-card:hover .product-card-visual img { transform:scale(1.025); }
+.product-card-grid { position:absolute; inset:0; z-index:-1; opacity:.4; background-image:linear-gradient(#c9b5ff12 1px,transparent 1px),linear-gradient(90deg,#c9b5ff12 1px,transparent 1px); background-size:40px 40px; mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent); }
+.product-card-badge { position:absolute; left:24px; top:24px; padding:7px 12px; border:1px solid #ffffff26; border-radius:999px; background:#241738e8; color:#efe9ff; font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+.product-card-emblem { display:grid; place-items:center; width:112px; height:112px; border-radius:28px; border:1px solid #d4c5ff73; background:linear-gradient(145deg,#a47de85c,#5d328c70); color:#e9e1ff; box-shadow:inset 0 1px 0 #ffffff2b,0 20px 60px #120c284d; transform:rotate(-9deg); }
+.product-card-emblem svg { transform:rotate(9deg); }
+.product-card-orbit { position:absolute; width:260px; height:260px; border:1px solid #d4c5ff29; border-radius:50%; z-index:-1; }
+.product-card-orbit::after { content:''; position:absolute; width:7px; height:7px; top:35px; left:35px; border-radius:50%; background:#d4c5ff; box-shadow:0 0 18px #be9fff; }
+.product-card-orbit.orbit-two { width:370px; height:370px; transform:rotate(110deg); border-color:#d4c5ff12; }
+.product-card-orbit.orbit-two::after { background:#b4ecdd; width:5px; height:5px; }
+.product-card-signature { position:absolute; bottom:22px; left:24px; display:flex; flex-direction:column; gap:3px; color:#f4f1ff; font-size:14px; font-weight:650; letter-spacing:-.02em; }
+.product-card-signature>span { color:#c3b4d9; font-size:10px; font-weight:400; letter-spacing:.02em; }
+.product-card-body { display:flex; flex:1; flex-direction:column; min-width:0; padding:32px; }
+.product-card-eyebrow { color:#7040cf; font-size:10px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }
+.product-card h3 { margin:12px 0 14px; color:#18152c; font-size:26px; font-weight:650; line-height:1.25; letter-spacing:-.035em; overflow-wrap:anywhere; }
+.product-card-summary { margin:0; color:#596579; font-size:14px; line-height:1.85; overflow-wrap:anywhere; }
+.product-card-features { display:grid; gap:11px; list-style:none; padding:0; margin:24px 0 0; }
+.product-card-features li { display:flex; align-items:flex-start; gap:10px; color:#475569; font-size:12px; line-height:1.65; }
+.product-card-features svg { flex:none; margin-top:2px; color:#7040cf; }
+.product-card-features span { overflow-wrap:anywhere; }
+.product-card-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-top:auto; padding-top:24px; }
+.product-card-price { color:#64748b; font-size:12px; font-weight:500; }
+.product-card-price small { display:block; margin-bottom:2px; color:#64748b; font-size:10px; font-weight:400; }
+.product-card-action { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:44px; border-radius:999px; padding:10px 17px; background:#7040cf; color:#fff; font-size:12px; font-weight:600; box-shadow:0 5px 15px -6px #7040cf80; }
+.product-card:hover .product-card-action { background:#6031b9; }
+@media(min-width:768px) { .product-grid>.product-card:only-child { grid-column:1/-1; display:grid; grid-template-columns:1fr 1.1fr; } .product-grid>.product-card:only-child .product-card-visual { aspect-ratio:auto; min-height:420px; } .product-grid>.product-card:only-child .product-card-body { padding:40px; } .product-grid>.product-card:only-child h3 { font-size:32px; } }
+@media(max-width:767px) { .product-grid { grid-template-columns:1fr; gap:24px; } .product-card { border-radius:20px; } .product-card-body { padding:24px; } .product-card h3 { font-size:25px; } .product-card-visual { aspect-ratio:4/3; } .product-card-emblem { width:96px; height:96px; border-radius:24px; } .product-card-emblem svg { width:48px; height:48px; } .product-card-orbit { width:220px; height:220px; } .product-card-orbit.orbit-two { width:310px; height:310px; } .product-card-badge { left:20px; top:20px; } .product-card-signature { left:20px; bottom:20px; } }
+@media(prefers-reduced-motion:reduce) { .product-card,.product-card-visual img { transition:none; } .product-card:hover,.product-card:hover .product-card-visual img { transform:none; } }

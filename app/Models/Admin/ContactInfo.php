@@ -9,6 +9,8 @@ class ContactInfo extends Model
 {
     use HasFactory;
 
+    protected $table = 'website_contact';
+
     protected $fillable = [
         'title',
         'subtitle',

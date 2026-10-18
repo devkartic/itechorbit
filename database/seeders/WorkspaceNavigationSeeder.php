@@ -9,6 +9,8 @@ class WorkspaceNavigationSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(AiProNavigationSeeder::class);
+        $this->call(WebsiteNavigationSeeder::class);
         DB::transaction(function () {
             $firstOrder = max(0, (int) (DB::table('menus')->min('order_number') ?? 1) - 1);
             $workspace = $this->menu('Workspace', $firstOrder);

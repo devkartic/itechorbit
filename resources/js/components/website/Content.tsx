@@ -1,14 +1,35 @@
 import { SiteLink as Link } from '@/components/shared/SiteLink';
-import { ArrowRight, ArrowUpRight, BookOpen, Boxes, ChevronRight, Code2, Database, Gauge, Layers3, Network, RefreshCw, ShieldCheck, Building2, Sparkles } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BookOpen, Boxes, Check, ChevronRight, Code2, Database, Gauge, Layers3, Network, RefreshCw, ShieldCheck, Building2, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { Article, Project, Service, Paginated } from '@/lib/types';
+import type { Article, Project, Service, Product, Paginated } from '@/lib/types';
 import { dateLabel, paginationLabel } from '@/lib/utils';
 import { Button } from '../ui/button';
 export function Eyebrow({ children }: { children: ReactNode }) { return <p className="eyebrow"><span />{children}</p>; }
 export function PageIntro({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) { return <section className="page-intro"><div className="shell"><Eyebrow>{eyebrow}</Eyebrow><h1>{title}</h1>{children && <div className="mt-3 max-w-2xl text-base leading-7 text-slate-600">{children}</div>}</div></section>; }
 export function Breadcrumbs({ items }: { items: { label: string; url?: string }[] }) { return <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-sm text-slate-500"><Link href="/">Home</Link>{items.map((item, i) => <span key={i} className="flex items-center gap-2"><ChevronRight size={14} />{item.url ? <Link href={item.url}>{item.label}</Link> : <span aria-current="page">{item.label}</span>}</span>)}</nav>; }
 const icons: Record<string, typeof Code2> = { code: Code2, layers: Layers3, refresh: RefreshCw, network: Network, building: Building2, database: Database, gauge: Gauge, shield: ShieldCheck, sparkles: Sparkles };
-export function ServiceCard({ service }: { service: Service }) { const Icon = icons[service.icon] ?? Code2; return <Link href={service.url} className={`service-card group ${service.highlight ? 'service-card-featured' : ''}`}><span className="icon-tile"><Icon size={23} /></span>{service.highlight && <span className="service-feature-label">AI + YOUR APPLICATION</span>}<h3 className="mt-6 text-xl font-semibold">{service.short}</h3><p className="mt-3 text-sm leading-7 text-slate-600">{service.summary}</p><span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">Explore service <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></span></Link>; }
+export function ServiceCard({ service }: { service: Service }) { const Icon = icons[service.icon] ?? Code2; return <Link href={service.url} className={`service-card group ${service.highlight ? 'service-card-featured' : ''}`}><span className="icon-tile"><Icon size={23} /></span>{service.image && <img src={service.image} alt="" loading="lazy" className="mt-5 aspect-video w-full rounded-lg object-cover" />}{service.highlight && <span className="service-feature-label">FEATURED SERVICE</span>}<h3 className="mt-6 text-xl font-semibold">{service.short}</h3><p className="mt-3 text-sm leading-7 text-slate-600">{service.summary}</p><span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-600">Explore service <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></span></Link>; }
+export function ProductCard({ product }: { product: Product }) {
+  const Icon = icons[product.icon] ?? Boxes;
+  const features = product.deliverables.slice(0, 3);
+  return <Link href={product.url} className={`product-card${product.highlight ? ' product-card-featured' : ''}`}>
+    <div className={`product-card-visual${product.image ? ' has-image' : ''}`} aria-hidden="true">
+      {product.image ? <img src={product.image} alt="" loading="lazy" width={800} height={600} /> : <>
+        <span className="product-card-grid" /><span className="product-card-orbit orbit-one" /><span className="product-card-orbit orbit-two" />
+        <span className="product-card-emblem"><Icon size={60} strokeWidth={1.4} /></span>
+        <span className="product-card-signature">iTechOrbit<span>Built with purpose.</span></span>
+      </>}
+      <span className="product-card-badge">{product.highlight ? 'Featured product' : 'iTechOrbit product'}</span>
+    </div>
+    <div className="product-card-body">
+      <span className="product-card-eyebrow">Built for your website</span>
+      <h3>{product.short}</h3>
+      <p className="product-card-summary">{product.summary}</p>
+      {features.length > 0 && <ul className="product-card-features">{features.map((feature, index) => <li key={index}><Check size={15} strokeWidth={2} aria-hidden="true" /><span>{feature}</span></li>)}</ul>}
+      <div className="product-card-footer"><span className="product-card-price">{product.price !== null && product.currency ? <><small>Price</small>{product.currency} {product.price}</> : 'Pricing on request'}</span><span className="product-card-action">Explore product <ArrowUpRight size={17} aria-hidden="true" /></span></div>
+    </div>
+  </Link>;
+}
 export function ArticleCard({ article }: { article: Article }) { return <article className="article-card group">{article.image ? <Link href={article.url} tabIndex={-1} aria-hidden="true"><img src={article.image} alt="" width={640} height={360} loading="lazy" className="aspect-[16/9] w-full object-cover" /></Link> : <div className="article-art" aria-hidden="true"><Code2 size={38} /><span>{article.category?.name ?? 'Engineering'}</span></div>}<div className="p-6"><div className="flex flex-wrap gap-3 text-xs text-slate-500"><span className="font-semibold text-blue-700">{article.category?.name ?? 'Engineering'}</span><span>{article.readingMinutes} min read</span></div><h3 className="mt-3 text-xl font-semibold leading-7"><Link href={article.url}>{article.title}</Link></h3><p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600">{article.excerpt}</p><div className="mt-6 flex items-center justify-between text-xs text-slate-500"><span>{article.author.name} · {dateLabel(article.date)}</span><ArrowUpRight size={18} className="text-blue-600" /></div></div></article>; }
 export function ProjectCard({ project }: { project: Project }) { return <article className="project-card group"><Link href={project.url} className="project-visual" tabIndex={-1} aria-hidden="true">{project.image ? <img src={project.image} alt="" width={720} height={480} loading="lazy" className="h-full w-full object-cover" /> : <div className="project-placeholder"><Boxes size={50} strokeWidth={1} /><span>{project.category ?? 'Software engineering'}</span></div>}</Link><div className="p-6"><p className="text-xs font-semibold uppercase tracking-wider text-blue-700">{project.category ?? 'Application'}</p><h3 className="mt-3 text-xl font-semibold"><Link href={project.url}>{project.name}</Link></h3><p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-600">{project.excerpt}</p><div className="mt-5 flex flex-wrap gap-2">{project.technologies.slice(0, 4).map(tag => <span className="tag" key={tag}>{tag}</span>)}</div><Link href={project.url} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold">View project <ArrowUpRight size={16} /></Link></div></article>; }
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) { return <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center"><BookOpen className="mx-auto mb-4 text-slate-400" /><h2 className="text-lg font-semibold">{title}</h2><p className="mx-auto mt-3 max-w-lg text-sm leading-7 text-slate-600">{children}</p></div>; }

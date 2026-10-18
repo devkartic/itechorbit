@@ -24,7 +24,7 @@ class SidebarNavigation
                     return false;
                 }
                 // Presentation is configurable; the existing access policies are not.
-                if ($path === 'workspace/email-notices' || str_starts_with($path, 'workspace/email-notices/')) {
+                if ($path === 'workspace/ai-pro' || str_starts_with($path, 'workspace/ai-pro/') || $path === 'workspace/email-notices' || str_starts_with($path, 'workspace/email-notices/')) {
                     return in_array((int) $user->role_id, [1, 2], true);
                 }
                 if (in_array($path, ['home', 'workspace/portfolio-templates'], true)) {

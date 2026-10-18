@@ -1,0 +1,240 @@
+iTechOrbit AI — AI Web Assistance
+
+What is included
+- A hosted, reusable website assistant, first integrated into iTechOrbit's public
+  layout. It is disabled until explicitly configured and enabled.
+- Workspace: /workspace/ai-pro. Access is restricted to active, verified Admin
+  and Super Admin users. Sites, knowledge, sync progress and recent chats are
+  managed here; customer accounts and billing are not part of this release.
+- Other websites, regardless of their framework, embed the same loader using
+  their own public site identifier and approved origins.
+- New product tables: ai_pro_sites, ai_pro_sources, ai_pro_chunks,
+  ai_pro_conversations, ai_pro_messages and ai_pro_sync_runs. Existing jobs and
+  failed_jobs infrastructure is reused; existing website tables are unchanged.
+
+Installation on this project
+1. Configure a reachable application database, then run:
+     php artisan migrate
+     php artisan ai-pro:setup
+     php artisan db:seed --class=WorkspaceNavigationSeeder
+   Setup is repeatable and preserves website settings; the local site starts
+   disabled. APP_URL must be the canonical scheme and origin of this website.
+2. Configure the following in the server environment (never in browser code):
+     AI_PRO_ENABLED=true
+     AI_PRO_LOCAL_SITE=itechorbit
+     AI_PRO_OPENAI_API_KEY=<your server-side API key>
+     AI_PRO_MODEL=gpt-4.1-mini
+     AI_PRO_EMBEDDING_MODEL=text-embedding-3-small
+   The master switch permits requests; each site's Enabled switch is separate.
+   Refresh the deployment's configuration cache and restart long-running workers
+   after changing environment settings. Never commit keys or paste them in chat.
+3. Start a dedicated worker under the deployment's process supervisor:
+     php artisan queue:work ai_pro --queue=ai-pro --sleep=1 --timeout=600 --tries=2
+   The ai_pro queue connection uses the existing database jobs table. Its
+   retry_after is 660 seconds, longer than the 600-second worker timeout.
+   Normal queue workers and the email-notices worker do not process this queue.
+4. Keep Laravel's scheduler running once per minute. The daily ai-pro:maintain
+   command purges expired conversations and queues knowledge reconciliation.
+5. Build frontend assets using npm run build; restart the SSR worker using the
+   deployment's normal process supervisor.
+6. Open /workspace/ai-pro, select this project's site and click Sync knowledge.
+   Wait for a completed sync and ready sources. Correct partial/failed sources
+   and retry. Enable the site's widget only after reviewing the sources.
+7. Open a public page, ask a known website question and verify its answer and
+   source link. Ask an unsupported question and verify the honest fallback.
+   Confirm English and Bangla behavior with your own questions before launch.
+
+Connecting another website
+1. An administrator creates a connected website with its canonical HTTPS URL,
+   exact allowed origins, contact page, welcome message, accent color and limits.
+   Include each real browser origin separately (for example https://example.com
+   and https://www.example.com); origins have no path, slash, query or wildcard.
+   A website origin cannot be reassigned to a different host after creation;
+   register a new site instead. HTTP origins are supported for local development.
+2. Add approved FAQs and/or HTTPS page and sitemap URLs on that website host.
+   The FAQ source link defaults to the website URL. Imports do not execute
+   JavaScript, authenticate to private pages, or import documents/PDFs.
+3. Sync, review indexing results and enable the site. Copy its generated snippet:
+     <script src="https://assistant-host.example/ai-pro/widget.js"
+             data-site="<public-site-id>" defer></script>
+4. If the embedding site uses CSP, allow the assistant host in script-src and
+   connect-src. The widget uses a Shadow DOM stylesheet; allow its styles under
+   the site's policy or apply the site's style nonce to the script element (the
+   loader copies it to its stylesheet). Frame policy changes are unnecessary.
+   HTTPS websites must use an HTTPS assistant host to avoid mixed-content blocks.
+5. Verify from the actual website origin. Origin checks support normal browser
+   integrations; they are not proof that an anonymous caller owns a domain.
+   Public site identifiers are intentionally public. Provider keys remain secret.
+
+Knowledge and answer behavior
+- iTechOrbit uses a dedicated local-content adapter, preserving its existing
+  visibility rules: published services, public articles, publicly visible projects,
+  company/about, contact, privacy information and the public site description.
+  Private/unpublished content, inquiries, comments and admin records are excluded.
+- Local changes queue a coalesced sync after commit. Source eligibility and content
+  checksums are rechecked before retrieval and after generation. Changed or
+  withdrawn sources stop answering immediately, even while a sync is pending.
+  Bulk SQL updates do not trigger model events; use Sync knowledge afterward.
+- Remote pages/sitemaps refresh during synchronization and daily reconciliation.
+  Changes on external websites are not detectable until the next successful fetch.
+  Disable a source in the workspace for immediate exclusion. Delete or disable
+  sitemap sources before removing their discovered pages to avoid reimporting them.
+- Imports use HTTPS on the configured host, reject private/reserved destinations,
+  pin DNS results, disable proxies, revalidate redirects and observe robots rules.
+  Non-404 robots retrieval failures fail closed. Downloads are limited to 2 MiB,
+  with 15-second timeouts and three redirects. At most 100 pages and ten sitemap
+  documents are accepted per import; five sitemap sources are allowed per site.
+- Indexing splits text into overlapping character windows, stores embeddings in
+  the application database, and atomically replaces chunks after successful
+  embedding. Each site is limited to 2,000 chunks and 100 manually managed FAQs.
+  Unchanged content is skipped. A failed source is excluded until a successful
+  retry. Long sync runs can time out; retry to resume already completed sources.
+- Retrieval ranks same-site embeddings using cosine similarity and supplies up to
+  six matching excerpts. The provider is instructed to use only those excerpts,
+  handle follow-up context and answer in the visitor's language. Returned source
+  IDs are validated server-side. Unsupported answers link to the contact page.
+  These grounding controls reduce invented answers; model quality still needs
+  review against representative website questions.
+- Changing the embedding model requires syncing all sites before retrieval can
+  use their new embeddings. Keep the model's embedding dimensions consistent.
+- Provider request timeout is 35 seconds. Failed provider calls produce an
+  availability message; no synthetic answer is presented as a successful reply.
+
+HTTP interfaces
+- GET /ai-pro/widget.js: framework-independent loader, cached for one hour.
+- GET /ai-pro/local-config: optional local site identifier, no credentials.
+- GET /api/ai-pro/v1/sites/{publicId}/config: safe branding and suggestions.
+- POST .../conversations: returns conversation_id and a random access token.
+- POST .../messages: Bearer token, JSON conversation_id and question.
+  Success: answer, sources [{title,url}], status (answered/unsupported), contact_url.
+  Failure: normal validation/access/limit responses; provider unavailable = 503.
+- API requests require an allowed Origin; same-origin browser GETs may use their
+  Sec-Fetch-Site metadata when Origin is omitted. HTTP development domains may
+  instead use an exact same-origin Referer for configuration GETs when browsers
+  omit metadata; an explicit disallowed Origin is never overridden. CORS handling does
+  not broaden the application's other routes or send authentication cookies.
+- Conversation tokens are hashed on the server and held only in widget memory.
+  Reset or reload starts a new conversation; tokens cannot access another site.
+- Questions are limited to 2,000 characters. Defaults: 10/minute per site/IP and
+  500/day per site (application timezone). Requests reserve quota before provider
+  access, including unsupported/failed requests. Conversation creation is limited
+  to 10/minute per site/IP. Existing global API throttling also applies.
+  Daily reservations lock the website row; minute limits use Laravel's cache.
+  Use a shared cache backend when deploying multiple application instances.
+- Chat retention is 30 days from conversation creation; the daily purge cascades
+  through messages. The widget warns visitors not to share sensitive information.
+  Questions and minimal excerpts are sent to the AI provider; Responses requests
+  use store=false, subject to the provider account's data-processing policy.
+
+Maintenance and troubleshooting
+- Check master/site switches, configured key, ready sources, allowed origins,
+  queue worker and latest sync status if answers are unavailable.
+- Failed sources can be retried with Sync knowledge. Errors displayed to admins
+  are sanitized and never include provider responses or credentials.
+- Database schema and queue configuration are additive. To disable the product,
+  set AI_PRO_ENABLED=false and refresh configuration; its routes then fail closed
+  and public pages continue to render without the widget.
+- Keep AI_PRO_LOCAL_SITE stable. ai-pro:setup must not point to another site's
+  identifier; the command rejects that case.
+- Hosted reuse does not require installing Laravel on the embedding website.
+  To host this backend elsewhere, move the AiPro namespace, migration/config,
+  controllers/routes, console commands, loader and provider registration; replace
+  LocalContent with that host's public-content adapter and connect its admin UI.
+  The current local adapter is intentionally iTechOrbit-specific.
+
+Verification
+- Automated PHP tests use isolated SQLite and a fake AI provider. HTTP contract
+  tests mock OpenAI requests; no API charges or live keys are required.
+- Browser tests cover desktop/mobile chat, citations, reset, failures, admin FAQs,
+  and real cross-origin transport with site isolation. Generated-answer UI is
+  intercepted; empty-knowledge fallback uses the real API.
+- A live deployment still requires a reachable database, valid provider key,
+  successful initial indexing and the manual launch smoke test above.
+
+Official provider references
+https://developers.openai.com/api/docs/guides/responses
+https://developers.openai.com/api/docs/guides/embeddings
+https://developers.openai.com/api/docs/models/gpt-4.1-mini
+
+Selecting Gemini, OpenAI or another compatible provider
+- Provider choice is trusted server configuration in .env; keys are never editable
+  or exposed through the public widget. The workspace displays the selected chat
+  and embedding providers and checks both configurations for readiness.
+- Google Gemini:
+    AI_PRO_PROVIDER=gemini
+    AI_PRO_EMBEDDING_PROVIDER=gemini
+    AI_PRO_GEMINI_API_KEY=<your Google AI Studio key>
+    AI_PRO_GEMINI_MODEL=gemini-3.8-flash
+    AI_PRO_GEMINI_EMBEDDING_MODEL=gemini-embedding-2
+  The key belongs in AI_PRO_GEMINI_API_KEY, never AI_PRO_OPENAI_API_KEY. Standard
+  embedding requests create one vector per chunk; no paid asynchronous Batch API
+  is used. Gemini Embedding 2 uses document/query prefixes and 768 dimensions.
+  Google's model-list endpoint may list older models unavailable to new accounts;
+  model access is checked using an actual generation request. Gemini 2.5 Flash
+  returned such a restriction for this installation, so 3.8 Flash is the default.
+- OpenAI (the API used by ChatGPT models; separate API billing still applies):
+    AI_PRO_PROVIDER=openai
+    AI_PRO_EMBEDDING_PROVIDER=openai
+    AI_PRO_OPENAI_API_KEY=<your OpenAI Platform key>
+    AI_PRO_MODEL=gpt-4.1-mini
+    AI_PRO_EMBEDDING_MODEL=text-embedding-3-small
+- Other OpenAI-compatible services:
+    AI_PRO_PROVIDER=compatible
+    AI_PRO_COMPATIBLE_BASE_URL=https://your-provider.example/v1
+    AI_PRO_COMPATIBLE_API_KEY=<that provider's key, or blank for a local server>
+    AI_PRO_COMPATIBLE_MODEL=<exact chat model ID>
+    AI_PRO_EMBEDDING_PROVIDER=compatible
+    AI_PRO_COMPATIBLE_EMBEDDING_MODEL=<exact embedding model ID>
+  The service must support chat/completions with JSON-object response_format and
+  standard embeddings request/response shapes. This is protocol compatibility,
+  not a guarantee that every AI vendor works without an adapter. Use an explicit
+  trusted server URL; credentials in URLs and redirects are rejected.
+- Chat and embeddings can use different providers. For example, keep Gemini for
+  knowledge search by setting AI_PRO_EMBEDDING_PROVIDER=gemini while selecting a
+  compatible chat service. Each provider uses its own key; missing keys never
+  silently fall back to another vendor. If AI_PRO_EMBEDDING_PROVIDER is omitted,
+  the chat provider is used for both tasks.
+- After changing .env, clear/rebuild configuration and restart only the dedicated
+  ai_pro worker. Then sync every website if the embedding provider/model changed.
+  Compatible endpoints have separate embedding-space identities even if their
+  model names match. Changing only the chat model does not require reindexing.
+- Credential and model errors stop a synchronization immediately. Quota and
+  temporary provider errors queue up to three delayed retries (minimum waits of
+  60, 120 and 300 seconds, respecting longer provider delays up to one hour).
+  Completed sources are reused on retry. Provider response bodies and keys are
+  excluded from errors. No failed Gemini request is rerouted to paid OpenAI.
+- Free-tier eligibility, quotas, model availability and billing depend on the
+  selected provider account. This application does not enable paid Google billing.
+  Google documents free-tier data usage and limits here:
+  https://ai.google.dev/gemini-api/docs/pricing
+  https://ai.google.dev/gemini-api/docs/rate-limits
+
+Admin organization
+- AI Section > iTechOrbit AI contains six pages: Overview, Websites, Knowledge,
+  Synchronization, Conversations, and Installation & Providers.
+- /workspace/ai-pro redirects to Overview. The selected website is carried in
+  ?site=<id>. List pages use ?page=<number>; Conversations also supports
+  ?conversation=<id>&message_page=<number>. Provider keys remain in .env.
+- Update existing navigation with:
+    php artisan db:seed --class=AiProNavigationSeeder --force
+  This targeted seeder is repeatable, preserves the old Overview link ID and
+  permission records, and does not change unrelated modules or website content.
+- The crawler identifies as iTechOrbitAI/1.0. Legacy SiteSageAI robots groups are
+  recognized only if no iTechOrbitAI group is specified.
+
+Widget appearance and admin themes
+- The self-contained widget uses the site's configured accent color, automatically
+  choosing black or white button text for contrast. A violet default is used
+  before site branding loads. Existing custom website accents are preserved.
+- Add data-theme="light", "dark", or "auto" to the embed script; auto (system
+  preference) is the default. Changing this attribute updates the mounted widget.
+- The public website loader and new embed snippets include a content-hash version
+  so new widget releases bypass the previous hour-long cached loader response.
+  Existing unversioned snippets remain supported and refresh when their cache expires.
+- Keyboard: Enter sends, Shift+Enter adds a line, Escape closes and restores focus.
+  Mobile opening does not immediately summon the software keyboard. The composer
+  uses Visual Viewport sizing to remain accessible when the keyboard opens.
+- Widget and AI admin animations respect prefers-reduced-motion. The admin uses
+  the existing saved workspace light/dark preference and theme switch.
+
+The local launcher follows the website primary button color and pill shape. External embeds can optionally set data-color="#7040cf" to override their configured accent.

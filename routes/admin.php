@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\TableController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WebsiteProductController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('workspace/email-notices')->controller(MailNoticeController::class)->group(function () {
@@ -48,7 +49,7 @@ Route::prefix('workspace/email-notices')->controller(MailNoticeController::class
 
 Route::get('/workspace/data/{resource}', TableController::class)->middleware('auth')->whereIn('resource', array_keys(config('admin')))->name('workspace.data');
 
-Route::get('/workspace/media/{resource}/{record}/{field}', MediaPreviewController::class)->middleware('auth')->whereIn('resource', ['posts', 'projects', 'basics'])->whereNumber('record')->where('field', '[a-z_]+')->name('workspace.media');
+Route::get('/workspace/media/{resource}/{record}/{field}', MediaPreviewController::class)->middleware('auth')->whereIn('resource', ['posts', 'projects', 'basics', 'service-info', 'product-info'])->whereNumber('record')->where('field', '[a-z_]+')->name('workspace.media');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/workspace/portfolio-templates', [PortfolioTemplateController::class, 'index'])->name('workspace.portfolio-templates');
@@ -73,6 +74,7 @@ Route::middleware('auth')->group(function () {
         'posts' => PostController::class,
         'about-info' => AboutInfoController::class,
         'service-info' => ServiceInfoController::class,
+        'product-info' => WebsiteProductController::class,
         'privacy-policies' => PrivacyPolicyController::class,
         'contact-info' => ContactInfoController::class,
 

@@ -69,3 +69,11 @@ foreach (array_keys(PortfolioPresentation::TEMPLATES) as $template) {
     $sparse = User::create(['name' => 'Minimal Engineer', 'email' => 'sparse-'.$template.'@example.test', 'password' => Hash::make('Synthetic-only-password-42'), 'role_id' => 4, 'status' => 1, 'portfolio_status' => 1, 'portfolio_id' => 'SPARSE-'.strtoupper($template)]);
     $sparse->forceFill(['portfolio_template' => $template])->save();
 }
+
+// The assistant has no provider key and no indexed knowledge in browser fixtures.
+// Tests cover real transport/fallback behavior and intercept generation separately.
+Artisan::call('ai-pro:setup');
+\App\AiPro\Models\Site::where('public_id', 'itechorbit')->update(['enabled' => true]);
+\App\AiPro\Models\Site::create(['public_id' => 'browser-remote', 'name' => 'Embedded test website', 'url' => 'http://127.0.0.1:8011',
+    'origins' => ['http://127.0.0.1:8011'], 'enabled' => true, 'contact_url' => 'http://127.0.0.1:8011/contact']);
+Artisan::call('db:seed', ['--class' => 'WorkspaceNavigationSeeder', '--force' => true]);
