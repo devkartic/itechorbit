@@ -8,8 +8,6 @@ use App\Models\Admin\ServiceInfo;
 use App\Services\Admin\AdminPresentation;
 use App\Services\Shared\MediaFiles;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ServiceInfoController extends Controller
 {
@@ -98,25 +96,12 @@ class ServiceInfoController extends Controller
         $data['highlight'] = $request->boolean('highlight');
         $data['display_order'] = $data['display_order'] ?? 0;
         $data['icon'] = $data['icon'] ?? 'code';
-        $previous = $service->image_path;
-        $uploaded = null;
         if ($request->boolean('remove_image')) {
             $data['image_path'] = null;
         }
-        try {
-            if ($file = $request->file('uploaded_image')) {
-                $uploaded = 'uploads/website-services/'.Str::uuid().'.'.$file->extension();
-                $file->move(public_path('uploads/website-services'), basename($uploaded));
-                $data['image_path'] = $uploaded;
-            }
-            DB::transaction(fn () => $service->fill($data)->save());
-        } catch (\Throwable $exception) {
-            MediaFiles::delete($uploaded);
-            throw $exception;
-        }
-        if ($previous !== $service->image_path) {
-            MediaFiles::delete($previous);
-        }
+        MediaFiles::save($service, $data, $request, [
+            'uploaded_image' => ['column' => 'image_path', 'directory' => 'uploads/website-services'],
+        ]);
     }
 
     /**
@@ -126,9 +111,7 @@ class ServiceInfoController extends Controller
      */
     public function destroy(ServiceInfo $serviceInfo)
     {
-        $image = $serviceInfo->image_path;
-        $serviceInfo->delete();
-        MediaFiles::delete($image);
+        MediaFiles::destroy($serviceInfo, ['image_path']);
 
         return response()->json(['success' => 'Service deleted successfully']);
     }

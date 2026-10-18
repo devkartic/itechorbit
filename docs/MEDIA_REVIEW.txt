@@ -1,0 +1,60 @@
+iTechOrbit upload and preview review
+===================================
+Branch: fix/media-upload-review
+
+Reviewed fields
+- Blog cover images and project screenshots.
+- Profile photos, banners and PDF CVs.
+- Website service and product images.
+- Admin selected/saved previews, public cards/detail pages and all five portfolios.
+
+Fixes
+- Content Security Policy now allows blob: only in img-src, enabling browser-local
+  selected-image previews while retaining the existing script/object restrictions.
+- Shared MediaFiles save lifecycle stages files, saves record references in a
+  transaction, and removes obsolete files only after commit. Failed uploads and
+  failed database saves remove newly staged files while preserving old files.
+- Profile multi-file changes use the same operation. Upload errors are returned
+  to the relevant field instead of being silently swallowed.
+- Explicit attachment removal saves the cleared reference before deleting its
+  file. Successful record deletion cleans attachments for posts, projects,
+  profiles, website services and products. Profile view/delete actions now work.
+- Public media uses the same canonical-path checks as admin media; missing files,
+  traversal and symlinks outside the uploads directory do not resolve.
+- Shared MediaImage handles load errors and failures before hydration. Detail
+  images disappear gracefully; portraits and product/portfolio visuals fall back.
+  Existing screenshot contain and banner cover styles remain unchanged.
+- Admin saved-image failures explain that a replacement is needed. A selected
+  image that cannot render shows a preview error. Cancel selection removes only
+  the pending upload and preserves the saved attachment.
+
+Boundaries and remaining limitations
+- cv_public_status controls whether a CV link is shown on the public portfolio.
+  CVs remain in public/uploads; anyone with the exact URL may fetch the file even
+  when that setting is off. This is not private document storage. Fixing direct
+  URL access requires a separately scoped private-storage migration and protected
+  download route, including hosting changes and old-file migration.
+- Filesystem cleanup failures are logged; database/filesystem operations are not
+  a distributed transaction. A process termination during staging or disk deletion
+  failure can leave an orphan file. No existing uploads are bulk scanned/deleted.
+- On outer transaction rollback after a successful nested media save, old files
+  remain safe but staged files may need orphan cleanup. Current controllers invoke
+  the helper without wrapping it in another application transaction.
+- PDF previews open through an authenticated inline route. Whether a browser
+  displays or downloads a PDF depends on browser settings.
+- No .env changes, database schema changes, ZIP creation, push or deployment.
+
+Verification
+- PHP failure tests use real commits on isolated SQLite, not test-wide transactions.
+- Browser tests use synthetic uploaded files and isolated records on desktop/mobile.
+- Existing file-type/size, CV permission, ownership, crop, and theme checks retained.
+
+Final local results
+- 148 Laravel tests passed (2,995 assertions).
+- Full existing browser run: 72 passed; selected-image preview tests identified
+  the CSP defect on desktop/mobile. After the image-only CSP correction, both
+  tests passed with explicit decode checks. Two new fallback tests also passed,
+  covering all five portfolio templates and unavailable authenticated previews.
+- TypeScript, ESLint, 5 frontend tests, client/SSR build and diff checks passed.
+- Screenshots reviewed for saved uploads, public product images, portfolio banner
+  cropping and missing-media states. No real user records/uploads used as fixtures.

@@ -8,17 +8,16 @@ use App\Models\Admin\Skill;
 use App\Models\User;
 use App\Services\Admin\AdminPresentation;
 use App\Services\Shared\MediaFiles;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
 {
-    protected ?string $destination_path;
+    private const UPLOADS = [
+        'uploaded_image' => ['column' => 'image_path', 'directory' => 'uploads/projects/images'],
+    ];
 
     /**
      * Check permission for routs, roles, links.
@@ -32,7 +31,6 @@ class ProjectController extends Controller
 
             return $next($request);
         });
-        $this->destination_path = public_path('uploads/projects/images');
     }
 
     /**
@@ -67,20 +65,7 @@ class ProjectController extends Controller
         $user_id = Auth::user()->id;
         $this->create_validator($request, $user_id);
 
-        $image_path = null;
-        if ($request->file('uploaded_image') != null && $request->file('uploaded_image')->isValid()) {
-            try {
-                $file = $request->file('uploaded_image');
-                $tempName = strtolower(str_replace(' ', '', $request->input('uploaded_image')));
-                $image = (string) Str::uuid().'.'.$file->extension();
-                $image_path = 'uploads/projects/images/'.$image;
-                $file->move($this->destination_path, $image);
-            } catch (FileNotFoundException $e) {
-
-            }
-        }
-
-        Project::create([
+        MediaFiles::save(new Project, [
             'user_id' => $user_id,
             'name' => $request->input('name'),
             'project_category' => $request->input('project_category'),
@@ -92,9 +77,8 @@ class ProjectController extends Controller
             'project_url' => $request->input('project_url'),
             'order_number' => $request->input('order_number'),
             'about_project' => $request->input('about_project'),
-            'image_path' => $image_path,
             'status' => filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN),
-        ]);
+        ], $request, self::UPLOADS);
 
         return response()->json(['success' => 'Project created successfully']);
     }
@@ -151,23 +135,6 @@ class ProjectController extends Controller
         $user_id = $project->user_id;
         $this->update_validator($request, $project, $user_id);
 
-        $old_file_image = $project->image_path;
-        $image_path = null;
-        if ($request->file('uploaded_image') != null && $request->file('uploaded_image')->isValid()) {
-            try {
-                $file = $request->file('uploaded_image');
-                $tempName = strtolower(str_replace(' ', '', $request->input('uploaded_image')));
-                $image = (string) Str::uuid().'.'.$file->extension();
-                $image_path = 'uploads/projects/images/'.$image;
-                $file->move($this->destination_path, $image);
-                if ($old_file_image) {
-                    MediaFiles::delete($old_file_image);
-                }
-            } catch (FileNotFoundException $e) {
-
-            }
-        }
-
         $project->name = $request->input('name');
         $project->project_category = $request->input('project_category');
         $project->client_name = $request->input('client_name');
@@ -178,11 +145,8 @@ class ProjectController extends Controller
         $project->project_url = $request->input('project_url');
         $project->order_number = $request->input('order_number');
         $project->about_project = $request->input('about_project');
-        if ($image_path) {
-            $project->image_path = $image_path;
-        }
         $project->status = filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN);
-        $project->save();
+        MediaFiles::save($project, $project->getDirty(), $request, self::UPLOADS);
 
         return response()->json(['success' => 'Project updated successfully']);
     }
@@ -219,14 +183,7 @@ class ProjectController extends Controller
 
         User::verify_ownership($project->user_id);
 
-        if ($project) {
-            $old_file = $project->$field_name;
-            if ($old_file) {
-                MediaFiles::delete($old_file);
-            }
-            $project->$field_name = null;
-            $project->save();
-        }
+        MediaFiles::save($project, [$field_name => null], $request, self::UPLOADS);
 
         return response()->json(['success' => 'File deleted successfully']);
     }
@@ -239,7 +196,7 @@ class ProjectController extends Controller
     public function destroy(Project $project)
     {
         User::verify_ownership($project->user_id);
-        $project->delete();
+        MediaFiles::destroy($project, ['image_path']);
 
         return response()->json(['success' => 'Project deleted successfully']);
     }
