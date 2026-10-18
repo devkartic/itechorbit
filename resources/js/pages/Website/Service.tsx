@@ -1,3 +1,4 @@
+import { MediaImage } from '@/components/shared/MediaImage';
 import { SiteLink as Link } from '@/components/shared/SiteLink';
 import { ArrowUpRight, Check } from 'lucide-react';
 import PublicLayout from '@/layouts/website/PublicLayout';
@@ -9,7 +10,7 @@ import type { Service as ServiceType, Seo as SeoType } from '@/lib/types';
 export default function Service({ seo, service }: { seo: SeoType; service: ServiceType }) {
   return <PublicLayout><Seo seo={seo} schema={{ '@context': 'https://schema.org', '@type': 'Service', name: service.title, description: service.summary, provider: { '@type': 'Organization', name: 'iTechOrbit' }, url: seo.canonical,  }} /><PageIntro eyebrow={'Service'} title={service.title}>{service.summary}</PageIntro>
     <section className="section shell"><Breadcrumbs items={[{ label: 'Services', url: '/service/info' }, { label: service.short }]} /><div className="grid gap-14 lg:grid-cols-[1.5fr_1fr]"><div>
-      {service.image && <img src={service.image} alt={service.title} className="mb-10 h-auto w-full rounded-2xl" />}
+      {service.image && <MediaImage src={service.image} alt={service.title} className="mb-10 h-auto w-full rounded-2xl" />}
       <div className="prose-content" dangerouslySetInnerHTML={{ __html: service.description }} />
       {service.problem && <><h2 className="mt-10 text-2xl font-semibold">The challenge</h2><p className="mt-5 text-lg leading-8 text-slate-600">{service.problem}</p></>}
       {service.solution && <><h2 className="mt-12 text-2xl font-semibold">A considered solution</h2><p className="mt-5 leading-8 text-slate-600">{service.solution}</p></>}

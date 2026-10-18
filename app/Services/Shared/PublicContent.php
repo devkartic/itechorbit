@@ -106,8 +106,7 @@ class PublicContent
 
     public function media(?string $path): ?string
     {
-        return $path && str_starts_with($path, 'uploads/') && ! str_contains($path, '..') && is_file(public_path($path))
-            ? '/'.$path : null;
+        return MediaFiles::resolve($path) ? '/'.$path : null;
     }
 
     public function externalUrl(?string $url): ?string

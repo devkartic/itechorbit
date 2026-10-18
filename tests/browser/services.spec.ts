@@ -38,6 +38,15 @@ test('website products support independent CRUD with responsive public pages', a
     await expect(page.getByRole('img', { name: 'Launch package', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await page.screenshot({ path: testInfo.outputPath('product-service.png'), fullPage: true });
+    await page.route('**/uploads/website-products/**', route => route.fulfill({ status: 404, body: '' }));
+    await page.reload();
+    await expect(page.getByRole('img', { name: 'Launch package', exact: true })).toHaveCount(0);
+    await page.goto('/products');
+    const productCard = page.locator('.product-card').filter({ has: page.getByRole('heading', { name: 'Launch package', exact: true }) });
+    await expect(productCard.locator('img')).toHaveCount(0);
+    await expect(productCard.locator('.product-card-emblem')).toBeVisible();
+    await page.unroute('**/uploads/website-products/**');
+    await page.goto(`/products/${slug}`);
     const oldUrl = await page.request.get(`/services/${slug}`, { maxRedirects: 0 });
     expect(oldUrl.status()).toBe(301);
     expect(oldUrl.headers().location).toMatch(new RegExp(`/products/${slug}$`));

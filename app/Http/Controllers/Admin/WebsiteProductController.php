@@ -8,8 +8,6 @@ use App\Models\Admin\WebsiteProduct;
 use App\Services\Admin\AdminPresentation;
 use App\Services\Shared\MediaFiles;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class WebsiteProductController extends Controller
 {
@@ -98,25 +96,12 @@ class WebsiteProductController extends Controller
         $data['highlight'] = $request->boolean('highlight');
         $data['display_order'] = $data['display_order'] ?? 0;
         $data['icon'] = $data['icon'] ?? 'code';
-        $previous = $service->image_path;
-        $uploaded = null;
         if ($request->boolean('remove_image')) {
             $data['image_path'] = null;
         }
-        try {
-            if ($file = $request->file('uploaded_image')) {
-                $uploaded = 'uploads/website-products/'.Str::uuid().'.'.$file->extension();
-                $file->move(public_path('uploads/website-products'), basename($uploaded));
-                $data['image_path'] = $uploaded;
-            }
-            DB::transaction(fn () => $service->fill($data)->save());
-        } catch (\Throwable $exception) {
-            MediaFiles::delete($uploaded);
-            throw $exception;
-        }
-        if ($previous !== $service->image_path) {
-            MediaFiles::delete($previous);
-        }
+        MediaFiles::save($service, $data, $request, [
+            'uploaded_image' => ['column' => 'image_path', 'directory' => 'uploads/website-products'],
+        ]);
     }
 
     /**
@@ -126,9 +111,7 @@ class WebsiteProductController extends Controller
      */
     public function destroy(WebsiteProduct $productInfo)
     {
-        $image = $productInfo->image_path;
-        $productInfo->delete();
-        MediaFiles::delete($image);
+        MediaFiles::destroy($productInfo, ['image_path']);
 
         return response()->json(['success' => 'Product deleted successfully']);
     }

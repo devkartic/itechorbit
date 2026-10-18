@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, FileText } from 'lucide-react';
+import { MediaImage } from '@/components/shared/MediaImage';
 import { Input } from '@/components/ui/input';
 import type { Attachment, Field } from './types';
 
 export function AttachmentPreview({ attachment }: { attachment: Attachment }) {
   return <div className="workspace-attachment-preview">
     <span className="workspace-attachment-label">{attachment.label}</span>
-    {attachment.type === 'image' && attachment.url && <a href={attachment.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${attachment.label} image`}><img src={attachment.url} alt={`${attachment.label} preview`} className="workspace-media-preview" /></a>}
+    {attachment.type === 'image' && attachment.url && <a href={attachment.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${attachment.label} image`}><MediaImage fallback={<span className="form-error" role="status">This saved image could not be loaded. Upload a replacement.</span>} src={attachment.url} alt={`${attachment.label} preview`} className="workspace-media-preview" /></a>}
     {attachment.type === 'pdf' && attachment.url && <a className="workspace-pdf-link" href={attachment.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${attachment.label} PDF`}><FileText size={18} />Open PDF <ArrowUpRight size={15} aria-hidden="true" /></a>}
     {attachment.type === 'unavailable' && <p className="form-error">This saved file is unavailable. Upload a replacement.</p>}
     <small>{attachment.name}</small>
@@ -34,8 +35,8 @@ export function UploadField({ field, file, error, disabled, onChange, help }: { 
       onChange(selected);
     }} aria-invalid={!!error} aria-describedby={`${field.name}-help ${field.name}-error`} />
     <small id={`${field.name}-help`}>{pdf ? 'PDF document' : 'JPG, PNG or WebP image'} · up to {field.max_kb?.toLocaleString()} KB</small>
-    {preview && <img src={preview} alt={`Selected ${field.label} preview`} className="workspace-media-preview" />}
-    {file && <p className="workspace-field-help">Selected file: {file.name}. Save changes to upload.</p>}
+    {preview && <MediaImage fallback={<span className="form-error" role="status">This image cannot be previewed. Choose a valid image.</span>} src={preview} alt={`Selected ${field.label} preview`} className="workspace-media-preview" />}
+    {file && <p className="workspace-field-help">Selected file: {file.name}. Save changes to upload. <button type="button" disabled={disabled} className="underline" onClick={() => { const input = document.getElementById(field.name) as HTMLInputElement | null; if (input) input.value = ''; onChange(undefined); }}>Cancel selection</button></p>}
     {help && <p className="workspace-field-help">{help}</p>}
     <p id={`${field.name}-error`} className="form-error" role={error ? 'alert' : undefined}>{error}</p>
   </div>;

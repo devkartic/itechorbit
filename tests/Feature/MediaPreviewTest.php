@@ -7,9 +7,13 @@ use App\Models\Admin\Link;
 use App\Models\Admin\Permission;
 use App\Models\Admin\Project;
 use App\Models\Admin\Route;
+use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\Skill;
+use App\Models\Admin\WebsiteProduct;
+use App\Services\Shared\MediaFiles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
 use Tests\TestCase;
@@ -86,5 +90,72 @@ class MediaPreviewTest extends TestCase
         } finally {
             @unlink($path);
         }
+    }
+
+    public function test_website_preview_access_and_unavailable_files_for_each_resource(): void
+    {
+        $owner = $this->user(1);
+        $post = $this->article([], $owner);
+        $service = ServiceInfo::firstOrFail();
+        $product = WebsiteProduct::create(['title' => 'Preview product', 'slug' => 'preview-product', 'subtitle' => 'Summary', 'descriptions' => 'Details']);
+        $name = 'preview-'.Str::uuid().'.png';
+        UploadedFile::fake()->image($name)->move(public_path('uploads'), $name);
+        $other = $this->user();
+        $this->permissionResources();
+        try {
+            foreach (['posts' => $post, 'service-info' => $service, 'product-info' => $product] as $resource => $record) {
+                $record->update(['image_path' => 'uploads/'.$name]);
+                $url = '/workspace/media/'.$resource.'/'.$record->id.'/image_path';
+                auth()->logout();
+                $this->get($url)->assertRedirect('/login');
+                $this->actingAs($other)->get($url)->assertForbidden();
+                $this->actingAs($owner)->get($url)->assertOk()->assertHeader('Content-Type', 'image/png');
+                $record->update(['image_path' => 'uploads/not-present.png']);
+                $this->get($url)->assertNotFound();
+                $this->get('/'.$resource.'/'.$record->id.'/edit')->assertOk()->assertInertia(fn (Assert $page) => $page->where('attachments.image_path.type', 'unavailable')->where('attachments.image_path.url', null));
+                $record->update(['image_path' => '../composer.json']);
+                $this->get($url)->assertNotFound();
+            }
+        } finally {
+            unlink(public_path('uploads/'.$name));
+        }
+    }
+
+    public function test_profile_view_and_delete_manage_all_attachments(): void
+    {
+        $this->actingAs($this->user(1));
+        $pdf = UploadedFile::fake()->createWithContent('resume.pdf', "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF");
+        $this->post('/basics', [...$this->basicData(),
+            'uploaded_banner_image' => UploadedFile::fake()->image('banner.png'),
+            'uploaded_profile_image' => UploadedFile::fake()->image('portrait.png'),
+            'uploaded_cv' => $pdf,
+        ], ['Accept' => 'application/json'])->assertOk();
+        $basic = Basic::firstOrFail();
+        $paths = [$basic->banner_image_path, $basic->profile_image_path, $basic->cv_path];
+        try {
+            $this->get('/basics/'.$basic->id)->assertOk()->assertInertia(fn (Assert $page) => $page->where('action', 'show')->has('attachments', 3));
+            foreach ($paths as $path) {
+                $this->assertFileExists(public_path($path));
+            }
+            $this->deleteJson('/basics/'.$basic->id)->assertOk();
+            $this->assertDatabaseMissing('basics', ['id' => $basic->id]);
+            foreach ($paths as $path) {
+                $this->assertFileDoesNotExist(public_path($path));
+            }
+        } finally {
+            foreach ($paths as $path) {
+                MediaFiles::delete($path);
+            }
+        }
+    }
+
+    public function test_csp_allows_local_image_previews_without_enabling_blob_scripts_or_objects(): void
+    {
+        $response = $this->get('/login')->assertOk();
+        $policy = $response->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString("img-src 'self' data: blob: https:", $policy);
+        $this->assertStringContainsString("object-src 'none'", $policy);
+        preg_match('/script-src ([^;]+)/', $policy, $script);
+        $this->assertStringNotContainsString('blob:', $script[1]);
     }
 }

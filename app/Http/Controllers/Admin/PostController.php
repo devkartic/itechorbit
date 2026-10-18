@@ -10,15 +10,15 @@ use App\Models\User;
 use App\Services\Admin\AdminPresentation;
 use App\Services\Shared\MediaFiles;
 use Carbon\Carbon;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
-    protected ?string $destination_path;
+    private const UPLOADS = [
+        'uploaded_image' => ['column' => 'image_path', 'directory' => 'uploads/posts/images'],
+    ];
 
     /**
      * Check permission for routs, roles, links.
@@ -32,7 +32,6 @@ class PostController extends Controller
 
             return $next($request);
         });
-        $this->destination_path = public_path('uploads/posts/images');
     }
 
     /**
@@ -66,30 +65,16 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $this->create_validator($request);
-        $image_path = null;
-        if ($request->file('uploaded_image') != null && $request->file('uploaded_image')->isValid()) {
-            try {
-                $file = $request->file('uploaded_image');
-                $tempName = strtolower(str_replace(' ', '', $request->input('uploaded_image')));
-                $image = (string) Str::uuid().'.'.$file->extension();
-                $image_path = 'uploads/posts/images/'.$image;
-                $file->move($this->destination_path, $image);
-            } catch (FileNotFoundException $e) {
-
-            }
-        }
-
-        Post::create([
+        MediaFiles::save(new Post, [
             'title' => $request->input('title'),
             'category_id' => $request->input('category_id'),
             'tags' => Tag::tags_to_json($request->input('tags')),
             'body' => $request->input('body'),
             'codebase' => $request->input('codebase'),
-            'image_path' => $image_path,
             'status' => filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN),
             'is_private' => filter_var($request->input('is_private'), FILTER_VALIDATE_BOOLEAN),
             'user_id' => Auth::user()->id,
-        ]);
+        ], $request, self::UPLOADS);
 
         return response()->json(['success' => 'Post created successfully']);
     }
@@ -142,35 +127,15 @@ class PostController extends Controller
 
         $this->update_validator($request);
 
-        $old_file_image = $post->image_path;
-        $image_path = null;
-        if ($request->file('uploaded_image') != null && $request->file('uploaded_image')->isValid()) {
-            try {
-                $file = $request->file('uploaded_image');
-                $tempName = strtolower(str_replace(' ', '', $request->input('uploaded_image')));
-                $image = (string) Str::uuid().'.'.$file->extension();
-                $image_path = 'uploads/posts/images/'.$image;
-                $file->move($this->destination_path, $image);
-                if ($old_file_image) {
-                    MediaFiles::delete($old_file_image);
-                }
-            } catch (FileNotFoundException $e) {
-
-            }
-        }
-
         $post->title = $request->input('title');
         $post->category_id = $request->input('category_id');
         $post->tags = Tag::tags_to_json($request->input('tags'));
         $post->body = $request->input('body');
         $post->codebase = $request->input('codebase');
-        if ($image_path) {
-            $post->image_path = $image_path;
-        }
         $post->status = filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN);
         $post->is_private = filter_var($request->input('is_private'), FILTER_VALIDATE_BOOLEAN);
         $post->updated_by = Auth::user()->id;
-        $post->save();
+        MediaFiles::save($post, $post->getDirty(), $request, self::UPLOADS);
 
         return response()->json(['success' => 'Post updated successfully']);
     }
@@ -194,7 +159,7 @@ class PostController extends Controller
     {
         User::verify_ownership($post->user_id);
 
-        $post->delete();
+        MediaFiles::destroy($post, ['image_path']);
 
         return response()->json(['success' => 'Post deleted successfully']);
     }

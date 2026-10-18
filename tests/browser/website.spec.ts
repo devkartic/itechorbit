@@ -673,7 +673,7 @@ test('CV PDF uploads save and clearing a replacement preserves the existing docu
 
 test('all image uploads preview selections and saved files with consistent validation', async ({ page, isMobile }, testInfo) => {
   await page.goto('/login'); await page.getByLabel('Email address').fill('admin@example.test'); await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42'); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page).toHaveURL(/\/home$/);
-  const png = { name: 'preview.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=', 'base64') };
+  const png = 'tests/browser/fixtures/project-screenshot.png';
   const title = `Image preview QA ${isMobile ? 'mobile' : 'desktop'}`;
   for (const [path, labels] of [['/posts/create', ['Cover image']], ['/projects/1/edit', ['Project screenshot']], ['/basics/1/edit', ['Banner image', 'Profile photo']]] as const) {
     await page.goto(path);
@@ -691,7 +691,13 @@ test('all image uploads preview selections and saved files with consistent valid
     }
     for (const label of labels) {
       await page.getByLabel(label, { exact: true }).setInputFiles(png);
-      await expect(page.getByRole('img', { name: `Selected ${label} preview`, exact: true })).toBeVisible();
+      const selectedPreview = page.getByRole('img', { name: `Selected ${label} preview`, exact: true });
+      await expect(selectedPreview).toBeVisible();
+      await expect.poll(() => selectedPreview.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBeTruthy();
+      const upload = page.locator('.workspace-upload').filter({ has: page.getByLabel(label, { exact: true }) });
+      await upload.getByRole('button', { name: 'Cancel selection', exact: true }).click();
+      await expect(page.getByRole('img', { name: `Selected ${label} preview`, exact: true })).toHaveCount(0);
+      await page.getByLabel(label, { exact: true }).setInputFiles(png);
     }
     await page.getByRole('button', { name: 'Save changes', exact: true }).click();
     await expect(page).toHaveURL(path.startsWith('/posts') ? /\/posts$/ : path.startsWith('/projects') ? /\/projects$/ : /\/basics$/);
