@@ -4,6 +4,7 @@ namespace App\Models\Admin;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ServiceInfo extends Model
 {
@@ -29,5 +30,10 @@ class ServiceInfo extends Model
     public function scopePublished($query)
     {
         return $query->where('status', 1)->orderBy('display_order')->orderBy('id');
+    }
+
+    public function websiteTechnologies(): BelongsToMany
+    {
+        return $this->belongsToMany(WebsiteTechnology::class, 'website_service_technology', 'website_service_id', 'website_technology_id')->withTimestamps();
     }
 }

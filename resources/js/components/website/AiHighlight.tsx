@@ -1,8 +1,8 @@
 import { ArrowRight, ArrowUpRight, FileText, Layers3, Search, Sparkles } from 'lucide-react';
 import { SiteLink } from '../shared/SiteLink';
 import { Button } from '../ui/button';
-import type { Service } from '@/lib/types';
-export function AiHighlight({ service }: { service?: Service }) {
+import type { ServiceSummary } from '@/lib/types';
+export function AiHighlight({ service }: { service?: ServiceSummary }) {
   if (!service) return null;
   return <section className="section shell ai-section" aria-labelledby="ai-highlight-title"><div className="ai-highlight">
     <div className="ai-highlight-copy"><span className="ai-label"><Sparkles size={15} />AI, WITH PURPOSE</span>

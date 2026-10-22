@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WebsiteProductController;
+use App\Http\Controllers\Admin\WebsiteTechnologyController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('workspace/email-notices')->controller(MailNoticeController::class)->group(function () {
@@ -59,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::post('website-technologies/{website_technology}/merge', [WebsiteTechnologyController::class, 'merge'])->name('website-technologies.merge');
     Route::resources([
         //    Security section
         'menus' => MenuController::class,
@@ -75,6 +77,7 @@ Route::middleware('auth')->group(function () {
         'about-info' => AboutInfoController::class,
         'service-info' => ServiceInfoController::class,
         'product-info' => WebsiteProductController::class,
+        'website-technologies' => WebsiteTechnologyController::class,
         'privacy-policies' => PrivacyPolicyController::class,
         'contact-info' => ContactInfoController::class,
 

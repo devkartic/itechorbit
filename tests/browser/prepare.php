@@ -77,3 +77,4 @@ Artisan::call('ai-pro:setup');
 \App\AiPro\Models\Site::create(['public_id' => 'browser-remote', 'name' => 'Embedded test website', 'url' => 'http://127.0.0.1:8011',
     'origins' => ['http://127.0.0.1:8011'], 'enabled' => true, 'contact_url' => 'http://127.0.0.1:8011/contact']);
 Artisan::call('db:seed', ['--class' => 'WorkspaceNavigationSeeder', '--force' => true]);
+Artisan::call('db:seed', ['--class' => 'WebsiteGrowthServicesSeeder', '--force' => true]);

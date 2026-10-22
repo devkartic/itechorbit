@@ -110,7 +110,7 @@
   .technology-strip > div { @apply flex flex-wrap items-center justify-between gap-7 py-8; }
   .technology-strip p { @apply text-xs font-semibold tracking-[.15em] text-slate-500; }
   .technology-strip > div > div { @apply flex flex-wrap gap-x-8 gap-y-3; }
-  .technology-strip span { @apply text-lg font-semibold tracking-[-.04em] text-slate-700; }
+  .technology-strip button { @apply text-lg font-semibold tracking-[-.04em] text-slate-700; }
   .work-section { background: #f1edf5; }
   .principles { @apply grid gap-6; }
   .principles > div { @apply flex items-start gap-5 rounded-xl border border-slate-200 bg-white p-6; }
@@ -401,3 +401,6 @@ span[data-text-font="sans"] { font-family:Inter,sans-serif; } span[data-text-fon
 @media(min-width:768px) { .product-grid>.product-card:only-child { grid-column:1/-1; display:grid; grid-template-columns:1fr 1.1fr; } .product-grid>.product-card:only-child .product-card-visual { aspect-ratio:auto; min-height:420px; } .product-grid>.product-card:only-child .product-card-body { padding:40px; } .product-grid>.product-card:only-child h3 { font-size:32px; } }
 @media(max-width:767px) { .product-grid { grid-template-columns:1fr; gap:24px; } .product-card { border-radius:20px; } .product-card-body { padding:24px; } .product-card h3 { font-size:25px; } .product-card-visual { aspect-ratio:4/3; } .product-card-emblem { width:96px; height:96px; border-radius:24px; } .product-card-emblem svg { width:48px; height:48px; } .product-card-orbit { width:220px; height:220px; } .product-card-orbit.orbit-two { width:310px; height:310px; } .product-card-badge { left:20px; top:20px; } .product-card-signature { left:20px; bottom:20px; } }
 @media(prefers-reduced-motion:reduce) { .product-card,.product-card-visual img { transition:none; } .product-card:hover,.product-card:hover .product-card-visual img { transform:none; } }
+
+.technology-strip button { border-bottom: 2px solid transparent; padding-block: .25rem; }
+.technology-strip button:hover, .technology-strip button[aria-pressed="true"] { color: #7040cf; border-bottom-color: #7040cf; }

@@ -35,7 +35,7 @@ class LocalContent
         };
         $add('home', $site->name, '/', config('site.description'));
         $presentation = app(PublicContent::class);
-        foreach (ServiceInfo::published()->get() as $record) {
+        foreach (ServiceInfo::published()->with('websiteTechnologies')->get() as $record) {
             $fields = $presentation->service($record);
             $content = implode("\n", array_filter([$fields['summary'], $fields['description'], $fields['problem'], $fields['solution'],
                 implode("\n", $fields['deliverables']), implode(', ', $fields['technologies']), implode("\n", $fields['approach'] ?? []),

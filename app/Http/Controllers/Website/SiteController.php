@@ -12,8 +12,10 @@ use App\Models\Admin\PrivacyPolicy;
 use App\Models\Admin\Project;
 use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\WebsiteProduct;
+use App\Models\Admin\WebsiteTechnology;
 use App\Models\Comment;
 use App\Models\User;
+use App\Services\Shared\TechnologyCatalog;
 use Illuminate\Http\Request;
 
 class SiteController extends PublicPageController
@@ -25,7 +27,7 @@ class SiteController extends PublicPageController
 
     private function services(): array
     {
-        return ServiceInfo::published()->get()->map(fn ($service) => $this->content->service($service))->all();
+        return ServiceInfo::published()->with('websiteTechnologies')->get()->map(fn ($service) => $this->content->service($service, false))->all();
     }
 
     public function home(Request $request)
@@ -40,6 +42,7 @@ class SiteController extends PublicPageController
             'articles' => Post::public_posts()->with(['category', 'user'])->latest('id')->limit(3)->get()->map(fn ($post) => $this->content->article($post)),
             'projects' => $this->projects()->orderBy('order_number')->limit(3)->get()->map(fn ($project) => $this->content->project($project)),
             'services' => $this->services(),
+            'toolkit' => app(TechnologyCatalog::class)->visible('homepage')->map(fn ($technology) => $this->content->technology($technology))->all(),
             'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product))->all(),
         ]);
     }
@@ -104,14 +107,33 @@ class SiteController extends PublicPageController
         return $this->page('Website/Project', $project->name, strip_tags($project->about_project), ['project' => $this->content->project($project, true)]);
     }
 
-    public function offerings()
+    public function offerings(Request $request)
     {
-        return $this->page('Website/Services', 'Software engineering services', config('site.description'), ['services' => $this->services()]);
+        $filters = $request->validate(['technology' => ['nullable', 'string', 'max:180'], 'group' => ['nullable', 'string', 'max:100']]);
+        $catalog = app(TechnologyCatalog::class);
+        $group = $filters['group'] ?? '';
+        $slug = $filters['technology'] ?? '';
+        $selected = $group !== '' ? $catalog->resolve($group, 'group') : ($slug !== '' ? $catalog->resolve($slug) : null);
+        if ($group !== '' || $slug !== '') {
+            abort_unless($selected?->status, 404);
+            if ($group !== '' || $selected->slug !== $slug) {
+                return redirect($catalog->serialize($selected)['url'], 301);
+            }
+        }
+        $services = ServiceInfo::published()->with('websiteTechnologies')
+            ->when($selected, fn ($query) => $query->whereHas('websiteTechnologies', fn ($q) => $q->where('website_technologies.id', $selected->id)))
+            ->get()->map(fn ($service) => $this->content->service($service, false))->all();
+
+        return $this->page('Website/Services', 'Website & software engineering services', 'Website speed optimization, AI-generated code review, technical SEO, analytics, security audits and custom software engineering. Explore our services and discuss your project.', [
+            'services' => $services,
+            'technologies' => $catalog->visible('filters')->map(fn ($technology) => $this->content->technology($technology))->all(),
+            'selectedTechnology' => $selected ? $this->content->technology($selected) : null,
+        ], '/service/info', $selected !== null);
     }
 
     public function service(string $slug)
     {
-        $record = ServiceInfo::published()->where('slug', $slug)->first();
+        $record = ServiceInfo::published()->with('websiteTechnologies')->where('slug', $slug)->first();
         if (! $record && WebsiteProduct::published()->where('slug', $slug)->exists()) {
             return redirect('/products/'.$slug, 301);
         }

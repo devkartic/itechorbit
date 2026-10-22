@@ -7,6 +7,7 @@ use App\Models\Admin\Permission;
 use App\Models\Admin\Post;
 use App\Models\Admin\Skill;
 use App\Models\Admin\Tag;
+use App\Models\Admin\WebsiteTechnology;
 use App\Models\Contact;
 use App\Models\User;
 use App\Services\Shared\MediaFiles;
@@ -96,6 +97,31 @@ class AdminPresentation
             $options[$field['name']] = $choices->orderBy('name')->get(['id', 'name'])->map(fn ($item) => ['value' => (string) $item->id, 'label' => $item->name])->all();
         }
         $values = $record ? $this->attributes($record) : [];
+        if ($resource === 'website-technologies') {
+            if ($action === 'create') {
+                $values['show_in_filters'] = true;
+            }
+            if ($record) {
+                $options['merge_target'] = WebsiteTechnology::where('id', '!=', $record->id)->orderBy('name')->get()
+                    ->map(fn ($technology) => ['value' => (string) $technology->id, 'label' => $technology->name.($technology->status ? '' : ' (inactive)')])->all();
+                $values['previous_names_and_links'] = \Illuminate\Support\Facades\DB::table('website_technology_aliases')
+                    ->where('website_technology_id', $record->id)->orderBy('type')->orderBy('value')->get()
+                    ->map(fn ($alias) => $alias->type.': '.$alias->value)->all();
+            }
+        }
+        if ($resource === 'service-info') {
+            $selected = $record?->websiteTechnologies()->pluck('website_technologies.id')->all() ?? [];
+            $options['technology_ids'] = WebsiteTechnology::where(fn ($query) => $query->where('status', true)->orWhereIn('id', $selected))
+                ->orderBy('display_order')->orderBy('name')->get()->map(fn ($technology) => [
+                    'value' => (string) $technology->id, 'label' => $technology->name.($technology->status ? '' : ' (inactive)'),
+                    'disabled' => ! $technology->status,
+                ])->all();
+            $values['technology_ids'] = array_map('strval', $selected);
+            if ($action === 'show' && $record) {
+                $values['technology_ids'] = $record->websiteTechnologies()->orderBy('display_order')->pluck('name')->all();
+            }
+            unset($values['technologies']);
+        }
         if ($record) {
             foreach (['tags' => Tag::class, 'technology_used' => Skill::class] as $field => $type) {
                 if (! empty($values[$field])) {
@@ -109,6 +135,9 @@ class AdminPresentation
             }
             if (in_array($resource, ['service-info', 'product-info'])) {
                 foreach (['deliverables', 'technologies', 'approach'] as $field) {
+                    if ($resource === 'service-info' && $field === 'technologies') {
+                        continue;
+                    }
                     $values[$field] = implode("\n", $record->{$field} ?? []);
                 }
                 $values['use_cases'] = implode("\n", array_map(fn ($item) => $item['title'].' | '.$item['description'], $record->use_cases ?? []));

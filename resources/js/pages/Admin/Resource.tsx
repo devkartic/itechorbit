@@ -5,6 +5,7 @@ import AdminLayout, { type Navigation } from '@/layouts/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { DataTable } from '@/components/admin/DataTable';
+import { TechnologyMerge } from '@/components/admin/TechnologyMerge';
 import { ResourceForm } from '@/components/admin/ResourceForm';
 import { AttachmentPreview } from '@/components/admin/UploadField';
 import { Notice } from '@/components/admin/Notice';
@@ -26,6 +27,7 @@ export default function Resource({ resource, title, action, fields, options, rec
     <Notice message={notice} error={failed} onDismiss={() => setNotice('')} />
     {action === 'index' && records && <DataTable key={resource} resource={resource} title={title} columns={columns} initial={records} filters={filters} revision={revision} actions={actions} />}
     {(action === 'create' || action === 'edit') && <ResourceForm key={`${resource}-${record.id ?? 'new'}`} resource={resource} title={title} action={action} fields={fields} options={options} record={record} attachments={attachments} />}
+    {resource === 'website-technologies' && action === 'edit' && abilities.edit && abilities.destroy && <TechnologyMerge id={Number(record.id)} name={String(record.name)} targets={options.merge_target ?? []} />}
     {contactMessage && <ContactMessage record={record} />}
     {action === 'show' && !contactMessage && <dl className="workspace-card workspace-record-details">{Object.entries(record).filter(([key]) => !['password', 'password_confirmation'].includes(key)).map(([key, value]) => <div key={key} className={key in previews ? 'is-rich' : ''}><dt>{key.replace(/_/g, ' ')}</dt>{attachments[key] ? <dd><AttachmentPreview attachment={attachments[key]} /></dd> : key in previews ? <dd className="prose-content" dangerouslySetInnerHTML={{ __html: previews[key] }} /> : <dd>{Array.isArray(value) ? value.join(', ') : String(value ?? '—')}</dd>}</div>)}</dl>}
     <Dialog open={deleting !== null} title="Delete this record?" onClose={() => { if (!busy) setDeleting(null); }}><p className="text-sm leading-7 text-slate-600">This action cannot be undone. Related records may also be removed by the existing database relationships.</p><div className="mt-6 flex justify-end gap-3"><Button variant="outline" disabled={busy} onClick={() => setDeleting(null)}>Cancel</Button><Button variant="destructive" disabled={busy} onClick={() => void remove()}>{busy ? 'Deleting…' : 'Delete record'}</Button></div></Dialog>

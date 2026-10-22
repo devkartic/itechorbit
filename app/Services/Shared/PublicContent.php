@@ -6,6 +6,7 @@ use App\Models\Admin\Post;
 use App\Models\Admin\Project;
 use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\WebsiteProduct;
+use App\Models\Admin\WebsiteTechnology;
 use Illuminate\Support\Str;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
@@ -24,17 +25,27 @@ class PublicContent
         return (new HtmlSanitizer($config))->sanitize($html ?? '');
     }
 
-    public function service(ServiceInfo $service): array
+    public function service(ServiceInfo $service, bool $detail = true): array
     {
+        $technologies = $service->websiteTechnologies->where('status', true)->sortBy(fn ($technology) => sprintf('%010d', $technology->display_order).$technology->name)->values();
+
         return [
             'slug' => $service->slug,
             'title' => $service->title, 'short' => $service->short_title ?: $service->title, 'summary' => $service->subtitle,
-            'description' => $this->html($service->descriptions), 'url' => '/services/'.$service->slug,
+            'url' => '/services/'.$service->slug,
             'image' => $this->media($service->image_path), 'icon' => $service->icon, 'highlight' => $service->highlight,
-            'problem' => $service->problem, 'solution' => $service->solution,
-            'deliverables' => $service->deliverables ?? [], 'technologies' => $service->technologies ?? [],
-            'approach' => $service->approach, 'useCases' => $service->use_cases,
+            'deliverables' => $service->deliverables ?? [], 'technologies' => $technologies->pluck('name')->all(),
+            'technologyIds' => $technologies->pluck('id')->all(),
+            ...($detail ? ['technologyLinks' => $technologies->map(fn ($technology) => $this->technology($technology))->all()] : []),
+            'useCases' => $service->use_cases,
+            ...($detail ? ['description' => $this->html($service->descriptions),
+                'problem' => $service->problem, 'solution' => $service->solution, 'approach' => $service->approach] : []),
         ];
+    }
+
+    public function technology(WebsiteTechnology $technology): array
+    {
+        return app(TechnologyCatalog::class)->serialize($technology);
     }
 
     public function product(WebsiteProduct $service): array

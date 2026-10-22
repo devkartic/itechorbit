@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 class MediaFiles
 {
     /** Stage uploads together, then publish their references in one database transaction. */
-    public static function save(Model $record, array $attributes, Request $request, array $bindings): void
+    public static function save(Model $record, array $attributes, Request $request, array $bindings, ?callable $afterSave = null): void
     {
         $staged = [];
         $previous = [];
@@ -35,13 +35,16 @@ class MediaFiles
                     $attributes[$column] = $path;
                 }
             }
-            DB::transaction(function () use ($record, $attributes, $previous, &$committed) {
+            DB::transaction(function () use ($record, $attributes, $previous, &$committed, $afterSave) {
                 // Mark commit before model observers dispatch their after-commit jobs.
                 DB::afterCommit(function () use (&$committed) {
                     $committed = true;
                 });
                 if (! $record->fill($attributes)->save()) {
                     throw new \RuntimeException('The record could not be saved.');
+                }
+                if ($afterSave) {
+                    $afterSave($record);
                 }
                 $obsolete = [];
                 foreach ($previous as $column => $path) {

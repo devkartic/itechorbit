@@ -6,6 +6,7 @@ use App\Models\Admin\Link;
 use App\Models\Admin\Permission;
 use App\Models\Admin\Route;
 use App\Models\Admin\ServiceInfo;
+use App\Models\Admin\WebsiteTechnology;
 use App\Services\Shared\MediaFiles;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +26,7 @@ class WebsiteServicesTest extends TestCase
         return array_replace([
             'title' => 'Application launch package', 'slug' => 'application-launch',
             'subtitle' => 'A defined launch package.', 'descriptions' => '<p>Implementation and handover.</p>',
-            'deliverables' => "Application setup\nDeployment guide", 'technologies' => "Laravel\nReact",
+            'deliverables' => "Application setup\nDeployment guide", 'technology_ids' => WebsiteTechnology::whereIn('slug', ['laravel', 'react'])->pluck('id')->all(),
             'approach' => "Discovery\nImplementation",
             'display_order' => 0, 'is_checked' => 'true',
         ], $overrides);
@@ -42,8 +43,8 @@ class WebsiteServicesTest extends TestCase
             ->where('record.deliverables', "Application setup\nDeployment guide")->missing('options.service_type'));
         $this->get('/services/application-launch')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->missing('service.serviceType')->missing('service.price'));
-        $this->get('/service/info')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch'));
-        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch'));
+        $this->get('/service/info')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch')->missing('services.0.description')->missing('services.0.approach'));
+        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch')->missing('services.0.description')->missing('services.0.approach'));
         $this->get('/sitemaps/pages.xml')->assertSee('/services/application-launch', false);
         $this->get('/robots.txt')->assertSee('Allow: /services/application-launch', false);
 

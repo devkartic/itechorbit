@@ -132,7 +132,7 @@ class PermissionController extends Controller
         return match ($route_name) {
             'show', 'view' => 'index',
             'store', 'store_or_destroy' => 'create',
-            'update', 'delete-files' => 'edit',
+            'update', 'delete-files', 'merge' => 'edit',
             default => $route_name,
         };
     }
