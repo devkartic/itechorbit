@@ -15,11 +15,39 @@ For a new local installation, copy `.env.example` to `.env`, configure a disposa
 
 ```sh
 npm run build
-php artisan serve
-php artisan inertia:start-ssr
+npm run serve
 ```
 
-Run the HTTP server and SSR process in separate terminals. `npm run dev` enables frontend development; SSR uses the compiled bundle. The web server document root must be `public/`.
+`npm run serve` starts the local production preview at `http://127.0.0.1:8000`, waits for the configured SSR service to become ready, and stops both processes on Ctrl+C. Stop any existing SSR service first and rebuild after frontend changes. Use this production preview for mobile performance measurements. `npm run dev` starts Vite at `http://127.0.0.1:5173` for live frontend updates while Laravel remains at the configured `APP_URL` (locally `http://itechorbit.local`). Keep the command running during development. Local requests use client rendering while `public/hot` exists because this Vite configuration does not supply an Inertia SSR endpoint. Stopping Vite removes its hot file and returns Laravel to the built assets and configured SSR service; rebuild before previewing those assets. If Vite exits unexpectedly, check that port 5173 is stopped before removing a stale `public/hot`. Internal application links use Inertia navigation; external links and downloads retain normal browser navigation. Development timings are not performance baselines. The web server document root must be `public/`.
+
+### Blank page after reloading locally
+
+If Vite exits unexpectedly, `public/hot` can remain and make Laravel load scripts from a stopped server. With local SSR disabled in hot mode, this leaves an empty page. Check `lsof -nP -iTCP:5173 -sTCP:LISTEN`; once no Vite process is listening, remove the stale marker and rebuild:
+
+```sh
+rm -f public/hot
+npm run build
+```
+
+For the Docker workspace at `http://itechorbit.local`, run `npm run ssr:docker` after rebuilding to refresh the SSR service, then reload the page. Keep the existing `.env` and database. To resume live frontend updates, run `npm run dev` and keep it running.
+
+## Google integrations
+
+Set these optional values in `.env`; blank values disable the corresponding integration:
+
+```dotenv
+GOOGLE_TAG_MANAGER_ID=GTM-XXXXXXX
+GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
+GOOGLE_SITE_VERIFICATION=your-search-console-verification-token
+```
+
+Tag Manager loads in the document head with its fallback immediately after the opening body tag. Direct GA4 loads in the head, and Search Console verification appears as a server-rendered meta tag. These integrations apply only to public website and portfolio pages, excluding authentication, account, and admin pages. Search Console uses the HTML-tag verification token, not an Analytics Measurement ID. AdSense configuration does not load an advertising script.
+
+Use either direct GA4 through `GOOGLE_ANALYTICS_ID` or GA4 configured inside Tag Manager. When using the latter, leave `GOOGLE_ANALYTICS_ID` blank to avoid duplicate tracking. For client-side navigation, enable GA4 enhanced measurement page views based on browser history changes; no manual page-view events are added. Configuring both IDs loads both integrations independently.
+
+The Content Security Policy permits the configured Google integrations on public pages and uses script nonces. Additional services or custom tags installed through Tag Manager may require their own CSP endpoints; preview/debug and advertising features are not enabled by this configuration.
+
+After changing environment values in a deployment using cached configuration, run `php artisan config:cache`. Restart long-running application workers if applicable. Environment configuration requires no frontend rebuild. Installation references: [Tag Manager](https://developers.google.com/tag-platform/tag-manager/web), [Search Console verification](https://support.google.com/webmasters/answer/9008080), and [GA4 single-page applications](https://developers.google.com/analytics/devguides/collection/ga4/single-page-applications).
 
 ## Technology catalog
 
@@ -52,6 +80,8 @@ npm run test:browser
 PHP tests use isolated SQLite memory. Browser tests use a temporary SQLite database, synthetic uploads and intercepted OAuth navigation, requiring free ports 8010 and 13714. Do not point fixtures at an application database.
 
 ## Project structure and operations
+
+See [loading performance](docs/PERFORMANCE.md) for repeatable mobile benchmarks, local preview setup, and compression/cache requirements.
 
 The public website, public portfolios and private admin workspace have separate route files, controllers and frontend page folders. Authentication, accounts and shared code are grouped separately. See the [developer structure guide](docs/ARCHITECTURE.md) for the directory map and compatibility rules, including why historical public image paths remain available.
 

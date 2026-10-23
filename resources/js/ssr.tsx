@@ -7,4 +7,4 @@ createServer(page => createInertiaApp({
   page, render: renderToString,
   resolve: async name => (await resolvePageComponent<{ default: ResolvedComponent }>(`./pages/${name}.tsx`, import.meta.glob<{ default: ResolvedComponent }>('./pages/**/*.tsx'))).default,
   setup: ({ App, props }) => <App {...props} />,
-}), { host: '127.0.0.1' });
+}), { host: process.env.INERTIA_SSR_HOST || '127.0.0.1' });

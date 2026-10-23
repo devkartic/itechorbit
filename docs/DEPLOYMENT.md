@@ -50,11 +50,50 @@ Do not deploy `.git`, test reports, local logs, development databases or credent
 
 ## Database migrations and data preservation
 
-Keep all migrations, even when their names are historical: they define valid installation and upgrade paths. Review pending changes against the existing schema. Current upgrades include the nullable Sanctum token expiry, portfolio template preference, widened privacy-policy content, social-account connections, email notice tables and database-managed workspace navigation.
+Keep migrations dated October 17, 2026 and earlier unchanged. Migrations after that date are consolidated as described below. Review pending changes against the existing schema. Current upgrades include the nullable Sanctum token expiry, portfolio template preference, widened privacy-policy content, social-account connections, email notice tables and database-managed workspace navigation.
 
 The privacy-policy migration widens content to LONGTEXT and intentionally does not shrink it on rollback. The social-account migration retains `users.provider_id`, copies known Google identities and refuses duplicate legacy identities before creating its table. Resolve identified duplicate identities before retrying; do not delete user accounts to make the migration pass. Portfolio template values default safely to Studio when unset.
 
 Preserve uploads, public CV visibility, existing article/portfolio URLs, permissions and primary keys across releases. Historical public images and fonts are retained because stored content can reference their URLs. Compare media checksums and record counts during staging rehearsal.
+
+### Consolidated migrations after October 17, 2026
+
+The eleven migration files from October 18–23 are replaced by four feature migrations:
+
+| Migration | Responsibility |
+| --- | --- |
+| `2026_10_18_000002_create_ai_pro_tables.php` | Independent AI assistant tables; unchanged. |
+| `2026_10_24_000001_upgrade_website_catalog.php` | Legacy service expansion, separate website products and the one-time marketing refresh. |
+| `2026_10_24_000002_upgrade_website_content.php` | Website contact/about renaming, structured contact fields and transfer of any temporary contact profile. |
+| `2026_10_24_000003_upgrade_website_technologies.php` | Technology tables, service assignments, aliases, canonical catalogue and navigation. |
+
+Before deployment, take a database backup and keep the matching pre-upgrade code revision. Rehearse on a restored staging database, then run `php artisan migrate --force`. Do not reset the database, delete migration-history rows or manually mark the new migrations as applied. Existing historical rows stay intact. The new runners inspect the current schema and existing migration history: completed schema changes are skipped, completed marketing refreshes are not repeated, and saved content, assignments, publication settings and navigation permissions remain intact. Fresh installations add fields directly to `website_contact`; they never create the discarded contact-details table or menu.
+
+Upgrade transformations live in `app/Support/Database` and are shared by the consolidated runners and upgrade tests. The tests cover fresh installation, the October 17 baseline, partial and fully migrated historical databases, contact transfer and repeated execution.
+
+**Rollback boundary:** the consolidated runners deliberately refuse `migrate:rollback`, `migrate:reset` and migration-based refresh to prevent removing previously existing data. Restore the pre-upgrade database backup together with the corresponding code revision instead. Historical migration rows may reference removed files; keep them as history, not runnable rollback targets. Use a newly created disposable database for tests or installation rehearsal, never an application database.
+
+## Website service catalogue
+
+The consolidated `2026_10_24_000001_upgrade_website_catalog.php` migration refreshes the nine original service descriptions once, retaining their IDs, slugs, media, publication status and highlight choices. It also orders any existing growth-service records first. It skips the refresh when either the historical refresh or consolidated catalogue migration has already completed, preserving later admin edits. Rollback uses the backup procedure above.
+
+After applying reviewed migrations, add the five new offerings with the dedicated, repeatable seeder:
+
+```sh
+php artisan db:seed --class=WebsiteGrowthServicesSeeder --force
+```
+
+This publishes Website Speed Optimization, AI-Generated Code Review & Fixing, Technical SEO Optimization, Google Analytics & Tag Manager, and Website Security Audit when their slugs are absent. Subsequent seeder runs preserve workspace edits and publication choices. Do not run the general demonstration database seeder against an existing application. Prices and delivery commitments remain scoped through the inquiry process.
+
+## Website technologies
+
+Apply `2026_10_24_000003_upgrade_website_technologies.php` with the reviewed migrations. They add the technology catalogue, service pivot relationships and a Technologies link beside Services in Website Control (the existing Site Control module). Existing navigation permissions are retained; Super Admin has access, and other roles need the usual index/create/edit/destroy permissions for Technologies.
+
+The initial import trims technology names, merges case-insensitive duplicates, maps REST to REST APIs and MySQL to SQL, and links all existing services without changing their content or publication settings. The original service `technologies` JSON column remains a snapshot; public pages and service editing use the relationships. Products and portfolio skills retain their existing independent storage. Newly created growth-service seed records also import their initial assignments; re-running the seeder preserves existing assignments and administrator edits.
+
+Manage names, slugs, active status, homepage visibility and display order in Technologies. Assign technologies in the service editor's searchable selector. Inactive assignments remain editable but are hidden publicly; remove assignments before deleting a technology. The six original toolkit entries are selected for homepage display initially, and only entries connected to published services appear there.
+
+Homepage buttons filter its first six matching cards in place. Services-page links use `/service/info?technology=laravel`; selected filters survive refresh and browser history, use the unfiltered canonical URL and are marked noindex. Unknown or inactive slugs return 404. After building, restart SSR and verify both public sections and the admin selector. The consolidated migration preserves existing catalogue and navigation settings. To reverse the upgrade, restore the database backup and matching code as described above.
 
 ## Social sign-in
 

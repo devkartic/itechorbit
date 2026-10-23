@@ -1,4 +1,9 @@
-Services module implementation
+Services module implementation (historical design notes)
+
+Current migration entry point: 2026_10_24_000001_upgrade_website_catalog.php.
+The October 18–23 migration chain was consolidated; see DEPLOYMENT.md for
+current upgrade compatibility and backup-based rollback instructions. Product
+fields now live in website_products; the service_type stage below is historical.
 
 Scope and findings
 - Website Services previously read nine offerings from config/site.php and displayed
@@ -10,7 +15,7 @@ Scope and findings
   remain available; public service slugs start with a letter and exclude create.
 
 Database changes
-- New migration: 2026_10_18_000001_create_website_services_from_service_infos.php.
+- New migration: 2026_10_24_000001_upgrade_website_catalog.php.
 - Renames service_infos to website_services, retaining every existing ID, title,
   subtitle, HTML description, status and timestamp. Existing rows become custom
   services and receive unique legacy-prefixed slugs.
@@ -50,7 +55,7 @@ Behavior
 Files added
 - app/Http/Requests/WebsiteServiceRequest.php: shared write validation and form normalization.
 - database/data/website_services.php: immutable snapshot of original static offerings.
-- database/migrations/2026_10_18_000001_create_website_services_from_service_infos.php:
+- database/migrations/2026_10_24_000001_upgrade_website_catalog.php:
   schema upgrade, legacy preservation and one-time static-content import.
 - tests/Feature/WebsiteServicesTest.php: CRUD, publication, validation, authorization,
   images, dynamic links and migration preservation/rollback tests.

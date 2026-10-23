@@ -10,27 +10,28 @@ import type { Shared } from '@/lib/types';
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
+    const onScroll = () => setScrolled(current => current ? window.scrollY > 8 : window.scrollY > 32);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') document.querySelector('details.mobile-menu')?.removeAttribute('open'); };
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { const menu = document.querySelector<HTMLDetailsElement>('details.mobile-menu[open]'); if (menu) { menu.open = false; menu.querySelector('summary')?.focus(); } } };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
   const { url, props } = usePage<Shared>();
   const aiService = props.site.aiService;
   const navigation = [['Home', '/'], ['Services', '/service/info'], ['Products', '/products'], ...(aiService ? [['AI solutions', `/services/${aiService.slug}`]] : []), ['Work', '/work'], ['Insights', '/blogs'], ['About', '/about/info']];
+  useEffect(() => { document.querySelector('details.mobile-menu')?.removeAttribute('open'); }, [url]);
   return <><a className="skip-link" href="#main">Skip to content</a>
     <header className={`site-header ${scrolled ? 'is-scrolled' : ''}`}><div className="shell header-inner">
-      <Link href="/" className="brand" aria-label="iTechOrbit home"><BrandLogo /></Link>
+      <Link href="/" className="brand" aria-label="iTechOrbit home"><BrandLogo dark /></Link>
       <nav className="header-navigation hidden items-center gap-1 lg:flex" aria-label="Main navigation">{navigation.map(([label, path]) => <Link key={path} href={path} className={`nav-link ${label === 'AI solutions' ? 'nav-ai' : ''}`} aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
       <div className="header-actions"><Button asChild className="header-project-cta hidden xl:inline-flex"><Link href="/contact/info">Let’s talk <ArrowUpRight size={16} /></Link></Button><HeaderAccount />
-      <details className="mobile-menu lg:hidden">
-        <summary role="button" aria-label="Open navigation" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 text-navy"><Menu className="menu-open-icon" size={21} /><X className="menu-close-icon" size={21} /></summary>
-        <nav id="mobile-navigation" aria-label="Mobile navigation" className="shell grid gap-1 border-t border-slate-200 py-4">{[...navigation, ['Let’s talk', '/contact/info']].map(([label, path]) => <Link key={path} href={path} className="rounded-xl p-3 font-medium" aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
+      <details className="mobile-menu lg:hidden" onToggle={event => { if (event.currentTarget.open) document.querySelector('details.account-menu')?.removeAttribute('open'); }}>
+        <summary role="button" aria-label="Open navigation" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full"><Menu className="menu-open-icon" size={21} /><X className="menu-close-icon" size={21} /></summary>
+        <nav id="mobile-navigation" aria-label="Mobile navigation" className="shell grid gap-1 py-4">{[...navigation, ['Let’s talk', '/contact/info']].map(([label, path]) => <Link key={path} href={path} className="rounded-xl p-3 font-medium" aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
       </details>
     </div></div></header>
     <main id="main">{children}</main><ITechOrbitAiLauncher />

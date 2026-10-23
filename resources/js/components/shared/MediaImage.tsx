@@ -4,5 +4,5 @@ import { useState, type ComponentProps, type ReactNode } from 'react';
 export function MediaImage({ fallback = null, ...props }: ComponentProps<'img'> & { fallback?: ReactNode }) {
   const [failedSource, setFailedSource] = useState<string>();
   if (failedSource === props.src) return <>{fallback}</>;
-  return <img {...props} ref={image => { if (image?.complete && image.naturalWidth === 0) setFailedSource(props.src); }} onError={() => setFailedSource(props.src)} />;
+  return <img decoding="async" {...props} ref={image => { if (image?.complete && image.naturalWidth === 0) setFailedSource(props.src); }} onError={() => setFailedSource(props.src)} />;
 }

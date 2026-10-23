@@ -39,7 +39,8 @@ class PublicContent
             ...($detail ? ['technologyLinks' => $technologies->map(fn ($technology) => $this->technology($technology))->all()] : []),
             'useCases' => $service->use_cases,
             ...($detail ? ['description' => $this->html($service->descriptions),
-                'problem' => $service->problem, 'solution' => $service->solution, 'approach' => $service->approach] : []),
+                'problem' => $service->problem, 'solution' => $service->solution, 'approach' => $service->approach,
+                ...$this->imageDimensions($service->image_path)] : []),
         ];
     }
 
@@ -48,17 +49,19 @@ class PublicContent
         return app(TechnologyCatalog::class)->serialize($technology);
     }
 
-    public function product(WebsiteProduct $service): array
+    public function product(WebsiteProduct $service, bool $detail = true): array
     {
         return [
             'slug' => $service->slug,
             'title' => $service->title, 'short' => $service->short_title ?: $service->title, 'summary' => $service->subtitle,
-            'description' => $this->html($service->descriptions), 'url' => '/products/'.$service->slug,
+            'url' => '/products/'.$service->slug,
             'image' => $this->media($service->image_path), 'icon' => $service->icon, 'highlight' => $service->highlight,
-            'problem' => $service->problem, 'solution' => $service->solution,
             'deliverables' => $service->deliverables ?? [], 'technologies' => $service->technologies ?? [],
             'price' => $service->price, 'currency' => $service->currency, 'deliveryTime' => $service->delivery_time,
-            'approach' => $service->approach, 'useCases' => $service->use_cases,
+            'useCases' => $service->use_cases,
+            ...($detail ? ['description' => $this->html($service->descriptions),
+                'problem' => $service->problem, 'solution' => $service->solution, 'approach' => $service->approach,
+                ...$this->imageDimensions($service->image_path)] : []),
         ];
     }
 
@@ -106,6 +109,14 @@ class PublicContent
         }
 
         return $item;
+    }
+
+    private function imageDimensions(?string $path): array
+    {
+        $file = MediaFiles::resolve($path);
+        $size = $file ? @getimagesize($file) : false;
+
+        return ['imageWidth' => $size ? $size[0] : null, 'imageHeight' => $size ? $size[1] : null];
     }
 
     public function tags(?string $json): array

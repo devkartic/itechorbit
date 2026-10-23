@@ -1,7 +1,25 @@
-import { BriefcaseBusiness, Code2, MessageSquare } from 'lucide-react';
 import PublicLayout from '@/layouts/website/PublicLayout';
 import { Seo } from '@/components/shared/Seo';
-import { PageIntro } from '@/components/website/Content';
+import { Eyebrow } from '@/components/website/Content';
 import { ContactForm } from '@/components/shared/ContactForm';
 import type { Seo as SeoType } from '@/lib/types';
-export default function Contact({ seo, existingContent, recipient }: { seo: SeoType; existingContent: string; recipient?: { name: string; portfolio_id: string } | null }) { return <PublicLayout><Seo seo={seo} /><PageIntro eyebrow="Let’s talk" title="What are you working on?">A new idea, an application that needs attention, or an engineering opportunity. Start the conversation here.</PageIntro><section className="section shell"><div className="grid gap-14 lg:grid-cols-[.8fr_1.2fr]"><div><h2 className="text-2xl font-semibold">A good place to start.</h2><p className="mt-5 leading-8 text-slate-600">Share the context and what you’re hoping to achieve. We can discuss the requirements, the technical approach and a sensible next step.</p><div className="mt-9 grid gap-6">{[[Code2, 'Build or improve an application'], [MessageSquare, 'Discuss a technical challenge'], [BriefcaseBusiness, 'Explore an engineering opportunity']].map(([Icon, text]) => { const I = Icon as typeof Code2; return <p key={String(text)} className="flex items-center gap-3 text-sm"><I size={19} className="text-blue-600" />{String(text)}</p>; })}</div>{existingContent && <div className="prose-content mt-10" dangerouslySetInnerHTML={{ __html: existingContent }} />}</div><div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-9"><ContactForm recipient={recipient} /></div></div></section></PublicLayout>; }
+import { Globe, Mail, MapPin, Phone, Smartphone } from 'lucide-react';
+
+type ContactDetail = { label: string; value: string; href: string | null };
+const contactIcons = { Website: Globe, Email: Mail, Phone, Mobile: Smartphone, Address: MapPin };
+
+export default function Contact({ seo, contactTitle, contactSubtitle, existingContent, contactDetails = [], recipient }: { seo: SeoType; contactTitle: string; contactSubtitle: string; existingContent: string; contactDetails: ContactDetail[]; recipient?: { name: string; portfolio_id: string } | null }) {
+  return <PublicLayout><Seo seo={seo} /><section className="contact-page shell">
+    <header className="contact-page-intro"><Eyebrow>Let’s talk</Eyebrow><h1>{contactTitle}</h1><p>{contactSubtitle}</p></header>
+    <div className="contact-grid">
+      <aside className="contact-copy" aria-labelledby="contact-panel-title"><span className="contact-panel-label">Get in touch</span><h2 id="contact-panel-title">Let’s start a conversation.</h2>
+        {existingContent ? <div className="contact-details prose-content" dangerouslySetInnerHTML={{ __html: existingContent }} /> : <p className="contact-details">Tell us what you’re building or where you need help. Use the form to discuss your project.</p>}
+        {contactDetails.length > 0 && <dl className="contact-business-details">{contactDetails.map(detail => {
+          const Icon = contactIcons[detail.label as keyof typeof contactIcons] ?? MapPin;
+          return <div key={detail.label}><dt><Icon size={17} aria-hidden="true" /><span>{detail.label}</span></dt><dd>{detail.href ? <a href={detail.href}>{detail.value}</a> : detail.value}</dd></div>;
+        })}</dl>}
+      </aside>
+      <section className="contact-form-card" aria-labelledby="contact-form-title"><h2 id="contact-form-title">Tell us about your project</h2><ContactForm recipient={recipient} /></section>
+    </div>
+  </section></PublicLayout>;
+}

@@ -10,7 +10,7 @@ import type { Product as ProductType, Seo as SeoType } from '@/lib/types';
 export default function Product({ seo, product }: { seo: SeoType; product: ProductType }) {
   return <PublicLayout><Seo seo={seo} schema={{ '@context': 'https://schema.org', '@type': 'Product', name: product.title, description: product.summary, provider: { '@type': 'Organization', name: 'iTechOrbit' }, url: seo.canonical, ...(product.price !== null && product.currency ? { offers: { '@type': 'Offer', price: product.price, priceCurrency: product.currency } } : {}) }} /><PageIntro eyebrow={'Product'} title={product.title}>{product.summary}</PageIntro>
     <section className="section shell"><Breadcrumbs items={[{ label: 'Products', url: '/products' }, { label: product.short }]} /><div className="grid gap-14 lg:grid-cols-[1.5fr_1fr]"><div>
-      {product.image && <MediaImage src={product.image} alt={product.title} className="mb-10 h-auto w-full rounded-2xl" />}
+      {product.image && <MediaImage src={product.image} alt={product.title} width={product.imageWidth ?? undefined} height={product.imageHeight ?? undefined} fetchPriority="high" className="mb-10 h-auto w-full rounded-2xl" />}
       <div className="prose-content" dangerouslySetInnerHTML={{ __html: product.description }} />
       {product.problem && <><h2 className="mt-10 text-2xl font-semibold">The challenge</h2><p className="mt-5 text-lg leading-8 text-slate-600">{product.problem}</p></>}
       {product.solution && <><h2 className="mt-12 text-2xl font-semibold">A considered solution</h2><p className="mt-5 leading-8 text-slate-600">{product.solution}</p></>}

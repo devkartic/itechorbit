@@ -25,7 +25,7 @@ test('public pages render crawlable HTML and responsive navigation', async ({ pa
   await page.locator('.architecture-preview').screenshot({ path: testInfo.outputPath('architecture-typography.png') });
   if (isMobile) { await page.getByRole('button', { name: 'Open navigation', exact: true }).click(); await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toBeVisible(); await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Services' }).click(); }
   else await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Services' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Practical engineering');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('A stronger website');
   await page.getByRole('link', { name: /Modernization & upgrades/ }).click(); await expect(page.getByRole('heading', { level: 1 })).toContainText('Laravel modernization');
   for (const url of ['/work', '/about/info', '/contact/info', '/portfolios/TESTPROFILE', '/privacy-n-policy']) { await page.goto(url); await expect(page.getByRole('heading', { level: 1 })).toBeVisible(); expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy(); }
   expect(errors).toEqual([]);

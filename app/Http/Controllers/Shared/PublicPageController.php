@@ -20,7 +20,6 @@ abstract class PublicPageController extends Controller
             'title' => $title.' | iTechOrbit', 'description' => $description,
             'canonical' => rtrim(config('app.url'), '/').($canonical ?? request()->getPathInfo()),
             'noindex' => $noindex, 'type' => $component === 'Website/Article' ? 'article' : 'website',
-            'verification' => config('site.verification'),
         ]]);
     }
 

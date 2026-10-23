@@ -39,8 +39,8 @@ class WebsiteProductsTest extends TestCase
             ->where('record.deliverables', "Application setup\nDeployment guide")->missing('options.service_type'));
         $this->get('/products/application-launch')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->missing('product.serviceType')->where('product.price', '1250.50')->where('product.deliveryTime', 'Two weeks'));
-        $this->get('/products')->assertOk()->assertInertia(fn (Assert $page) => $page->where('products.0.slug', 'application-launch'));
-        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->where('products.0.slug', 'application-launch'));
+        $this->get('/products')->assertOk()->assertInertia(fn (Assert $page) => $page->where('products.0.slug', 'application-launch')->missing('products.0.description')->missing('products.0.approach'));
+        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->where('products.0.slug', 'application-launch')->missing('products.0.description')->missing('products.0.approach'));
         $this->get('/sitemaps/pages.xml')->assertSee('/products/application-launch', false);
         $this->get('/robots.txt')->assertDontSee('Disallow: /products', false);
 
@@ -106,6 +106,8 @@ class WebsiteProductsTest extends TestCase
         $first = $service->image_path;
         try {
             $this->assertFileExists(public_path($first));
+            $this->get('/products/application-launch')->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->where('product.imageWidth', 1)->where('product.imageHeight', 1));
             $this->get('/workspace/media/product-info/'.$service->id.'/image_path')->assertOk();
             $this->putJson('/product-info/'.$service->id, $this->payload())->assertOk();
             $this->assertSame($first, $service->fresh()->image_path);

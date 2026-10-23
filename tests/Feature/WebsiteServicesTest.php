@@ -8,6 +8,7 @@ use App\Models\Admin\Route;
 use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\WebsiteTechnology;
 use App\Services\Shared\MediaFiles;
+use App\Support\Database\WebsiteCatalogUpgrade;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -99,6 +100,8 @@ class WebsiteServicesTest extends TestCase
         $first = $service->image_path;
         try {
             $this->assertFileExists(public_path($first));
+            $this->get('/services/application-launch')->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->where('service.imageWidth', 1)->where('service.imageHeight', 1));
             $this->get('/workspace/media/service-info/'.$service->id.'/image_path')->assertOk();
             $this->putJson('/service-info/'.$service->id, $this->payload())->assertOk();
             $this->assertSame($first, $service->fresh()->image_path);
@@ -148,15 +151,14 @@ class WebsiteServicesTest extends TestCase
                 $table->timestamps();
             });
             DB::table('service_infos')->insert(['id' => 42, 'title' => 'Existing service', 'subtitle' => 'Existing summary', 'descriptions' => '<h2>Existing HTML</h2>', 'status' => 1]);
-            $migration = require database_path('migrations/2026_10_18_000001_create_website_services_from_service_infos.php');
-            $migration->up();
+            $migration = new WebsiteCatalogUpgrade;
+            $migration->expandServices();
             $this->assertFalse(Schema::hasTable('service_infos'));
             $this->assertSame('<h2>Existing HTML</h2>', DB::table('website_services')->where('id', 42)->value('descriptions'));
             $this->assertSame('custom', DB::table('website_services')->where('id', 42)->value('service_type'));
             $this->assertSame(10, DB::table('website_services')->count());
             $this->assertSame('ai-workflow-integration', DB::table('website_services')->where('highlight', 1)->value('slug'));
-            $migration->down();
-            $this->assertSame(10, DB::table('service_infos')->count());
+
         } finally {
             DB::setDefaultConnection($original);
             DB::purge('service_migration_test');

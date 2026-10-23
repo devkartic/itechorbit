@@ -1,5 +1,25 @@
 import { test, expect } from '@playwright/test';
 
+test('growth services are discoverable and lead to a scoped inquiry', async ({ page }) => {
+  const offers = [
+    ['Website Speed Optimization', 'website-speed-optimization'],
+    ['AI-Generated Code Review & Fixing', 'ai-generated-code-review-fixing'],
+    ['Technical SEO Optimization', 'technical-seo-optimization'],
+    ['Google Analytics & Tag Manager', 'google-analytics-tag-manager'],
+    ['Website Security Audit', 'website-security-audit'],
+  ];
+  await page.goto('/service/info');
+  expect((await page.locator('.service-card h3').allTextContents()).slice(0, 5)).toEqual(offers.map(([title]) => title));
+  for (const [title, slug] of offers) {
+    await page.goto(`/services/${slug}`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
+    await expect(page.getByRole('heading', { name: 'What is included', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'How we work', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Discuss this service', exact: true }).click();
+    await expect(page.getByLabel('What can we help with?')).toHaveValue(title);
+  }
+});
+
 test('website products support independent CRUD with responsive public pages', async ({ page }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

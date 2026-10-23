@@ -43,7 +43,7 @@ class SiteController extends PublicPageController
             'projects' => $this->projects()->orderBy('order_number')->limit(3)->get()->map(fn ($project) => $this->content->project($project)),
             'services' => $this->services(),
             'toolkit' => app(TechnologyCatalog::class)->visible('homepage')->map(fn ($technology) => $this->content->technology($technology))->all(),
-            'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product))->all(),
+            'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product, false))->all(),
         ]);
     }
 
@@ -146,7 +146,7 @@ class SiteController extends PublicPageController
     public function products()
     {
         return $this->page('Website/Products', 'Website products', 'Purpose-built products to help your website serve visitors and support your business.', [
-            'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product))->all(),
+            'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product, false))->all(),
         ]);
     }
 
@@ -173,9 +173,9 @@ class SiteController extends PublicPageController
 
             return redirect('/portfolios/'.rawurlencode($recipient->portfolio_id).'/contact'.(! empty($query['subject']) ? '?'.http_build_query(['subject' => $query['subject']]) : ''));
         }
-        $info = ContactInfo::where('status', 1)->first();
+        $info = ContactInfo::where('status', 1)->orderBy('id')->first();
 
-        return $this->page('Website/Contact', 'Let’s build what comes next', 'Discuss a software project, a modernization challenge or an engineering opportunity.', ['existingContent' => $this->content->html($info?->descriptions), 'recipient' => $recipient?->only(['name', 'portfolio_id'])]);
+        return $this->page('Website/Contact', 'Let’s build what comes next', 'Discuss a software project, a modernization challenge or an engineering opportunity.', ['contactDetails' => $info?->publicDetails() ?? [], 'contactTitle' => $info?->title ?? 'What are you working on?', 'contactSubtitle' => $info?->subtitle ?? 'Share your idea, challenge, or next opportunity.', 'existingContent' => $this->content->html($info?->descriptions), 'recipient' => $recipient?->only(['name', 'portfolio_id'])]);
     }
 
     public function inquiry(ContactRequest $request)

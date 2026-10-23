@@ -1,5 +1,6 @@
 <?php
 
+use App\AiPro\Models\Site;
 use App\Models\Admin\Basic;
 use App\Models\Admin\Category;
 use App\Models\Admin\Experience;
@@ -28,6 +29,7 @@ if (getenv('APP_ENV') !== 'testing' || getenv('DB_CONNECTION') !== 'sqlite' || b
 $app = require __DIR__.'/../../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 Artisan::call('migrate', ['--force' => true]);
+\App\Models\Admin\ContactInfo::create(['title' => 'What are you working on?', 'subtitle' => 'Share your idea, challenge, or next opportunity.', 'descriptions' => '', 'website_url' => 'https://example.test', 'email' => 'hello@example.test', 'phone' => '+880 (2) 123-456', 'mobile' => '+880 1712 345678', 'address' => "Example office\nDhaka, Bangladesh", 'status' => true]);
 foreach ([1 => 'Administrator', 4 => 'Member'] as $id => $name) {
     (new Role)->forceFill(['id' => $id, 'name' => $name, 'status' => 1])->save();
 }
@@ -73,8 +75,8 @@ foreach (array_keys(PortfolioPresentation::TEMPLATES) as $template) {
 // The assistant has no provider key and no indexed knowledge in browser fixtures.
 // Tests cover real transport/fallback behavior and intercept generation separately.
 Artisan::call('ai-pro:setup');
-\App\AiPro\Models\Site::where('public_id', 'itechorbit')->update(['enabled' => true]);
-\App\AiPro\Models\Site::create(['public_id' => 'browser-remote', 'name' => 'Embedded test website', 'url' => 'http://127.0.0.1:8011',
+Site::where('public_id', 'itechorbit')->update(['enabled' => true]);
+Site::create(['public_id' => 'browser-remote', 'name' => 'Embedded test website', 'url' => 'http://127.0.0.1:8011',
     'origins' => ['http://127.0.0.1:8011'], 'enabled' => true, 'contact_url' => 'http://127.0.0.1:8011/contact']);
 Artisan::call('db:seed', ['--class' => 'WorkspaceNavigationSeeder', '--force' => true]);
 Artisan::call('db:seed', ['--class' => 'WebsiteGrowthServicesSeeder', '--force' => true]);

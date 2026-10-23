@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Admin\WebsiteProduct;
 use App\Services\Shared\MediaFiles;
 use App\Services\Shared\PublicContent;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -16,13 +15,16 @@ use Tests\TestCase;
 class MediaLifecycleTest extends TestCase
 {
     // Real commits exercise afterCommit cleanup, unlike a test-wide transaction.
-    use DatabaseMigrations;
 
     private string $directory;
 
     protected function setUp(): void
     {
         parent::setUp();
+        // Use a new disposable database, without rolling back consolidated migrations at teardown.
+        $this->assertSame('sqlite', DB::connection()->getDriverName());
+        $this->assertSame(':memory:', DB::connection()->getDatabaseName());
+        $this->artisan('migrate')->assertExitCode(0);
         $this->directory = 'uploads/media-lifecycle-'.Str::uuid();
         mkdir(public_path($this->directory), 0755, true);
     }

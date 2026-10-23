@@ -1,17 +1,40 @@
 <?php
 
+namespace App\Support\Database;
+
+use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\WebsiteTechnology;
 use App\Services\Shared\TechnologyCatalog;
-use Illuminate\Database\Migrations\Migration;
+use App\Services\Shared\WebsiteTechnologyImport;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-return new class extends Migration
+class WebsiteTechnologyUpgrade
 {
-    public function up(): void
+    public function createCatalog(): void
+    {
+        Schema::create('website_technologies', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 100)->unique();
+            $table->string('slug', 180)->unique();
+            $table->boolean('status')->default(true)->index();
+            $table->boolean('show_on_homepage')->default(false);
+            $table->unsignedInteger('display_order')->default(0);
+            $table->timestamps();
+        });
+        Schema::create('website_service_technology', function (Blueprint $table) {
+            $table->foreignId('website_service_id')->constrained('website_services')->cascadeOnDelete();
+            $table->foreignId('website_technology_id')->constrained('website_technologies')->cascadeOnDelete();
+            $table->unique(['website_service_id', 'website_technology_id'], 'website_service_technology_unique');
+            $table->timestamps();
+        });
+        ServiceInfo::orderBy('id')->each(fn ($service) => WebsiteTechnologyImport::service($service));
+    }
+
+    public function consolidateCatalog(): void
     {
         $backup = storage_path('app/private/technology-backups/'.Str::uuid().'.json');
         File::ensureDirectoryExists(dirname($backup), 0700);
@@ -67,8 +90,19 @@ return new class extends Migration
         });
     }
 
-    public function down(): void
+    public function registerNavigation(): void
     {
-        throw new RuntimeException('Restore the technology-backups JSON snapshot to reverse this data consolidation; automatic rollback would lose assignment history.');
+        if (DB::table('links')->whereIn('url', ['website-technologies', '/website-technologies'])->exists()) {
+            return;
+        }
+        $module = DB::table('links')->whereIn('url', ['service-info', '/service-info'])->value('module_id')
+            ?? DB::table('modules')->where('name', 'Site Control')->value('id');
+        if (! $module) {
+            $menu = DB::table('menus')->where('name', 'Website')->value('id')
+                ?? DB::table('menus')->insertGetId(['name' => 'Website', 'status' => 1, 'created_at' => now(), 'updated_at' => now()]);
+            $module = DB::table('modules')->insertGetId(['menu_id' => $menu, 'name' => 'Site Control', 'status' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        }
+        DB::table('links')->insert(['module_id' => $module, 'name' => 'Technologies', 'url' => 'website-technologies',
+            'fa_icon' => 'code', 'status' => 1, 'created_at' => now(), 'updated_at' => now()]);
     }
-};
+}
