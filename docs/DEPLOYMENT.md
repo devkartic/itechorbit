@@ -46,9 +46,9 @@ Create a GitHub environment named `production` under **Settings → Environments
 | `VPS_USER` | SSH deployment username, for example `deploy` |
 | `VPS_PORT` | SSH port; optional, defaults to `22` |
 | `VPS_SSH_KEY` | Complete private SSH key without a passphrase; matching public key goes in the deployment user's `authorized_keys` |
-| `VPS_KNOWN_HOSTS` | Verified SSH known-hosts entry for your VPS; for a custom port use the `[host]:port` form |
+| `VPS_KNOWN_HOSTS` | Server public host key copied from the trusted VPS console, or verified known-hosts entries matching the configured host and port |
 
-Obtain the host key through a trusted server console or verify its fingerprint there before saving the known-hosts entry. The workflow enforces host-key verification.
+The exact secret name is `VPS_KNOWN_HOSTS`, not `VPS_KNON_HOSTS`. In the trusted VPS console, run `cat /etc/ssh/ssh_host_ed25519_key.pub` and copy the complete single line beginning `ssh-ed25519` into this secret. This is the server's public identity key, different from your deployment user's authorized key. The workflow associates a bare public host key with `VPS_HOST` and `VPS_PORT` automatically. Existing known-hosts entries must match those values exactly (including `[host]:port` for a nonstandard port). Obtain keys through a trusted server console or independently verify their fingerprints before saving. Host-key verification remains enforced; unknown keys are never accepted automatically.
 
 Add these environment **variables**:
 
