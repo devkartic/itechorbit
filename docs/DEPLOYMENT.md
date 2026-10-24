@@ -2,41 +2,39 @@
 
 ## Deploy from GitHub Actions to a VPS
 
-The workflow `.github/workflows/deploy-vps.yml` uploads the selected commit over SSH and runs `deploy/deploy-vps.sh` on a Linux VPS. The **Branch to build and deploy** input defaults to `production-version`; enter another branch to deploy it instead. The **Use workflow from** selector chooses the workflow definition, while the branch input chooses the application code. The application branch must contain `deploy/deploy-vps.sh`. It builds dependencies and client/SSR assets in a new release, optionally applies reviewed migrations, switches `current`, restarts PHP-FPM and the three Supervisor programs, then checks SSR and the public health endpoint. Run the existing verification workflow successfully for the same commit before deploying.
+The manual workflow uploads the selected application's commit and runs `deploy/deploy-vps.sh` against the existing Docker containers. It builds with the exact PHP and Node images already installed on the VPS, backs up the previous code, enables maintenance mode, synchronizes the bind-mounted source, optionally migrates, rebuilds caches, and restarts PHP, Nginx and SSR. It checks SSR before reopening the application, then checks the public health URL. Run verification for the application commit before deploying.
+
+The **Branch to build and deploy** input defaults to `production-version`. **Use workflow from** chooses the workflow and deployment script; the branch input chooses application code. The deployment script comes from the workflow branch, so the application branch does not need to contain it.
+
+### Existing VPS Docker layout
+
+This script targets the inspected running containers:
+
+| Container | Role |
+| --- | --- |
+| `php-workspace-production-itechorbit-php-1` | PHP 8.5 and Composer |
+| `php-workspace-production-itechorbit-nginx-1` | Web server |
+| `itechorbit-local-ssr-1` | Node 24 and Inertia SSR |
+
+All three must mount `/srv/Workspace/projects/itechorbit/src` as their source. The script verifies those mounts before updating files. It preserves `.env` and `.env.*`, `public/uploads`, `public/storage`, `storage`, `bootstrap/cache`, `.git`, `.docker` and `logs`. Existing storage/cache named volumes remain attached. MariaDB, Redis, Caddy and access containers are not restarted or recreated. This workflow updates application code and dependencies using existing images; changes to PHP extensions, container configuration, Dockerfiles or Compose require a separate workspace image rebuild. Existing queue workers receive Laravel's `queue:restart` signal; the workflow does not provision workers or a scheduler.
 
 ### One-time VPS setup
 
-This workflow uses native PHP-FPM, Nginx and Supervisor, matching the examples in `deploy/`. The `.docker/` files are a separate workspace setup. Install PHP >=8.3 and its required extensions, Composer 2, Node >=22.12 (prefer the CI version, Node 24), npm, GNU tar/coreutils, curl, util-linux (`flock`), Nginx and Supervisor. Ensure these tools are on the SSH user's noninteractive PATH. Provision the production database separately.
+Keep the existing Docker stack, production `.env`, `APP_KEY`, database and uploads. There is no host PHP-FPM or Supervisor requirement. `PHP_FPM_SERVICE` is not used.
 
-Use a dedicated deployment user, for example `deploy`, with SSH public-key access. Create this layout (replace the user/group and path for your server):
+As root on the VPS, install deployment tools, grant the SSH deployment user Docker access, and create staging **outside** the live source:
 
 ```sh
-sudo install -d -o deploy -g www-data -m 2750 /srv/itechorbit
-sudo install -d -o deploy -g www-data -m 2750 /srv/itechorbit/releases /srv/itechorbit/incoming /srv/itechorbit/shared
-sudo install -d -o deploy -g www-data -m 2770 \
-  /srv/itechorbit/shared/uploads \
-  /srv/itechorbit/shared/storage \
-  /srv/itechorbit/shared/storage/app \
-  /srv/itechorbit/shared/storage/app/public \
-  /srv/itechorbit/shared/storage/framework \
-  /srv/itechorbit/shared/storage/framework/cache \
-  /srv/itechorbit/shared/storage/framework/cache/data \
-  /srv/itechorbit/shared/storage/framework/sessions \
-  /srv/itechorbit/shared/storage/framework/views \
-  /srv/itechorbit/shared/storage/logs
-sudo usermod -aG www-data deploy
+apt update
+apt install -y rsync util-linux acl
+usermod -aG docker deploy
+install -d -o deploy -g deploy -m 755 /srv/Workspace/projects/itechorbit/src.deploy
+setfacl -R -m u:deploy:rwX /srv/Workspace/projects/itechorbit/src
 ```
 
-Before first deployment, securely place your production `.env` at `/srv/itechorbit/shared/.env`, owned by `deploy:www-data` with mode `640`. Configure the production settings below and retain the original `APP_KEY` for an existing installation. For a new installation only, generate its key once. Copy all existing `storage/` contents and `public/uploads/` into their corresponding shared directories; preserve private files and uploads. Set shared directories to group `www-data`, group writable with the setgid bit, and shared files group writable, so both deployment commands and PHP workers can write. Start a new SSH session after changing group membership.
+Docker group access gives the deployment user administrative control of the host. Reconnect SSH after adding group membership. The ACL command grants source access without changing existing ownership or application permissions. Ensure the user can traverse every parent directory. Test `docker ps` and source access from that user's SSH session. PHP artisan commands run inside the existing PHP container as `www-data`, which must already have write access to the mounted storage and bootstrap-cache volumes.
 
-Configure Nginx with `/srv/itechorbit/current/public` as its root, HTTPS, and the correct PHP socket using `deploy/nginx.conf.example`. Install `deploy/supervisor.conf.example` with its paths adjusted. On a new installation, load/start the Supervisor programs after the first release exists; an initial workflow run may fail at the restart step until the programs are registered. Configure the scheduler as described below. Ensure PHP-FPM and Supervisor workers run with group `www-data` and a umask of `0007` or `0002`, so newly written shared files remain writable by both users.
-
-Allow the deployment user to run only the required service commands through passwordless sudo. For example, use `visudo` to add these rules, substituting the actual binary paths and installed PHP version:
-
-```sudoers
-deploy ALL=(root) NOPASSWD: /usr/bin/systemctl reload php8.3-fpm
-deploy ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart itechorbit-ssr itechorbit-queue itechorbit-mail-notices
-```
+`VPS_PATH` is the existing source directory. The workflow derives its staging and backup directory automatically by appending `.deploy`: `/srv/Workspace/projects/itechorbit/src.deploy`. No additional path variable is needed. Back up the database and uploads separately before migrating. Code backups under this staging root exclude secrets, uploads and runtime storage; they are not database or media backups. The staging root needs enough space for the new build and the previous code, including dependencies.
 
 ### GitHub configuration
 
@@ -56,13 +54,14 @@ Add these environment **variables**:
 
 | Variable | Example |
 | --- | --- |
-| `VPS_PATH` | `/srv/itechorbit` (absolute path without spaces or trailing slash) |
-| `PHP_FPM_SERVICE` | `php8.3-fpm` (use your installed version) |
+| `VPS_PATH` | `/srv/Workspace/projects/itechorbit/src` (the existing container source mount) |
 | `HEALTHCHECK_URL` | `https://itechorbit.com/healthz` (use your actual domain) |
 
 Commit and push the workflow, script and documentation. The workflow must exist on the repository's default branch to appear for manual runs. Open **Actions → Deploy to VPS → Run workflow**, select the branch containing the updated workflow under **Use workflow from**, leave **Branch to build and deploy** as `production-version` or enter another verified branch, and enable migrations only after reviewing pending migrations and backing up the database. No deployment runs automatically on push. No credentials are stored in the repository.
 
-Build failures leave `current` unchanged. Migrations run before the switch and can change the live database even if a later step fails. A service restart or health-check failure after activation marks the workflow failed and leaves the new release active for inspection. There is no automatic database rollback or release deletion. For a code rollback, atomically repoint `current` to the previous release printed in the action log, then reload PHP-FPM and restart all three Supervisor programs. Check database compatibility first and follow the rollback boundaries below. Retained releases and failed build directories need periodic manual cleanup; keep the previous working release and never remove `shared/`.
+Build failures leave live application code unchanged. Activation uses an in-place source sync during maintenance because the containers bind-mount a fixed directory; it is not an atomic symlink switch. An activation failure leaves maintenance enabled and may leave SSR stopped. Inspect the failure before recovery. The script prints the previous-code backup path. To restore code, use the same rsync exclusions from `deploy/deploy-vps.sh`, rebuild Laravel caches, restart the three application containers, verify SSR, then run `docker exec --user www-data php-workspace-production-itechorbit-php-1 php artisan up`. Never restore excluded paths from a code backup or automatically roll back migrations. A later public health failure leaves the new deployment active for inspection. Retained builds and code backups require periodic manual cleanup.
+
+The sections below describe application requirements and general deployment/rollback procedures. Native Nginx/Supervisor examples are for hosts without this Docker workspace. For this Docker setup, run application PHP commands inside the PHP container and use the existing Compose networking; the SSR URL in `.env` must resolve to the SSR service from PHP (for example `http://itechorbit-ssr:13714`), rather than host loopback.
 
 ## Runtime and configuration
 
