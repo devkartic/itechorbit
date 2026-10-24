@@ -1,5 +1,69 @@
 # Deployment
 
+## Deploy from GitHub Actions to a VPS
+
+The workflow `.github/workflows/deploy-vps.yml` uploads the selected commit over SSH and runs `deploy/deploy-vps.sh` on a Linux VPS. The **Branch to build and deploy** input defaults to `production-version`; enter another branch to deploy it instead. The **Use workflow from** selector chooses the workflow definition, while the branch input chooses the application code. The application branch must contain `deploy/deploy-vps.sh`. It builds dependencies and client/SSR assets in a new release, optionally applies reviewed migrations, switches `current`, restarts PHP-FPM and the three Supervisor programs, then checks SSR and the public health endpoint. Run the existing verification workflow successfully for the same commit before deploying.
+
+### One-time VPS setup
+
+This workflow uses native PHP-FPM, Nginx and Supervisor, matching the examples in `deploy/`. The `.docker/` files are a separate workspace setup. Install PHP >=8.3 and its required extensions, Composer 2, Node >=22.12 (prefer the CI version, Node 24), npm, GNU tar/coreutils, curl, util-linux (`flock`), Nginx and Supervisor. Ensure these tools are on the SSH user's noninteractive PATH. Provision the production database separately.
+
+Use a dedicated deployment user, for example `deploy`, with SSH public-key access. Create this layout (replace the user/group and path for your server):
+
+```sh
+sudo install -d -o deploy -g www-data -m 2750 /srv/itechorbit
+sudo install -d -o deploy -g www-data -m 2750 /srv/itechorbit/releases /srv/itechorbit/incoming /srv/itechorbit/shared
+sudo install -d -o deploy -g www-data -m 2770 \
+  /srv/itechorbit/shared/uploads \
+  /srv/itechorbit/shared/storage \
+  /srv/itechorbit/shared/storage/app \
+  /srv/itechorbit/shared/storage/app/public \
+  /srv/itechorbit/shared/storage/framework \
+  /srv/itechorbit/shared/storage/framework/cache \
+  /srv/itechorbit/shared/storage/framework/cache/data \
+  /srv/itechorbit/shared/storage/framework/sessions \
+  /srv/itechorbit/shared/storage/framework/views \
+  /srv/itechorbit/shared/storage/logs
+sudo usermod -aG www-data deploy
+```
+
+Before first deployment, securely place your production `.env` at `/srv/itechorbit/shared/.env`, owned by `deploy:www-data` with mode `640`. Configure the production settings below and retain the original `APP_KEY` for an existing installation. For a new installation only, generate its key once. Copy all existing `storage/` contents and `public/uploads/` into their corresponding shared directories; preserve private files and uploads. Set shared directories to group `www-data`, group writable with the setgid bit, and shared files group writable, so both deployment commands and PHP workers can write. Start a new SSH session after changing group membership.
+
+Configure Nginx with `/srv/itechorbit/current/public` as its root, HTTPS, and the correct PHP socket using `deploy/nginx.conf.example`. Install `deploy/supervisor.conf.example` with its paths adjusted. On a new installation, load/start the Supervisor programs after the first release exists; an initial workflow run may fail at the restart step until the programs are registered. Configure the scheduler as described below. Ensure PHP-FPM and Supervisor workers run with group `www-data` and a umask of `0007` or `0002`, so newly written shared files remain writable by both users.
+
+Allow the deployment user to run only the required service commands through passwordless sudo. For example, use `visudo` to add these rules, substituting the actual binary paths and installed PHP version:
+
+```sudoers
+deploy ALL=(root) NOPASSWD: /usr/bin/systemctl reload php8.3-fpm
+deploy ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart itechorbit-ssr itechorbit-queue itechorbit-mail-notices
+```
+
+### GitHub configuration
+
+Create a GitHub environment named `production` under **Settings → Environments**. Add these environment secrets:
+
+| Secret | Value |
+| --- | --- |
+| `VPS_HOST` | VPS hostname or IPv4 address |
+| `VPS_USER` | SSH deployment username, for example `deploy` |
+| `VPS_PORT` | SSH port; optional, defaults to `22` |
+| `VPS_SSH_KEY` | Complete private SSH key without a passphrase; matching public key goes in the deployment user's `authorized_keys` |
+| `VPS_KNOWN_HOSTS` | Verified SSH known-hosts entry for your VPS; for a custom port use the `[host]:port` form |
+
+Obtain the host key through a trusted server console or verify its fingerprint there before saving the known-hosts entry. The workflow enforces host-key verification.
+
+Add these environment **variables**:
+
+| Variable | Example |
+| --- | --- |
+| `VPS_PATH` | `/srv/itechorbit` (absolute path without spaces or trailing slash) |
+| `PHP_FPM_SERVICE` | `php8.3-fpm` (use your installed version) |
+| `HEALTHCHECK_URL` | `https://itechorbit.com/healthz` (use your actual domain) |
+
+Commit and push the workflow, script and documentation. The workflow must exist on the repository's default branch to appear for manual runs. Open **Actions → Deploy to VPS → Run workflow**, select the branch containing the updated workflow under **Use workflow from**, leave **Branch to build and deploy** as `production-version` or enter another verified branch, and enable migrations only after reviewing pending migrations and backing up the database. No deployment runs automatically on push. No credentials are stored in the repository.
+
+Build failures leave `current` unchanged. Migrations run before the switch and can change the live database even if a later step fails. A service restart or health-check failure after activation marks the workflow failed and leaves the new release active for inspection. There is no automatic database rollback or release deletion. For a code rollback, atomically repoint `current` to the previous release printed in the action log, then reload PHP-FPM and restart all three Supervisor programs. Check database compatibility first and follow the rollback boundaries below. Retained releases and failed build directories need periodic manual cleanup; keep the previous working release and never remove `shared/`.
+
 ## Runtime and configuration
 
 Use PHP >=8.3 with Composer's platform requirements satisfied, Node >=22.12 for asset builds (CI uses Node 24), and the locked Composer/npm dependencies. PHP needs PDO MySQL, mbstring, DOM/XML, OpenSSL, fileinfo and GD. Enable the matching Redis driver only if Redis is configured. Validate the actual MySQL/MariaDB version, collation and SQL mode in staging.
@@ -139,4 +203,4 @@ The scheduler dispatches remaining recipient batches and recovers undispatched r
 
 Keep the previous release available. Roll back code, locked dependencies and matching client/SSR assets together, rebuild that release's caches, and restart PHP/SSR/queue workers. Retain additive database columns and social connections unless a separately reviewed data rollback is necessary. Do not restore a live database wholesale to undo a code release. Preserve `APP_KEY` and shared media throughout.
 
-Monitor application errors, HTTP health, actual SSR output, database connectivity, queued/failed jobs and mail delivery. Validate OAuth with real provider applications and review public indexing/canonical behavior after release. Test backups independently of the running site. CI has no deployment credentials or automatic deployment step.
+Monitor application errors, HTTP health, actual SSR output, database connectivity, queued/failed jobs and mail delivery. Validate OAuth with real provider applications and review public indexing/canonical behavior after release. Test backups independently of the running site. The verification workflow has no deployment credentials; the separate deployment workflow uses the `production` environment and is triggered manually.

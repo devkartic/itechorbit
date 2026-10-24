@@ -1,0 +1,94 @@
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and deploy'
+        type: string
+        required: true
+        default: production-version
+      run_migrations:
+        description: 'Apply reviewed database migrations (take a backup first)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+      VPS_PATH: ${{ vars.VPS_PATH }}
+      PHP_FPM_SERVICE: ${{ vars.PHP_FPM_SERVICE }}
+      HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
+      RUN_MIGRATIONS: ${{ inputs.run_migrations }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Identify deployment release
+        run: echo "RELEASE_ID=$(git rev-parse HEAD)-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+
+      - name: Configure SSH and validate settings
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$VPS_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          [[ "$VPS_PATH" =~ ^/[a-zA-Z0-9/_-]+$ && "$VPS_PATH" != / ]]
+          [[ "$PHP_FPM_SERVICE" =~ ^php[0-9]+\.[0-9]+-fpm$ ]]
+          [[ "$HEALTHCHECK_URL" == https://* ]]
+          test -n "$SSH_KEY"
+          test -n "$KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host production-vps
+            HostName $VPS_HOST
+            User $VPS_USER
+            Port $VPS_PORT
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Upload the selected commit
+        run: |
+          set -euo pipefail
+          git archive --format=tar.gz --output="$RUNNER_TEMP/release.tar.gz" HEAD
+          ssh production-vps "mkdir -p '$VPS_PATH/incoming'"
+          scp "$RUNNER_TEMP/release.tar.gz" "production-vps:$VPS_PATH/incoming/$RELEASE_ID.tar.gz"
+
+      - name: Build and activate release
+        run: |
+          set -euo pipefail
+          ssh production-vps bash -s -- \
+            "$VPS_PATH" "$RELEASE_ID" "$PHP_FPM_SERVICE" "$RUN_MIGRATIONS" \
+            < deploy/deploy-vps.sh
+
+      - name: Check public application health
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 \
+            --retry-all-errors --connect-timeout 10 --max-time 30 "$HEALTHCHECK_URL"
+
+      - name: Remove runner SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519 ~/.ssh/config ~/.ssh/known_hosts

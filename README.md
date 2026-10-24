@@ -85,4 +85,4 @@ See [loading performance](docs/PERFORMANCE.md) for repeatable mobile benchmarks,
 
 The public website, public portfolios and private admin workspace have separate route files, controllers and frontend page folders. Authentication, accounts and shared code are grouped separately. See the [developer structure guide](docs/ARCHITECTURE.md) for the directory map and compatibility rules, including why historical public image paths remain available.
 
-Follow [deployment and rollback](docs/DEPLOYMENT.md) for production setup. CI lives in `.github/workflows/modernization.yml`; deployment is manual.
+Follow [deployment and rollback](docs/DEPLOYMENT.md) for production setup, including the **Deploy to VPS** GitHub Actions workflow. CI lives in `.github/workflows/modernization.yml`; deployment is started manually from GitHub Actions.
