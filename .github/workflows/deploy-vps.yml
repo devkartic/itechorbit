@@ -6,9 +6,12 @@ on:
     inputs:
       branch:
         description: 'Branch to build and deploy'
-        type: string
+        type: choice
         required: true
         default: production-version
+        options:
+          - main
+          - production-version
       run_migrations:
         description: 'Apply reviewed database migrations (take a backup first)'
         type: boolean
@@ -25,6 +28,11 @@ concurrency:
 
 jobs:
   deploy:
+    # GitHub's built-in branch selector still lists repository branches.
+    # Skip deployment unless both the workflow and application branches are allowed.
+    if: >-
+      ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production-version') &&
+          (inputs.branch == 'main' || inputs.branch == 'production-version') }}
     # A temporary GitHub runner; Ubuntu is not installed on your VPS.
     runs-on: ubuntu-latest
     timeout-minutes: 30
