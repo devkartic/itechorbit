@@ -86,4 +86,15 @@ See [loading performance](docs/PERFORMANCE.md) for repeatable mobile benchmarks,
 
 The public website, public portfolios and private admin workspace have separate route files, controllers and frontend page folders. Authentication, accounts and shared code are grouped separately. See the [developer structure guide](docs/ARCHITECTURE.md) for the directory map and compatibility rules, including why historical public image paths remain available.
 
-Follow [deployment and rollback](docs/DEPLOYMENT.md) for production setup, including the **Deploy to VPS** GitHub Actions workflow. CI lives in `.github/workflows/modernization.yml`; deployment is started manually from GitHub Actions.
+Start with [production deployment](docs/DEPLOYMENT.md) for the **Deploy to VPS** GitHub Actions workflow, manual deployment and post-deployment checks. CI lives in `.github/workflows/modernization.yml`; deployment is started manually from GitHub Actions.
+
+| Operational task | Guide |
+| --- | --- |
+| Containers, environment, PHP/Nginx images, SSR and TLS | [Services and configuration](docs/operations/SERVICES.md) |
+| Website email, Namecheap DNS and support forwarding | [Mail and DNS](docs/operations/MAIL.md) |
+| Cron, scheduled commands and queue workers | [Scheduler and queues](docs/operations/SCHEDULER.md) |
+| Database, uploads, private configuration and code recovery | [Backup and recovery](docs/operations/BACKUP-RECOVERY.md) |
+| Failed deploys, illustrated 404s and runtime errors | [Troubleshooting](docs/operations/TROUBLESHOOTING.md) |
+| Migrations, OAuth, content upgrades and media | [Application reference](docs/operations/APPLICATION.md) |
+
+The application source and workspace infrastructure are separate repositories. Project Docker configuration belongs in `../.docker/`, shared by local and VPS configurations; application deployment preserves the VPS environment and persistent data. Pulling the workspace repository does not update its ignored project directory. See the deployment guide for paths, ownership and branch selection before making production changes.
