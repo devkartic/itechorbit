@@ -3,6 +3,13 @@ name: Deploy to VPS
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'Test uploads/builds only; live updates the running application'
+        type: choice
+        options:
+          - test
+          - live
+        default: test
       branch:
         description: 'Branch to build and deploy'
         type: string
@@ -32,6 +39,7 @@ jobs:
       VPS_PATH: ${{ vars.VPS_PATH }}
       HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
       RUN_MIGRATIONS: ${{ inputs.run_migrations }}
+      DEPLOY_MODE: ${{ inputs.mode }}
     steps:
       - name: Check out deployment tools
         uses: actions/checkout@v4
@@ -59,7 +67,12 @@ jobs:
           VPS_PATH=${VPS_PATH%/}
           [[ "$VPS_PATH" =~ ^/[a-zA-Z0-9/_-]+$ && "$VPS_PATH" != / ]]
           echo "VPS_PATH=$VPS_PATH" >> "$GITHUB_ENV"
-          [[ "$HEALTHCHECK_URL" == https://* ]]
+          if [[ "$DEPLOY_MODE" == live ]]; then
+            [[ "$HEALTHCHECK_URL" == https://* ]]
+          elif [[ "$DEPLOY_MODE" != test || "$RUN_MIGRATIONS" == true ]]; then
+            echo '::error::Choose test or live mode. Database migrations are available only in live mode.'
+            exit 1
+          fi
           test -n "$SSH_KEY"
           if [[ -z "$KNOWN_HOSTS" ]]; then
             echo '::error::Add the production environment secret VPS_KNOWN_HOSTS (check the spelling).'
@@ -107,14 +120,15 @@ jobs:
           ssh production-vps "mkdir -p '$VPS_PATH.deploy/incoming'"
           scp "$RUNNER_TEMP/release.tar.gz" "production-vps:$VPS_PATH.deploy/incoming/$RELEASE_ID.tar.gz"
 
-      - name: Build and activate release
+      - name: Build and deploy selected mode
         run: |
           set -euo pipefail
           ssh production-vps bash -s -- \
-            "$VPS_PATH" "$RELEASE_ID" "$RUN_MIGRATIONS" \
+            "$VPS_PATH" "$RELEASE_ID" "$RUN_MIGRATIONS" "$DEPLOY_MODE" \
             < deployment-tools/deploy/deploy-vps.sh
 
       - name: Check public application health
+        if: inputs.mode == 'live'
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 5 \
             --retry-all-errors --connect-timeout 10 --max-time 30 "$HEALTHCHECK_URL"
