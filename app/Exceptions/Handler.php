@@ -47,11 +47,31 @@ class Handler extends ExceptionHandler
     {
         $response = parent::render($request, $e);
         $status = $response->getStatusCode();
+        // Asset consumers must receive a failed resource, not an Inertia document.
+        // Navigating to the same missing file in a browser still shows our 404.
+        $htmlNavigation = str_contains(strtolower($request->header('Accept', '')), 'text/html');
+        $assetRequest = $request->is('build/*', 'storage/*', 'uploads/*')
+            || in_array($request->header('Sec-Fetch-Dest'), ['script', 'style', 'image', 'font', 'audio', 'video', 'worker']);
+        if ($status === 404 && ! $request->expectsJson() && ! $request->header('X-Inertia') && ! $htmlNavigation && $assetRequest) {
+            return response('', 404)->header('X-Robots-Tag', 'noindex');
+        }
         if (! $request->expectsJson() && (in_array($status, [403, 404, 503]) || ($status === 500 && ! config('app.debug')))) {
-            return Inertia::render('Shared/Error', ['status' => $status, 'seo' => [
-                'title' => $status.' | iTechOrbit', 'description' => 'The requested page is unavailable.',
-                'canonical' => rtrim(config('app.url'), '/').$request->getPathInfo(), 'noindex' => true,
-            ]])->toResponse($request)->setStatusCode($status);
+            // Unknown routes can fail before the web middleware shares layout
+            // props. Supply safe defaults so SSR can render the header/footer.
+            return Inertia::render('Shared/Error', [
+                'site' => Inertia::getShared('site', ['name' => 'iTechOrbit', 'url' => rtrim(config('app.url'), '/'), 'aiService' => null]),
+                'auth' => Inertia::getShared('auth', ['user' => null]),
+                'flash' => Inertia::getShared('flash', []),
+                'status' => $status, 'seo' => [
+                    'title' => match ($status) {
+                        403 => 'Access forbidden | iTechOrbit',
+                        404 => 'Page not found | iTechOrbit',
+                        default => $status.' | iTechOrbit',
+                    },
+                    'description' => $status === 404 ? 'The page or file you’re looking for may have moved, or no longer exists.' : 'The requested page is unavailable.',
+                    'canonical' => rtrim(config('app.url'), '/').$request->getPathInfo(), 'noindex' => true,
+                ],
+            ])->toResponse($request)->setStatusCode($status);
         }
 
         return $response;
