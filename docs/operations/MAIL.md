@@ -1,5 +1,7 @@
 # Mail and DNS operations
 
+Example placeholders: IP addresses, private email addresses, SSH users, host paths and infrastructure names below are illustrative. Replace them with verified values from your private deployment configuration before running commands. These examples do not change production settings.
+
 [Deployment](../DEPLOYMENT.md) · [Services](SERVICES.md) · [Queues](SCHEDULER.md) · [Troubleshooting](TROUBLESHOOTING.md)
 
 ## Mail flow and current scope
@@ -8,7 +10,7 @@ Verified 26 October 2026 (Asia/Dhaka):
 
 ```text
 Laravel / default worker -> private smtp:587 -> recipient's mail server
-Internet -> mail.itechorbit.com:25 -> inbound filter/SRS/ARC -> kartic.gharami@gmail.com
+Internet -> mail.itechorbit.com:25 -> inbound filter/SRS/ARC -> owner@example.com
 ```
 
 Website sender: **iTechOrbit Support Team <support@itechorbit.com>**. Inbound recipient: **support@itechorbit.com** only. There is no support mailbox, catch-all, public IMAP or public submission service. The inbound and outbound servers are separate; neither is provided by Namecheap Private Email or an external SMTP delivery service.
@@ -17,7 +19,7 @@ A real forwarded test was accepted by Gmail, then classified into Spam. Gmail ac
 
 ## Outgoing website settings
 
-**VPS / root:** edit `/srv/Workspace/projects/itechorbit/src/.env` after a private backup. Keep each key once:
+**VPS / root:** edit `/srv/example-project/src/.env` after a private backup. Keep each key once:
 
 ```dotenv
 MAIL_MAILER=smtp
@@ -37,8 +39,8 @@ No SMTP password is needed on this private, restricted connection. Do not expose
 After editing:
 
 ```sh
-docker exec --user www-data php-workspace-production-itechorbit-php-1 php artisan config:cache
-docker exec --user www-data php-workspace-production-itechorbit-php-1 php artisan queue:restart
+docker exec --user www-data example-production-app-php-1 php artisan config:cache
+docker exec --user www-data example-production-app-php-1 php artisan queue:restart
 ```
 
 Expected: configuration cache succeeds and supervised workers restart gracefully. Email jobs also need the correct queue consumer. SMTP configuration alone does not drain `mail-notices` or `ai-pro` jobs.
@@ -49,12 +51,12 @@ Namecheap hosts authoritative domain DNS; Contabo controls reverse DNS. Preserve
 
 | Panel / section | Type / host | Expected value |
 | --- | --- | --- |
-| Namecheap → Advanced DNS → Host Records | A / `mail` | `84.46.254.80` |
+| Namecheap → Advanced DNS → Host Records | A / `mail` | `192.0.2.10` |
 | Namecheap → Advanced DNS → Mail Settings → Custom MX | MX / `@`, priority 10 | `mail.itechorbit.com` |
-| Namecheap → Host Records | TXT / `@` | `v=spf1 ip4:84.46.254.80 -all` (current single sender) |
+| Namecheap → Host Records | TXT / `@` | `v=spf1 ip4:192.0.2.10 -all` (current single sender) |
 | Namecheap → Host Records | TXT / `mail._domainkey` | Generated public DKIM record, not a private key |
 | Namecheap → Host Records | TXT / `_dmarc` | `v=DMARC1; p=none` (monitoring policy) |
-| Contabo → Network Services → Reverse DNS Management | PTR / `84.46.254.80` | `mail.itechorbit.com` |
+| Contabo → Network Services → Reverse DNS Management | PTR / `192.0.2.10` | `mail.itechorbit.com` |
 
 Add other authorized senders to the **same** SPF record if adopting another service. Do not create multiple SPF records. Raising DMARC enforcement requires reviewing all legitimate senders first. Keep the DKIM key and DNS public key synchronized across upgrades.
 
@@ -66,28 +68,28 @@ dig +short MX itechorbit.com
 dig +short TXT itechorbit.com
 dig +short TXT mail._domainkey.itechorbit.com
 dig +short TXT _dmarc.itechorbit.com
-dig +short -x 84.46.254.80
+dig +short -x 192.0.2.10
 ```
 
 Use `dig @dns1.registrar-servers.com ...` to compare authoritative records with cached resolver results. DNS changes are not complete merely because the panel saved them.
 
-Retrieve the current **public** DKIM TXT content on **VPS / deploy**:
+Retrieve the current **public** DKIM TXT content on **VPS / example-user**:
 
 ```sh
-docker exec php-workspace-production-itechorbit-smtp-1 cat /etc/opendkim/keys/itechorbit.com.txt
+docker exec example-production-app-smtp-1 cat /etc/opendkim/keys/itechorbit.com.txt
 ```
 
 For Namecheap's TXT value, join quoted strings without parentheses/quotes. Never copy `itechorbit.com.private` into DNS or chat.
 
 ## Inspect SMTP without sending mail
 
-**VPS / deploy; any directory:**
+**VPS / example-user; any directory:**
 
 ```sh
-docker inspect --format '{{.State.Status}} {{.State.Health.Status}}' php-workspace-production-itechorbit-smtp-1
-docker exec php-workspace-production-itechorbit-smtp-1 postqueue -p
-docker exec php-workspace-production-itechorbit-smtp-1 postconf myhostname mynetworks inet_protocols defer_transports
-docker logs --since 10m --tail 80 php-workspace-production-itechorbit-smtp-1
+docker inspect --format '{{.State.Status}} {{.State.Health.Status}}' example-production-app-smtp-1
+docker exec example-production-app-smtp-1 postqueue -p
+docker exec example-production-app-smtp-1 postconf myhostname mynetworks inet_protocols defer_transports
+docker logs --since 10m --tail 80 example-production-app-smtp-1
 ```
 
 Expected: healthy; `myhostname=mail.itechorbit.com`, IPv4 delivery and an empty `defer_transports` setting. A queue can contain retrying remote deliveries; inspect the reason. `defer_transports = smtp` means an intentional delivery hold.
@@ -95,7 +97,7 @@ Expected: healthy; `myhostname=mail.itechorbit.com`, IPv4 delivery and an empty 
 Test the PHP-side connection without submitting a message:
 
 ```sh
-docker exec php-workspace-production-itechorbit-php-1 php -r '
+docker exec example-production-app-php-1 php -r '
 $s = @stream_socket_client("tcp://smtp:587", $code, $error, 10);
 if (!$s) { fwrite(STDERR, "$error ($code)\n"); exit(1); }
 echo fgets($s);
@@ -108,25 +110,25 @@ Expected banner starts with `220 mail.itechorbit.com`. Repeat with the worker co
 
 ## Operate support forwarding
 
-Durable configuration: `/srv/Workspace/projects/itechorbit/.docker/compose.forwarding.yml` plus `.docker/compose.forwarding.public.yml`. Both files are required for the public service. They are independent of the application workspace stack and source deployment.
+Durable configuration: `/srv/example-project/.docker/compose.forwarding.yml` plus `.docker/compose.forwarding.public.yml`. Both files are required for the public service. They are independent of the application workspace stack and source deployment.
 
 **VPS / root; configuration-changing operation:** back up `.docker/forwarding/` privately before changing aliases or secrets, then:
 
 ```sh
-cd /srv/Workspace/projects/itechorbit
+cd /srv/example-project
 docker compose -f .docker/compose.forwarding.yml -f .docker/compose.forwarding.public.yml config --quiet
 docker compose -f .docker/compose.forwarding.yml -f .docker/compose.forwarding.public.yml up -d --wait --wait-timeout 120
 ```
 
-Expected: `itechorbit-forwarding-inbound-1` healthy; only host port `84.46.254.80:25` published. The alias is stored in `.docker/forwarding/config/postfix-virtual.cf`. Changing the Gmail destination forwards future messages to a different account; review that address carefully before applying it. Preserve explicit recipient lookup configuration in `postfix-main.cf`; alias-only SMTP defaults previously accepted unknown domain recipients until the lookup map was enabled.
+Expected: `example-forwarding-inbound-1` healthy; only host port `192.0.2.10:25` published. The alias is stored in `.docker/forwarding/config/postfix-virtual.cf`. Changing the Gmail destination forwards future messages to a different account; review that address carefully before applying it. Preserve explicit recipient lookup configuration in `postfix-main.cf`; alias-only SMTP defaults previously accepted unknown domain recipients until the lookup map was enabled.
 
-**VPS / deploy; read-only:**
+**VPS / example-user; read-only:**
 
 ```sh
-docker exec itechorbit-forwarding-inbound-1 supervisorctl status
-docker exec itechorbit-forwarding-inbound-1 postqueue -p
-docker exec itechorbit-forwarding-inbound-1 rspamadm configtest
-docker logs --since 10m --tail 100 itechorbit-forwarding-inbound-1
+docker exec example-forwarding-inbound-1 supervisorctl status
+docker exec example-forwarding-inbound-1 postqueue -p
+docker exec example-forwarding-inbound-1 rspamadm configtest
+docker logs --since 10m --tail 100 example-forwarding-inbound-1
 ```
 
 Postfix, postsrsd, Rspamd, its Redis process and the certificate/config change detector should run. Dovecot/IMAP is intentionally stopped. Unknown root-domain recipients must receive a 5xx response; attempts to relay to unrelated domains must be rejected. Test recipient negotiation without `DATA` first after changing restrictions.
@@ -138,7 +140,7 @@ Caddy provisions and renews `mail.itechorbit.com`. The forwarding container moun
 Current certificate directory:
 
 ```text
-/var/lib/docker/volumes/php-workspace-production-gateway_certificates/_data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/mail.itechorbit.com
+/var/lib/docker/volumes/example-production-gateway_certificates/_data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/mail.itechorbit.com
 ```
 
 This is a documented mount source, not a directory for manual database-style edits. If gateway regeneration changes the CA/provisioner, inspect the new certificate path and adjust the forwarding mount; matching hostname aliases preserve issuance but not necessarily a custom provisioner path. Never share the entire gateway key store with an unrelated service.
@@ -155,7 +157,7 @@ Expected: valid hostname/chain and no verification error. If the workstation has
 
 ## Delivery tests and failures
 
-Send one controlled message to `support@itechorbit.com` from a different external account, with a unique subject/time. In logs, find the matching queue ID and `orig_to=<support@itechorbit.com>`, `to=<kartic.gharami@gmail.com>`, `status=sent` and remote `250` acceptance. Check the destination inbox and Spam separately. Do not retry repeatedly when the outcome is unconfirmed.
+Send one controlled message to `support@itechorbit.com` from a different external account, with a unique subject/time. In logs, find the matching queue ID and `orig_to=<support@itechorbit.com>`, `to=<owner@example.com>`, `status=sent` and remote `250` acceptance. Check the destination inbox and Spam separately. Do not retry repeatedly when the outcome is unconfirmed.
 
 | Result | Interpretation / next action |
 | --- | --- |
@@ -168,7 +170,7 @@ Send one controlled message to `support@itechorbit.com` from a different externa
 
 When clearing a hold, use explicit `POSTFIX_defer_transports: ""` in the parent SMTP service, validate Compose and recreate **only smtp** using [the application Compose helper](SERVICES.md#target-one-application-compose-service). Simply removing the environment key previously left the hold in persistent Postfix configuration. Recheck `postconf -h defer_transports` before sending.
 
-To halt inbound forwarding during recovery: `docker stop itechorbit-forwarding-inbound-1`. This interrupts receiving; sending remains separate. To restart unchanged: `docker start itechorbit-forwarding-inbound-1`. Preserve queued mail and investigate its state before resuming. Do not delete queues as a generic fix.
+To halt inbound forwarding during recovery: `docker stop example-forwarding-inbound-1`. This interrupts receiving; sending remains separate. To restart unchanged: `docker start example-forwarding-inbound-1`. Preserve queued mail and investigate its state before resuming. Do not delete queues as a generic fix.
 
 ## Gmail inbox placement
 
