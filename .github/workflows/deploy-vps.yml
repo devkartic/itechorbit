@@ -34,7 +34,8 @@ jobs:
       ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production-version') &&
           (inputs.branch == 'main' || inputs.branch == 'production-version') }}
     # A temporary GitHub runner; Ubuntu is not installed on your VPS.
-    runs-on: ubuntu-latest
+    # Pin the runner OS so ubuntu-latest migrations cannot change deployment tools.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production
     # Configure these under Settings → Environments → production.
@@ -49,13 +50,13 @@ jobs:
     steps:
       # Read the deployment script from "Use workflow from" (normally main).
       - name: Check out deployment tools
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: deployment-tools
 
       # Build the application branch selected in the manual run form.
       - name: Check out application branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.branch }}
           path: application
