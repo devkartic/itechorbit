@@ -143,6 +143,8 @@ for attempt in {1..15}; do
     sleep 2
 done
 if [[ "$ssr_ready" != true ]]; then
+    docker inspect --format 'SSR container: {{.State.Status}}; health: {{if .State.Health}}{{.State.Health.Status}}{{else}}not configured{{end}}' "$ssr_container" || true
+    echo 'SSR must listen on 0.0.0.0 inside Docker (INERTIA_SSR_HOST). PHP must use its Docker address, e.g. INERTIA_SSR_URL=http://itechorbit-ssr:13714, rather than 127.0.0.1.' >&2
     echo 'SSR did not become ready; leaving maintenance enabled.' >&2
     on_error 1
 fi

@@ -65,6 +65,8 @@ Build failures leave live application code unchanged. Activation uses an in-plac
 
 The sections below describe application requirements and general deployment/rollback procedures. Native Nginx/Supervisor examples are for hosts without this Docker workspace. For this Docker setup, run application PHP commands inside the PHP container and use the existing Compose networking; the SSR URL in `.env` must resolve to the SSR service from PHP (for example `http://itechorbit-ssr:13714`), rather than host loopback.
 
+If deployment reports that SSR is unavailable, confirm the SSR container has `INERTIA_SSR_HOST=0.0.0.0` and the deployed `resources/js/ssr.tsx` reads that setting when starting its listener. A hardcoded `127.0.0.1` listener can pass a health check inside the SSR container while remaining unreachable from PHP. Rebuild the bundle and restart SSR after correcting its source. PHP's `.env` must use `INERTIA_SSR_URL=http://itechorbit-ssr:13714` (or the actual shared-network alias), and both containers must share that Docker network. Refresh PHP's config cache after changing its URL. Start a fresh workflow run from `main` targeting the corrected application branch to recover deployment; it can run while maintenance remains enabled.
+
 ## Runtime and configuration
 
 Use PHP >=8.3 with Composer's platform requirements satisfied, Node >=22.12 for asset builds (CI uses Node 24), and the locked Composer/npm dependencies. PHP needs PDO MySQL, mbstring, DOM/XML, OpenSSL, fileinfo and GD. Enable the matching Redis driver only if Redis is configured. Validate the actual MySQL/MariaDB version, collation and SQL mode in staging.
