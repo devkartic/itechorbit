@@ -6,12 +6,15 @@ use App\Models\Admin\Link;
 use App\Models\Admin\Permission;
 use App\Models\Admin\Route;
 use App\Models\Admin\ServiceInfo;
+use App\Models\Admin\WebsiteTechnology;
 use App\Services\Shared\MediaFiles;
+use App\Support\Database\WebsiteCatalogUpgrade;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
 use Tests\TestCase;
@@ -25,7 +28,7 @@ class WebsiteServicesTest extends TestCase
         return array_replace([
             'title' => 'Application launch package', 'slug' => 'application-launch',
             'subtitle' => 'A defined launch package.', 'descriptions' => '<p>Implementation and handover.</p>',
-            'deliverables' => "Application setup\nDeployment guide", 'technologies' => "Laravel\nReact",
+            'deliverables' => "Application setup\nDeployment guide", 'technology_ids' => WebsiteTechnology::whereIn('slug', ['laravel', 'react'])->pluck('id')->all(),
             'approach' => "Discovery\nImplementation",
             'display_order' => 0, 'is_checked' => 'true',
         ], $overrides);
@@ -42,8 +45,8 @@ class WebsiteServicesTest extends TestCase
             ->where('record.deliverables', "Application setup\nDeployment guide")->missing('options.service_type'));
         $this->get('/services/application-launch')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->missing('service.serviceType')->missing('service.price'));
-        $this->get('/service/info')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch'));
-        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch'));
+        $this->get('/service/info')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch')->missing('services.0.description')->missing('services.0.approach'));
+        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->where('services.0.slug', 'application-launch')->missing('services.0.description')->missing('services.0.approach'));
         $this->get('/sitemaps/pages.xml')->assertSee('/services/application-launch', false);
         $this->get('/robots.txt')->assertSee('Allow: /services/application-launch', false);
 
@@ -97,7 +100,9 @@ class WebsiteServicesTest extends TestCase
         $service = ServiceInfo::where('slug', 'application-launch')->firstOrFail();
         $first = $service->image_path;
         try {
-            $this->assertFileExists(public_path($first));
+            $this->assertFileExists(Storage::disk('public')->path($first));
+            $this->get('/services/application-launch')->assertOk()->assertInertia(fn (Assert $page) => $page
+                ->where('service.imageWidth', 1)->where('service.imageHeight', 1));
             $this->get('/workspace/media/service-info/'.$service->id.'/image_path')->assertOk();
             $this->putJson('/service-info/'.$service->id, $this->payload())->assertOk();
             $this->assertSame($first, $service->fresh()->image_path);
@@ -107,14 +112,14 @@ class WebsiteServicesTest extends TestCase
             $this->put('/service-info/'.$service->id, [...$this->payload(), 'uploaded_image' => $image()], ['Accept' => 'application/json'])->assertOk();
             $second = $service->fresh()->image_path;
             $this->assertNotSame($first, $second);
-            $this->assertFileDoesNotExist(public_path($first));
+            $this->assertFileDoesNotExist(Storage::disk('public')->path($first));
             $this->putJson('/service-info/'.$service->id, $this->payload(['remove_image' => true]))->assertOk();
             $this->assertNull($service->fresh()->image_path);
-            $this->assertFileDoesNotExist(public_path($second));
+            $this->assertFileDoesNotExist(Storage::disk('public')->path($second));
             $this->put('/service-info/'.$service->id, [...$this->payload(), 'uploaded_image' => $image()], ['Accept' => 'application/json'])->assertOk();
             $third = $service->fresh()->image_path;
             $this->deleteJson('/service-info/'.$service->id)->assertOk();
-            $this->assertFileDoesNotExist(public_path($third));
+            $this->assertFileDoesNotExist(Storage::disk('public')->path($third));
         } finally {
             foreach (array_filter([$first, $second ?? null, $third ?? null, $service->fresh()?->image_path]) as $path) {
                 MediaFiles::delete($path);
@@ -147,15 +152,14 @@ class WebsiteServicesTest extends TestCase
                 $table->timestamps();
             });
             DB::table('service_infos')->insert(['id' => 42, 'title' => 'Existing service', 'subtitle' => 'Existing summary', 'descriptions' => '<h2>Existing HTML</h2>', 'status' => 1]);
-            $migration = require database_path('migrations/2026_10_18_000001_create_website_services_from_service_infos.php');
-            $migration->up();
+            $migration = new WebsiteCatalogUpgrade;
+            $migration->expandServices();
             $this->assertFalse(Schema::hasTable('service_infos'));
             $this->assertSame('<h2>Existing HTML</h2>', DB::table('website_services')->where('id', 42)->value('descriptions'));
             $this->assertSame('custom', DB::table('website_services')->where('id', 42)->value('service_type'));
             $this->assertSame(10, DB::table('website_services')->count());
             $this->assertSame('ai-workflow-integration', DB::table('website_services')->where('highlight', 1)->value('slug'));
-            $migration->down();
-            $this->assertSame(10, DB::table('service_infos')->count());
+
         } finally {
             DB::setDefaultConnection($original);
             DB::purge('service_migration_test');

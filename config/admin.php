@@ -19,6 +19,7 @@ use App\Models\Admin\SocialLink;
 use App\Models\Admin\Tag;
 use App\Models\Admin\Testimonial;
 use App\Models\Admin\WebsiteProduct;
+use App\Models\Admin\WebsiteTechnology;
 use App\Models\Contact;
 use App\Models\User;
 
@@ -180,6 +181,17 @@ return [
             ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
         ],
     ],
+    'website-technologies' => [
+        'model' => WebsiteTechnology::class, 'title' => 'Website technologies', 'owner' => false,
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'slug', 'label' => 'URL slug', 'type' => 'text', 'required' => true],
+            ['name' => 'display_order', 'label' => 'Display order', 'type' => 'number', 'required' => false],
+            ['name' => 'show_on_homepage', 'label' => 'Show in homepage toolkit', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'show_in_filters', 'label' => 'Show in services filters', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
     'service-info' => [
         'model' => ServiceInfo::class, 'title' => 'Website services', 'owner' => false,
         'fields' => [
@@ -192,7 +204,7 @@ return [
             ['name' => 'problem', 'label' => 'The challenge', 'type' => 'textarea', 'required' => false],
             ['name' => 'solution', 'label' => 'The solution', 'type' => 'textarea', 'required' => false],
             ['name' => 'deliverables', 'label' => 'Deliverables (one per line)', 'type' => 'textarea', 'required' => false],
-            ['name' => 'technologies', 'label' => 'Technologies (one per line)', 'type' => 'textarea', 'required' => false],
+            ['name' => 'technology_ids', 'label' => 'Technologies', 'type' => 'multiselect', 'required' => false, 'searchable' => true],
             ['name' => 'approach', 'label' => 'Approach (one step per line)', 'type' => 'textarea', 'required' => false],
             ['name' => 'use_cases', 'label' => 'Use cases (one Title | Description per line)', 'type' => 'textarea', 'required' => false],
             ['name' => 'icon', 'label' => 'Icon', 'type' => 'select', 'required' => false, 'choices' => array_map(fn ($icon) => ['value' => $icon, 'label' => ucfirst($icon)], ['code', 'layers', 'refresh', 'network', 'building', 'database', 'gauge', 'shield', 'sparkles'])],
@@ -233,6 +245,11 @@ return [
             ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
             ['name' => 'subtitle', 'label' => 'Subtitle', 'type' => 'text', 'required' => true],
             ['name' => 'descriptions', 'label' => 'Descriptions', 'type' => 'richtext', 'required' => false],
+            ['name' => 'website_url', 'label' => 'Website URL', 'type' => 'url', 'required' => false],
+            ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => false],
+            ['name' => 'phone', 'label' => 'Phone', 'type' => 'tel', 'required' => false],
+            ['name' => 'mobile', 'label' => 'Mobile', 'type' => 'tel', 'required' => false],
+            ['name' => 'address', 'label' => 'Address', 'type' => 'textarea', 'required' => false],
             ['name' => 'is_checked', 'label' => 'Published / active', 'type' => 'checkbox', 'required' => false],
         ],
     ],

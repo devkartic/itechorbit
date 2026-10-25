@@ -8,7 +8,7 @@ server {
     client_max_body_size 12m;
     location / { try_files $uri $uri/ /index.php?$query_string; }
     location = /favicon.ico { access_log off; log_not_found off; }
-    location ~ ^/build/ { expires 1y; add_header Cache-Control "public, immutable"; }
+    include /srv/itechorbit/current/deploy/nginx-performance.conf;
     # Uploaded files must never execute PHP. Keep this before the PHP location.
     location ~* ^/(uploads|storage)/.*\.(php|phtml|phar)$ { deny all; }
     location ~ \.php$ {
@@ -18,7 +18,5 @@ server {
         fastcgi_pass unix:/run/php/php8.5-fpm.sock;
     }
     location ~ /\.(?!well-known).* { deny all; }
-    gzip on;
-    gzip_types text/css application/javascript application/json application/xml image/svg+xml;
     # Configure HTTPS and certificates through the existing infrastructure before release.
 }

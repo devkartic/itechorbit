@@ -17,6 +17,7 @@ class AdminTable
         $fields = config('admin.'.$resource.'.fields', []);
         $columns = match ($resource) {
             'service-info', 'product-info' => ['title', 'display_order', 'status'],
+            'website-technologies' => ['name', 'slug', 'services_count', 'display_order', 'show_on_homepage', 'show_in_filters', 'status'],
             'contacts' => ['name', 'email', 'subject', 'read_status'],
             'users' => ['name', 'email', 'status', 'portfolio_status'],
             default => [...collect($fields)->filter(fn ($field) => in_array($field['type'], ['text', 'email', 'date']) && $field['name'] !== 'fa_icon')->take(3)->pluck('name')->all(), 'status'],
@@ -78,10 +79,15 @@ class AdminTable
         }
         $portfolios = $resource === 'users' && User::can_view_all_user_portfolios();
         $columns = array_values(array_unique(['id', ...$this->columns($resource), ...($resource === 'posts' ? ['is_private'] : [])]));
-        $selected = [...$columns, ...($portfolios ? ['portfolio_id'] : [])];
+        $selected = [...array_diff($columns, ['services_count']), ...($portfolios ? ['portfolio_id'] : [])];
 
         // List responses never include rich bodies, passwords, provider IDs or tokens.
-        return $query->select($selected)->paginate($filters['per_page'] ?: 20)->withQueryString()->through(function ($item) use ($columns, $portfolios) {
+        $query->select($selected);
+        if ($resource === 'website-technologies') {
+            $query->withCount('services');
+        }
+
+        return $query->paginate($filters['per_page'] ?: 20)->withQueryString()->through(function ($item) use ($columns, $portfolios) {
             $row = $item->only($columns);
             if ($portfolios) {
                 $row['public_portfolio'] = filled($item->portfolio_id)

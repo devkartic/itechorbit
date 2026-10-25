@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WebsiteServiceRequest;
 use App\Models\Admin\ServiceInfo;
+use App\Models\Admin\WebsiteTechnology;
 use App\Services\Admin\AdminPresentation;
 use App\Services\Shared\MediaFiles;
 use Illuminate\Http\Response;
@@ -91,7 +92,7 @@ class ServiceInfoController extends Controller
 
     private function saveService(WebsiteServiceRequest $request, ServiceInfo $service): void
     {
-        $data = $request->safe()->except(['uploaded_image', 'is_checked', 'remove_image']);
+        $data = $request->safe()->except(['uploaded_image', 'is_checked', 'remove_image', 'technology_ids']);
         $data['status'] = $request->boolean('is_checked');
         $data['highlight'] = $request->boolean('highlight');
         $data['display_order'] = $data['display_order'] ?? 0;
@@ -101,7 +102,11 @@ class ServiceInfoController extends Controller
         }
         MediaFiles::save($service, $data, $request, [
             'uploaded_image' => ['column' => 'image_path', 'directory' => 'uploads/website-services'],
-        ]);
+        ], function () use ($service, $request) {
+            $ids = $request->validated('technology_ids', []);
+            WebsiteTechnology::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+            $service->websiteTechnologies()->sync($ids);
+        });
     }
 
     /**

@@ -1,14 +1,15 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
+namespace App\Support\Database;
+
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-return new class extends Migration
+class WebsiteCatalogUpgrade
 {
-    public function up(): void
+    public function expandServices(): void
     {
         Schema::rename('service_infos', 'website_services');
         Schema::table('website_services', function (Blueprint $table) {
@@ -62,16 +63,57 @@ return new class extends Migration
         });
     }
 
-    public function down(): void
+    public function separateProducts(): void
     {
-        // Retain all service records on rollback; only the added structure is removed.
-        Schema::table('website_services', function (Blueprint $table) {
-            $table->dropUnique(['slug']);
-            $table->dropIndex(['service_type']);
-            $table->dropIndex(['display_order']);
-            $table->dropColumn(['slug', 'service_type', 'short_title', 'image_path', 'display_order', 'icon', 'highlight',
-                'problem', 'solution', 'deliverables', 'technologies', 'approach', 'use_cases', 'price', 'currency', 'delivery_time']);
+        Schema::create('website_products', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->string('subtitle');
+            $table->text('descriptions');
+            $table->tinyInteger('status')->default(0);
+            $table->timestamps();
+            $table->string('slug')->unique();
+            $table->string('short_title')->nullable();
+            $table->string('image_path')->nullable();
+            $table->unsignedInteger('display_order')->default(0)->index();
+            $table->string('icon', 30)->default('code');
+            $table->boolean('highlight')->default(false);
+            $table->text('problem')->nullable();
+            $table->text('solution')->nullable();
+            $table->json('deliverables')->nullable();
+            $table->json('technologies')->nullable();
+            $table->json('approach')->nullable();
+            $table->json('use_cases')->nullable();
+            $table->decimal('price', 12, 2)->nullable();
+            $table->string('currency', 3)->nullable();
+            $table->string('delivery_time')->nullable();
         });
-        Schema::rename('website_services', 'service_infos');
+        foreach (DB::table('website_services')->where('service_type', 'product')->orderBy('id')->get() as $record) {
+            $data = (array) $record;
+            unset($data['service_type']);
+            DB::table('website_products')->insert($data);
+        }
+        DB::table('website_services')->where('service_type', 'product')->delete();
+        Schema::table('website_services', function (Blueprint $table) {
+            $table->dropIndex(['service_type']);
+            $table->dropColumn(['service_type', 'price', 'currency', 'delivery_time']);
+        });
     }
-};
+
+    public function refreshMarketing(): void
+    {
+        DB::transaction(function () {
+            foreach (require database_path('data/website_service_marketing.php') as $slug => $attributes) {
+                foreach (['deliverables', 'technologies', 'approach', 'use_cases'] as $field) {
+                    $attributes[$field] = json_encode($attributes[$field], JSON_THROW_ON_ERROR);
+                }
+                // One-time copy refresh; retain IDs, URLs, media and publication choices.
+                DB::table('website_services')->where('slug', $slug)->update([...$attributes, 'updated_at' => now()]);
+            }
+            $order = 0;
+            foreach (array_keys(require database_path('data/website_growth_services.php')) as $slug) {
+                DB::table('website_services')->where('slug', $slug)->update(['display_order' => $order += 10]);
+            }
+        });
+    }
+}

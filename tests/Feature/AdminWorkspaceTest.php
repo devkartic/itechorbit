@@ -14,6 +14,7 @@ use App\Models\Admin\Skill;
 use App\Models\Contact;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
 use Tests\TestCase;
@@ -94,7 +95,7 @@ class AdminWorkspaceTest extends TestCase
         $path = $basic->fresh()->cv_path;
         $this->assertNotNull($path);
         $this->assertStringEndsWith('.pdf', $path);
-        $this->assertFileExists(public_path($path));
+        $this->assertFileExists(Storage::disk('public')->path($path));
         try {
             $this->putJson('/basics/'.$basic->id, [...$data, 'uploaded_cv' => null])->assertOk();
             $this->assertSame($path, $basic->fresh()->cv_path);
@@ -106,7 +107,7 @@ class AdminWorkspaceTest extends TestCase
             $this->assertSame($path, $basic->fresh()->cv_path);
             $this->put('/basics/'.$basic->id, [...$data, 'uploaded_cv' => UploadedFile::fake()->create('large.pdf', 5001, 'application/pdf')], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('uploaded_cv');
         } finally {
-            @unlink(public_path($path));
+            @unlink(Storage::disk('public')->path($path));
         }
     }
 

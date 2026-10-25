@@ -1,5 +1,90 @@
 # Deployment
 
+## Deploy from GitHub Actions to a VPS
+
+The manual workflow deploys the selected application's commit to the source directory configured in `VPS_PATH`. It builds with the exact PHP and Node images already installed on the VPS, backs up the previous code, enables maintenance mode, synchronizes source and fresh assets, optionally migrates, rebuilds caches, and restarts PHP, Nginx and SSR. It checks SSR before reopening the application, then checks the public health URL. Every deployment runs `npm ci --include=dev` followed by `npm run build` inside Docker, refreshing both the client assets and the SSR bundle before replacing live files. Run verification for the application commit before deploying.
+
+The **Branch to build and deploy** dropdown offers only `main` and `production-version`, defaulting to `production-version`. **Use workflow from** chooses the workflow and deployment script; the branch input chooses application code. GitHub's built-in workflow branch selector still lists repository branches; the updated deployment job skips runs from any workflow branch other than `main` or `production-version`, and rejects any other application branch. Normally select `main` for **Use workflow from**. The deployment script comes from the workflow branch, so the application branch does not need to contain it.
+
+### Existing VPS Docker layout
+
+This script targets the inspected running containers:
+
+| Container | Role |
+| --- | --- |
+| `php-workspace-production-itechorbit-php-1` | PHP 8.5 and Composer |
+| `php-workspace-production-itechorbit-nginx-1` | Web server |
+| `itechorbit-local-ssr-1` | Node 24 and Inertia SSR |
+
+All three must mount `/srv/Workspace/projects/itechorbit/src` as their source. The script verifies those mounts before updating files. `VPS_PATH` must equal the source mount itself. Synchronization excludes any earlier `test-deploy` and `test-deploy.deploy` directories, preserving those files and avoiding recursive backups; there is no test mode in the workflow. It preserves `.env` and `.env.*`, `public/uploads`, `public/storage`, `storage`, `bootstrap/cache`, `.git`, `.docker` and `logs`. Existing storage/cache named volumes remain attached. MariaDB, Redis, Caddy and access containers are not restarted or recreated. This workflow updates application code and dependencies using existing images; changes to PHP extensions, container configuration, Dockerfiles or Compose require a separate workspace image rebuild. Existing queue workers receive Laravel's `queue:restart` signal; the workflow does not provision workers or a scheduler.
+
+### One-time VPS setup
+
+Keep the existing Docker stack, production `.env`, `APP_KEY`, database and uploads. There is no host PHP-FPM or Supervisor requirement. `PHP_FPM_SERVICE` is not used.
+
+Run these commands as root on the VPS to prepare deployment permissions:
+
+```sh
+apt update
+apt install -y rsync util-linux acl
+usermod -aG docker deploy
+install -d -o deploy -g deploy -m 755 /srv/Workspace/projects/itechorbit/src.deploy
+setfacl -R -m u:deploy:rwX /srv/Workspace/projects/itechorbit/src
+```
+
+Docker group access gives the deployment user administrative control of the host. Reconnect SSH after adding group membership. Ensure the user can traverse every parent directory. Test `docker ps` and source access from that user's SSH session. PHP artisan commands run inside the existing PHP container as `www-data`, which must already have write access to the mounted storage and bootstrap-cache volumes.
+
+`VPS_PATH` is `/srv/Workspace/projects/itechorbit/src`. The workflow derives its temporary build and code-backup directory automatically by appending `.deploy`. No additional path variable is needed.
+
+The ACL command grants source access without changing existing ownership or application permissions. Back up the database and uploads separately before migrating. Code backups under this staging root exclude secrets, uploads and runtime storage; they are not database or media backups. The staging root needs enough space for the new build and the previous code, including dependencies.
+
+### Build assets and persistent uploads
+
+`npm run build` compiles client and SSR assets only. Vite's public-directory copying is disabled, and builds retain previous hashed chunks. Deployment publishes new `public/build` files without deleting old hashes, then updates the application source with `public/build` excluded from deletion. This lets open tabs continue loading the CSS, JavaScript and fonts referenced by their existing page. The previous manifest is included in the code backup. Old build assets need deliberate periodic cleanup after the support window for old tabs; do not wipe `public/build` as part of a release. Default Vite URLs are same-origin relative paths, avoiding incorrect backend HTTP/hostname URLs behind a TLS proxy; an explicit `ASSET_URL` CDN is still honored. HTML and Inertia responses revalidate, and every page's CSS is linked in its initial HTML rather than waiting for hydration.
+
+New images and PDFs are stored through Laravel's public filesystem disk at `storage/app/public/uploads` on the existing Docker storage volume. Their URLs use `/storage/uploads/...`. Deployment runs `media:preserve-uploads` to copy legacy `public/uploads` files into that volume with SHA-256 verification. It keeps original files, refuses to replace differing files with the same path, and can be rerun safely. Existing database paths remain unchanged and existing `/uploads/...` links continue working. Admin previews, replacement/deletion and public CV visibility retain their existing checks. Already-missing files require recovery from an existing backup; a build cannot restore them.
+
+The deployment user creates Laravel's standard `public/storage` symlink with `php artisan storage:link`. PHP and Nginx must share the same storage volume; the script checks this before deployment. The source sync excludes `public/uploads`, `public/storage`, `storage` and `bootstrap/cache` regardless of whether they are directories or symlinks. Never run rsync with `--delete-excluded`, wipe/recreate the storage volume, or copy build output over uploaded files. Docker image rebuilds must retain the same named volumes. A code rollback must retain storage-aware media handling so uploads created after this change remain readable.
+
+For a manual local setup after configuring `.env`, run:
+
+```sh
+php artisan storage:link
+php artisan media:preserve-uploads
+npm run build
+```
+
+The GitHub workflow performs these operations in the existing containers; PHP, Composer and npm do not need to be installed on the VPS host. Confirm `APP_URL` is the canonical HTTPS domain and that any `ASSET_URL` value points to a server that actually serves the same build. Leave `ASSET_URL` unset for same-origin assets. Do not run the Vite development server in production; deployment removes `public/hot`.
+
+### GitHub configuration
+
+Create a GitHub environment named `production` under **Settings → Environments**. Add these environment secrets:
+
+| Secret | Value |
+| --- | --- |
+| `VPS_HOST` | VPS hostname or IPv4 address |
+| `VPS_USER` | SSH deployment username, for example `deploy` |
+| `VPS_PORT` | SSH port; optional, defaults to `22` |
+| `VPS_SSH_KEY` | Complete private SSH key without a passphrase; matching public key goes in the deployment user's `authorized_keys` |
+| `VPS_KNOWN_HOSTS` | Server public host key copied from the trusted VPS console, or verified known-hosts entries matching the configured host and port |
+
+The exact secret name is `VPS_KNOWN_HOSTS`, not `VPS_KNON_HOSTS`. In the trusted VPS console, run `cat /etc/ssh/ssh_host_ed25519_key.pub` and copy the complete single line beginning `ssh-ed25519` into this secret. This is the server's public identity key, different from your deployment user's authorized key. The workflow associates a bare public host key with `VPS_HOST` and `VPS_PORT` automatically. Existing known-hosts entries must match those values exactly (including `[host]:port` for a nonstandard port). Obtain keys through a trusted server console or independently verify their fingerprints before saving. Host-key verification remains enforced; unknown keys are never accepted automatically.
+
+Add these environment **variables**:
+
+| Variable | Example |
+| --- | --- |
+| `VPS_PATH` | `/srv/Workspace/projects/itechorbit/src` (the existing running containers source mount) |
+| `HEALTHCHECK_URL` | `https://itechorbit.com/healthz` |
+
+Commit and push the workflow, script and documentation. The workflow must exist on the repository's default branch to appear for manual runs. Open **Actions → Deploy to VPS → Run workflow**, select `main` under **Use workflow from**, choose `main` or `production-version` under **Branch to build and deploy**, and enable migrations only after reviewing pending migrations and backing up the database. No deployment runs automatically on push. No credentials are stored in the repository.
+
+Build failures leave live application code unchanged. Activation uses an in-place source sync during maintenance because the containers bind-mount a fixed directory; it is not an atomic symlink switch. An activation failure leaves maintenance enabled and may leave SSR stopped. Inspect the failure before recovery. The script prints the previous-code backup path. To restore code, use the same rsync exclusions from `deploy/deploy-vps.sh`, rebuild Laravel caches, restart the three application containers, verify SSR, then run `docker exec --user www-data php-workspace-production-itechorbit-php-1 php artisan up`. Never restore excluded paths from a code backup or automatically roll back migrations. A later public health failure leaves the new deployment active for inspection. Retained builds and code backups require periodic manual cleanup.
+
+The sections below describe application requirements and general deployment/rollback procedures. Native Nginx/Supervisor examples are for hosts without this Docker workspace. For this Docker setup, run application PHP commands inside the PHP container and use the existing Compose networking; the SSR URL in `.env` must resolve to the SSR service from PHP (for example `http://itechorbit-ssr:13714`), rather than host loopback.
+
+If deployment reports that SSR is unavailable, confirm the SSR container has `INERTIA_SSR_HOST=0.0.0.0` and the deployed `resources/js/ssr.tsx` reads that setting when starting its listener. A hardcoded `127.0.0.1` listener can pass a health check inside the SSR container while remaining unreachable from PHP. Rebuild the bundle and restart SSR after correcting its source. PHP's `.env` must use `INERTIA_SSR_URL=http://itechorbit-ssr:13714` (or the actual shared-network alias), and both containers must share that Docker network. Refresh PHP's config cache after changing its URL. Start a fresh workflow run from `main` targeting the corrected application branch to recover deployment; it can run while maintenance remains enabled.
+
 ## Runtime and configuration
 
 Use PHP >=8.3 with Composer's platform requirements satisfied, Node >=22.12 for asset builds (CI uses Node 24), and the locked Composer/npm dependencies. PHP needs PDO MySQL, mbstring, DOM/XML, OpenSSL, fileinfo and GD. Enable the matching Redis driver only if Redis is configured. Validate the actual MySQL/MariaDB version, collation and SQL mode in staging.
@@ -50,11 +135,50 @@ Do not deploy `.git`, test reports, local logs, development databases or credent
 
 ## Database migrations and data preservation
 
-Keep all migrations, even when their names are historical: they define valid installation and upgrade paths. Review pending changes against the existing schema. Current upgrades include the nullable Sanctum token expiry, portfolio template preference, widened privacy-policy content, social-account connections, email notice tables and database-managed workspace navigation.
+Keep migrations dated October 17, 2026 and earlier unchanged. Migrations after that date are consolidated as described below. Review pending changes against the existing schema. Current upgrades include the nullable Sanctum token expiry, portfolio template preference, widened privacy-policy content, social-account connections, email notice tables and database-managed workspace navigation.
 
 The privacy-policy migration widens content to LONGTEXT and intentionally does not shrink it on rollback. The social-account migration retains `users.provider_id`, copies known Google identities and refuses duplicate legacy identities before creating its table. Resolve identified duplicate identities before retrying; do not delete user accounts to make the migration pass. Portfolio template values default safely to Studio when unset.
 
 Preserve uploads, public CV visibility, existing article/portfolio URLs, permissions and primary keys across releases. Historical public images and fonts are retained because stored content can reference their URLs. Compare media checksums and record counts during staging rehearsal.
+
+### Consolidated migrations after October 17, 2026
+
+The eleven migration files from October 18–23 are replaced by four feature migrations:
+
+| Migration | Responsibility |
+| --- | --- |
+| `2026_10_18_000002_create_ai_pro_tables.php` | Independent AI assistant tables; unchanged. |
+| `2026_10_24_000001_upgrade_website_catalog.php` | Legacy service expansion, separate website products and the one-time marketing refresh. |
+| `2026_10_24_000002_upgrade_website_content.php` | Website contact/about renaming, structured contact fields and transfer of any temporary contact profile. |
+| `2026_10_24_000003_upgrade_website_technologies.php` | Technology tables, service assignments, aliases, canonical catalogue and navigation. |
+
+Before deployment, take a database backup and keep the matching pre-upgrade code revision. Rehearse on a restored staging database, then run `php artisan migrate --force`. Do not reset the database, delete migration-history rows or manually mark the new migrations as applied. Existing historical rows stay intact. The new runners inspect the current schema and existing migration history: completed schema changes are skipped, completed marketing refreshes are not repeated, and saved content, assignments, publication settings and navigation permissions remain intact. Fresh installations add fields directly to `website_contact`; they never create the discarded contact-details table or menu.
+
+Upgrade transformations live in `app/Support/Database` and are shared by the consolidated runners and upgrade tests. The tests cover fresh installation, the October 17 baseline, partial and fully migrated historical databases, contact transfer and repeated execution.
+
+**Rollback boundary:** the consolidated runners deliberately refuse `migrate:rollback`, `migrate:reset` and migration-based refresh to prevent removing previously existing data. Restore the pre-upgrade database backup together with the corresponding code revision instead. Historical migration rows may reference removed files; keep them as history, not runnable rollback targets. Use a newly created disposable database for tests or installation rehearsal, never an application database.
+
+## Website service catalogue
+
+The consolidated `2026_10_24_000001_upgrade_website_catalog.php` migration refreshes the nine original service descriptions once, retaining their IDs, slugs, media, publication status and highlight choices. It also orders any existing growth-service records first. It skips the refresh when either the historical refresh or consolidated catalogue migration has already completed, preserving later admin edits. Rollback uses the backup procedure above.
+
+After applying reviewed migrations, add the five new offerings with the dedicated, repeatable seeder:
+
+```sh
+php artisan db:seed --class=WebsiteGrowthServicesSeeder --force
+```
+
+This publishes Website Speed Optimization, AI-Generated Code Review & Fixing, Technical SEO Optimization, Google Analytics & Tag Manager, and Website Security Audit when their slugs are absent. Subsequent seeder runs preserve workspace edits and publication choices. Do not run the general demonstration database seeder against an existing application. Prices and delivery commitments remain scoped through the inquiry process.
+
+## Website technologies
+
+Apply `2026_10_24_000003_upgrade_website_technologies.php` with the reviewed migrations. They add the technology catalogue, service pivot relationships and a Technologies link beside Services in Website Control (the existing Site Control module). Existing navigation permissions are retained; Super Admin has access, and other roles need the usual index/create/edit/destroy permissions for Technologies.
+
+The initial import trims technology names, merges case-insensitive duplicates, maps REST to REST APIs and MySQL to SQL, and links all existing services without changing their content or publication settings. The original service `technologies` JSON column remains a snapshot; public pages and service editing use the relationships. Products and portfolio skills retain their existing independent storage. Newly created growth-service seed records also import their initial assignments; re-running the seeder preserves existing assignments and administrator edits.
+
+Manage names, slugs, active status, homepage visibility and display order in Technologies. Assign technologies in the service editor's searchable selector. Inactive assignments remain editable but are hidden publicly; remove assignments before deleting a technology. The six original toolkit entries are selected for homepage display initially, and only entries connected to published services appear there.
+
+Homepage buttons filter its first six matching cards in place. Services-page links use `/service/info?technology=laravel`; selected filters survive refresh and browser history, use the unfiltered canonical URL and are marked noindex. Unknown or inactive slugs return 404. After building, restart SSR and verify both public sections and the admin selector. The consolidated migration preserves existing catalogue and navigation settings. To reverse the upgrade, restore the database backup and matching code as described above.
 
 ## Social sign-in
 
@@ -100,4 +224,4 @@ The scheduler dispatches remaining recipient batches and recovers undispatched r
 
 Keep the previous release available. Roll back code, locked dependencies and matching client/SSR assets together, rebuild that release's caches, and restart PHP/SSR/queue workers. Retain additive database columns and social connections unless a separately reviewed data rollback is necessary. Do not restore a live database wholesale to undo a code release. Preserve `APP_KEY` and shared media throughout.
 
-Monitor application errors, HTTP health, actual SSR output, database connectivity, queued/failed jobs and mail delivery. Validate OAuth with real provider applications and review public indexing/canonical behavior after release. Test backups independently of the running site. CI has no deployment credentials or automatic deployment step.
+Monitor application errors, HTTP health, actual SSR output, database connectivity, queued/failed jobs and mail delivery. Validate OAuth with real provider applications and review public indexing/canonical behavior after release. Test backups independently of the running site. The verification workflow has no deployment credentials; the separate deployment workflow uses the `production` environment and is triggered manually.

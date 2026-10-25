@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowRight, ArrowUpRight, Check } from 'lucide-react';
 import { SiteLink as Link } from '@/components/shared/SiteLink';
 import { AiHighlight } from '@/components/website/AiHighlight';
@@ -6,20 +7,23 @@ import PublicLayout from '@/layouts/website/PublicLayout';
 import { Seo } from '@/components/shared/Seo';
 import { ArticleCard, ProjectCard, ServiceCard, ProductCard, ContactCta, EmptyState, Eyebrow } from '@/components/website/Content';
 import { Button } from '@/components/ui/button';
-import type { Product, Article, Project, Service, Seo as SeoType } from '@/lib/types';
-export default function Home({ seo, articles, projects, services, products }: { seo: SeoType; articles: Article[]; projects: Project[]; services: Service[]; products: Product[] }) {
+import type { ProductSummary, Article, Project, ServiceSummary, Technology, Seo as SeoType } from '@/lib/types';
+export default function Home({ seo, articles, projects, services, products, toolkit }: { seo: SeoType; articles: Article[]; projects: Project[]; services: ServiceSummary[]; products: ProductSummary[]; toolkit: Technology[] }) {
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const selected = toolkit.find(technology => technology.id === selectedId);
+  const matches = selected ? services.filter(service => service.technologyIds?.includes(selected.id)) : services;
   return <PublicLayout><Seo seo={seo} schema={{ '@context': 'https://schema.org', '@type': 'Organization', name: 'iTechOrbit', url: seo.canonical, description: seo.description }} />
-    <section className="hero"><div className="shell hero-grid">
+    <section className="hero"><div className="hero-ambient" aria-hidden="true"><span /><span /></div><div className="shell hero-grid">
       <div className="hero-copy"><Eyebrow>Beyond the ordinary. Built for what’s next.</Eyebrow>
         <h1>Build, Modernize<br />&amp; Scale Your<br /><span className="hero-highlight">Software</span><br /><span className="hero-closing">with Confidence.</span></h1>
         <p className="hero-description">Your ideas deserve exceptional engineering. Laravel, APIs and full-stack applications built with clarity, care, and room to grow.</p>
-        <div className="hero-actions"><Button asChild size="lg"><Link href="/contact/info">Let’s build something <ArrowUpRight size={18} /></Link></Button><Link href="/work" className="text-link">Explore our work <ArrowRight size={18} /></Link></div>
+        <div className="hero-actions"><Button asChild size="lg" className="hero-primary-action"><Link href="/contact/info">Let’s build something <ArrowUpRight size={18} /></Link></Button><Link href="/work" className="text-link">Explore our work <ArrowRight size={18} /></Link></div>
         <div className="hero-assurances">{['Clear communication', 'Maintainable code', 'Tested delivery'].map(text => <span key={text}><Check size={14} />{text}</span>)}</div>
       </div>
       <ArchitecturePreview />
     </div></section>
-    <section className="technology-strip"><div className="shell"><p>OUR ENGINEERING TOOLKIT</p><div>{['Laravel', 'PHP', 'React', 'TypeScript', 'REST APIs', 'SQL'].map(tech => <span key={tech}>{tech}</span>)}</div></div></section>
-    <section className="section shell"><div className="section-heading"><div><Eyebrow>What we do</Eyebrow><h2 className="section-title">Ambitious ideas.<br /><span className="heading-muted">Practical solutions.</span></h2></div><Link href="/service/info" className="text-link">All services <ArrowUpRight size={18} /></Link></div><div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{services.slice(0, 6).map(service => <ServiceCard key={service.slug} service={service} />)}</div></section>
+    {toolkit.length > 0 && <section className="technology-strip" aria-label="Filter homepage services by technology"><div className="shell"><p>OUR ENGINEERING TOOLKIT</p><div><button type="button" aria-pressed={selectedId === null} aria-controls="homepage-services" onClick={() => setSelectedId(null)}>All</button>{toolkit.map(technology => <button type="button" key={technology.id} aria-pressed={selectedId === technology.id} aria-controls="homepage-services" onClick={() => setSelectedId(selectedId === technology.id ? null : technology.id)}>{technology.name}</button>)}</div></div></section>}
+    <section id="homepage-services" className="section shell"><div className="section-heading"><div><Eyebrow>What we do</Eyebrow><h2 className="section-title">Ambitious ideas.<br /><span className="heading-muted">Practical solutions.</span></h2></div><Link href={selected?.url ?? "/service/info"} className="text-link">{selected ? `View all ${selected.name} services` : 'All services'} <ArrowUpRight size={18} /></Link></div><div className="mb-5 flex items-center gap-4"><p role="status" aria-live="polite" className="text-sm text-slate-600">{matches.length} {selected ? `${selected.name} ` : ''}{matches.length === 1 ? 'service' : 'services'}</p>{selected && <button type="button" className="text-sm font-semibold text-blue-700" onClick={() => setSelectedId(null)}>All services</button>}</div>{matches.length === 0 && <p className="text-slate-600">No matching services are currently published. Choose another technology or view all services.</p>}<div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{matches.slice(0, 6).map(service => <ServiceCard key={service.slug} service={service} />)}</div></section>
     {products.length > 0 && <section className="section shell"><div className="section-heading"><div><Eyebrow>Our products</Eyebrow><h2 className="section-title">Built to help your website do more.</h2></div><Link href="/products" className="text-link">All products <ArrowUpRight size={18} /></Link></div><div className="product-grid">{products.slice(0, 3).map(product => <ProductCard key={product.slug} product={product} />)}</div></section>}
     <AiHighlight service={services.find(service => service.icon === 'sparkles' && service.highlight)} />
     <section className="section work-section"><div className="shell"><div className="section-heading"><div><Eyebrow>Selected work</Eyebrow><h2 className="section-title">Ideas brought to life.</h2><p className="section-description">A closer look at the engineering behind the experience.</p></div><Link href="/work" className="text-link">View portfolio <ArrowUpRight size={18} /></Link></div>{projects.length ? <div className={`grid gap-6 ${projects.length === 1 ? 'featured-project' : 'md:grid-cols-2 lg:grid-cols-3'}`}>{projects.map(project => <ProjectCard key={project.id} project={project} />)}</div> : <EmptyState title="Your next project could start here">Share your requirements and explore the architecture behind your next application.</EmptyState>}</div></section>

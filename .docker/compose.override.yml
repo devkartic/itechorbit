@@ -1,0 +1,15 @@
+# Project-only additions. Relative paths resolve from the application root.
+# Example:
+# services:
+#   worker:
+#     image: ${STACK_NAME}-php:${IMAGE_TAG}
+#     command: php artisan queue:work
+#     restart: unless-stopped
+#     volumes:
+#       - ${PROJECT_SOURCE}/.env:/var/www/html/.env:ro
+#       - runtime_storage:/var/www/html/storage
+#     # Default network is this project's private backend.
+services:
+  mariadb:
+    ports:
+      - "127.0.0.1:3306:3306"

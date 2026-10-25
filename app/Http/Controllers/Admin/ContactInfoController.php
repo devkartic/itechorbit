@@ -7,6 +7,7 @@ use App\Models\Admin\ContactInfo;
 use App\Services\Admin\AdminPresentation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
 class ContactInfoController extends Controller
 {
@@ -51,25 +52,9 @@ class ContactInfoController extends Controller
      */
     public function store(Request $request)
     {
-        $this->create_validator($request);
-
-        ContactInfo::create([
-            'title' => $request->input('title'),
-            'subtitle' => $request->input('subtitle'),
-            'descriptions' => $request->input('descriptions'),
-            'status' => filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN),
-        ]);
+        ContactInfo::create($this->validated($request));
 
         return response()->json(['success' => 'Contact created successfully']);
-    }
-
-    private function create_validator($request)
-    {
-        $request->validate([
-            'title' => ['required', 'string', 'max:100'],
-            'subtitle' => ['required', 'string', 'max:255'],
-            'descriptions' => ['required', 'string'],
-        ]);
     }
 
     /**
@@ -99,23 +84,27 @@ class ContactInfoController extends Controller
      */
     public function update(Request $request, ContactInfo $contactInfo)
     {
-        $this->update_validator($request);
-        $contactInfo->title = $request->input('title');
-        $contactInfo->subtitle = $request->input('subtitle');
-        $contactInfo->descriptions = $request->input('descriptions');
-        $contactInfo->status = filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN);
-        $contactInfo->save();
+        $contactInfo->update($this->validated($request));
 
         return response()->json(['success' => 'Contact updated successfully']);
     }
 
-    private function update_validator($request)
+    private function validated(Request $request): array
     {
-        $request->validate([
+        $values = $request->validate([
             'title' => ['required', 'string', 'max:100'],
             'subtitle' => ['required', 'string', 'max:255'],
-            'descriptions' => ['required', 'string'],
+            'descriptions' => ['nullable', 'string'],
+            'website_url' => ['sometimes', 'nullable', 'url:http,https', 'max:2048'],
+            'email' => ['sometimes', 'nullable', 'email', 'max:255'],
+            'phone' => ['sometimes', 'nullable', 'string', 'max:50', 'regex:/^\+?[0-9 () .-]+$/', 'regex:/\d/'],
+            'mobile' => ['sometimes', 'nullable', 'string', 'max:50', 'regex:/^\+?[0-9 () .-]+$/', 'regex:/\d/'],
+            'address' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'is_checked' => ['sometimes', Rule::in([true, false, 0, 1, '0', '1', 'true', 'false'])],
         ]);
+        unset($values['is_checked']);
+
+        return [...$values, 'descriptions' => $values['descriptions'] ?? '', 'status' => $request->boolean('is_checked')];
     }
 
     /**

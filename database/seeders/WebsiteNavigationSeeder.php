@@ -17,7 +17,7 @@ class WebsiteNavigationSeeder extends Seeder
                     ?? DB::table('menus')->insertGetId(['name' => 'Blog Section', 'status' => 1, 'created_at' => $now, 'updated_at' => $now]);
                 $module = DB::table('modules')->insertGetId(['menu_id' => $menu, 'name' => 'Site Control', 'status' => 1, 'created_at' => $now, 'updated_at' => $now]);
             }
-            foreach (['service-info' => 'Services', 'product-info' => 'Products'] as $path => $label) {
+            foreach (['service-info' => 'Services', 'product-info' => 'Products', 'website-technologies' => 'Technologies'] as $path => $label) {
                 $link = DB::table('links')->whereIn('url', [$path, '/'.$path])->first();
                 $data = ['module_id' => $module, 'name' => $label, 'updated_at' => $now];
                 if ($link) {

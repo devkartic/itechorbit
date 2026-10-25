@@ -7,13 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class MediaFiles
 {
     /** Stage uploads together, then publish their references in one database transaction. */
-    public static function save(Model $record, array $attributes, Request $request, array $bindings): void
+    public static function save(Model $record, array $attributes, Request $request, array $bindings, ?callable $afterSave = null): void
     {
         $staged = [];
         $previous = [];
@@ -27,7 +28,9 @@ class MediaFiles
                     // Include partial writes in cleanup if the filesystem operation fails.
                     $staged[] = $path;
                     try {
-                        $file->move(public_path($binding['directory']), basename($path));
+                        if (! Storage::disk('public')->putFileAs($binding['directory'], $file, basename($path))) {
+                            throw new \RuntimeException('The upload could not be written to persistent storage.');
+                        }
                     } catch (\Throwable $exception) {
                         report($exception);
                         throw ValidationException::withMessages([$field => 'The file could not be saved. Your previous files have been kept. Please try again.']);
@@ -35,13 +38,16 @@ class MediaFiles
                     $attributes[$column] = $path;
                 }
             }
-            DB::transaction(function () use ($record, $attributes, $previous, &$committed) {
+            DB::transaction(function () use ($record, $attributes, $previous, &$committed, $afterSave) {
                 // Mark commit before model observers dispatch their after-commit jobs.
                 DB::afterCommit(function () use (&$committed) {
                     $committed = true;
                 });
                 if (! $record->fill($attributes)->save()) {
                     throw new \RuntimeException('The record could not be saved.');
+                }
+                if ($afterSave) {
+                    $afterSave($record);
                 }
                 $obsolete = [];
                 foreach ($previous as $column => $path) {
@@ -87,10 +93,34 @@ class MediaFiles
         if (! $path || ! str_starts_with($path, 'uploads/') || str_contains($path, '..')) {
             return null;
         }
-        $root = realpath(public_path('uploads'));
-        $file = realpath(public_path($path));
+        foreach (self::locations($path) as [$root, $file]) {
+            if ($root && $file && str_starts_with($file, $root.DIRECTORY_SEPARATOR) && is_file($file)) {
+                return $file;
+            }
+        }
 
-        return $root && $file && str_starts_with($file, $root.DIRECTORY_SEPARATOR) && is_file($file) ? $file : null;
+        return null;
+    }
+
+    /** New files use Laravel's public disk; old /uploads URLs remain readable. */
+    public static function url(?string $path): ?string
+    {
+        $file = self::resolve($path);
+        if (! $file) {
+            return null;
+        }
+
+        return $file === realpath(Storage::disk('public')->path($path)) ? '/storage/'.$path : '/'.$path;
+    }
+
+    private static function locations(string $path): array
+    {
+        $disk = Storage::disk('public');
+
+        return array_unique([
+            [realpath($disk->path('uploads')), realpath($disk->path($path))],
+            [realpath(public_path('uploads')), realpath(public_path($path))],
+        ], SORT_REGULAR);
     }
 
     public static function delete(?string $path): void
@@ -98,10 +128,10 @@ class MediaFiles
         if (! $path || ! str_starts_with($path, 'uploads/') || str_contains($path, '..')) {
             return;
         }
-        $root = realpath(public_path('uploads'));
-        $file = realpath(public_path($path));
-        if ($root && $file && str_starts_with($file, $root.DIRECTORY_SEPARATOR) && is_file($file)) {
-            if (! File::delete($file)) {
+        // A preserved legacy file may exist in both locations. Remove both only
+        // after its record transaction commits, using the same containment checks.
+        foreach (self::locations($path) as [$root, $file]) {
+            if ($root && $file && str_starts_with($file, $root.DIRECTORY_SEPARATOR) && is_file($file) && ! File::delete($file)) {
                 throw new \RuntimeException('The obsolete upload could not be deleted.');
             }
         }

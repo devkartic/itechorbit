@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             PostSeeder::class,
             ITechOrbitAiProductSeeder::class,
+            WebsiteGrowthServicesSeeder::class,
         ]);
 
     }

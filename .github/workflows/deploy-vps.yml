@@ -1,0 +1,147 @@
+name: Deploy to VPS
+
+# Deploy manually from Actions → Deploy to VPS → Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and deploy'
+        type: choice
+        required: true
+        default: production-version
+        options:
+          - main
+          - production-version
+      run_migrations:
+        description: 'Apply reviewed database migrations (take a backup first)'
+        type: boolean
+        default: false
+
+# Checkout needs read access to repository contents only.
+permissions:
+  contents: read
+
+# Finish an active deployment before starting the next one.
+concurrency:
+  group: vps-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # GitHub's built-in branch selector still lists repository branches.
+    # Skip deployment unless both the workflow and application branches are allowed.
+    if: >-
+      ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production-version') &&
+          (inputs.branch == 'main' || inputs.branch == 'production-version') }}
+    # A temporary GitHub runner; Ubuntu is not installed on your VPS.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    # Configure these under Settings → Environments → production.
+    # VPS_PATH is the existing source mount, e.g. /srv/Workspace/projects/itechorbit/src.
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+      VPS_PATH: ${{ vars.VPS_PATH }}
+      HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
+      RUN_MIGRATIONS: ${{ inputs.run_migrations }}
+    steps:
+      # Read the deployment script from "Use workflow from" (normally main).
+      - name: Check out deployment tools
+        uses: actions/checkout@v4
+        with:
+          path: deployment-tools
+
+      # Build the application branch selected in the manual run form.
+      - name: Check out application branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          path: application
+
+      # A unique ID keeps each build and its previous-code backup separate.
+      - name: Identify deployment release
+        run: echo "RELEASE_ID=$(git -C application rev-parse HEAD)-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+
+      - name: Configure SSH and validate settings
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          # Stop before upload if required settings are missing or malformed.
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$VPS_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          VPS_PATH=${VPS_PATH%/}
+          [[ "$VPS_PATH" =~ ^/[a-zA-Z0-9/_-]+$ && "$VPS_PATH" != / ]]
+          echo "VPS_PATH=$VPS_PATH" >> "$GITHUB_ENV"
+          [[ "$HEALTHCHECK_URL" == https://* ]]
+          test -n "$SSH_KEY"
+          if [[ -z "$KNOWN_HOSTS" ]]; then
+            echo '::error::Add the production environment secret VPS_KNOWN_HOSTS (check the spelling).'
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          host_lookup=$VPS_HOST
+          if [[ "$VPS_PORT" != 22 ]]; then
+            host_lookup="[$VPS_HOST]:$VPS_PORT"
+          fi
+          # Accept either verified known_hosts entries or a public host key
+          # copied directly from the trusted VPS console. Never scan-and-trust.
+          printf '%s\n' "$KNOWN_HOSTS" | tr -d '\r' | awk -v host="$host_lookup" '
+            $1 ~ /^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521))$/ {
+              print host, $1, $2
+              next
+            }
+            { print }
+          ' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          if ! ssh-keygen -F "$host_lookup" -f ~/.ssh/known_hosts > /dev/null; then
+            echo '::error::VPS_KNOWN_HOSTS does not match VPS_HOST/VPS_PORT. Save the server public host key from /etc/ssh/ssh_host_ed25519_key.pub in the production environment secret VPS_KNOWN_HOSTS.'
+            exit 1
+          fi
+          if ! ssh-keygen -l -f ~/.ssh/known_hosts > /dev/null 2>&1; then
+            echo '::error::VPS_KNOWN_HOSTS is not a valid SSH host key. Paste the complete public host key line, not its fingerprint or a private key.'
+            exit 1
+          fi
+          cat > ~/.ssh/config <<EOF
+          Host production-vps
+            HostName $VPS_HOST
+            User $VPS_USER
+            Port $VPS_PORT
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+          EOF
+
+      # Upload tracked source only. Local .env, node_modules and vendor are not uploaded.
+      # Build in the sibling VPS_PATH.deploy directory before updating the running app.
+      - name: Upload the selected commit
+        run: |
+          set -euo pipefail
+          git -C application archive --format=tar.gz --output="$RUNNER_TEMP/release.tar.gz" HEAD
+          ssh production-vps "mkdir -p '$VPS_PATH.deploy/incoming'"
+          scp "$RUNNER_TEMP/release.tar.gz" "production-vps:$VPS_PATH.deploy/incoming/$RELEASE_ID.tar.gz"
+
+      # The VPS script installs dependencies, runs npm run build (client + SSR),
+      # preserves .env/uploads, updates source, refreshes caches and restarts the app.
+      - name: Build assets and deploy application
+        run: |
+          set -euo pipefail
+          ssh production-vps bash -s -- \
+            "$VPS_PATH" "$RELEASE_ID" "$RUN_MIGRATIONS" \
+            < deployment-tools/deploy/deploy-vps.sh
+
+      - name: Check public application health
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 \
+            --retry-all-errors --connect-timeout 10 --max-time 30 "$HEALTHCHECK_URL"
+
+      # Remove the private key even when an earlier step fails.
+      - name: Remove runner SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519 ~/.ssh/config ~/.ssh/known_hosts

@@ -20,7 +20,10 @@ class WebsiteServiceRequest extends FormRequest
                 $this->merge([$field => $this->input($field) === 'true']);
             }
         }
-        foreach (['deliverables', 'technologies', 'approach', 'use_cases'] as $field) {
+        if ($this->input('technology_ids') === null || $this->input('technology_ids') === '') {
+            $this->merge(['technology_ids' => []]);
+        }
+        foreach (['deliverables', 'approach', 'use_cases'] as $field) {
             if (is_string($this->input($field))) {
                 $lines = array_values(array_filter(array_map('trim', explode("\n", $this->input($field))), fn ($line) => $line !== ''));
                 if ($field === 'use_cases') {
@@ -55,7 +58,12 @@ class WebsiteServiceRequest extends FormRequest
             'remove_image' => ['sometimes', 'boolean'],
             'problem' => ['nullable', 'string', 'max:10000'], 'solution' => ['nullable', 'string', 'max:10000'],
             'deliverables' => ['nullable', 'array', 'max:50'], 'deliverables.*' => ['required', 'string', 'max:1000'],
-            'technologies' => ['nullable', 'array', 'max:50'], 'technologies.*' => ['required', 'string', 'max:100'],
+            'technologies' => ['prohibited'],
+            'technology_ids' => ['present', 'array', 'max:100'],
+            'technology_ids.*' => ['required', 'integer', 'distinct', Rule::exists('website_technologies', 'id')->where(function ($query) {
+                $attached = $this->route('service_info')?->websiteTechnologies()->pluck('website_technologies.id')->all() ?? [];
+                $query->where(fn ($q) => $q->where('status', true)->orWhereIn('id', $attached));
+            })],
             'approach' => ['nullable', 'array', 'max:50'], 'approach.*' => ['required', 'string', 'max:1000'],
             'use_cases' => ['nullable', 'array', 'max:30'], 'use_cases.*' => ['array:title,description'],
             'use_cases.*.title' => ['required', 'string', 'max:255'], 'use_cases.*.description' => ['required', 'string', 'max:2000'],
