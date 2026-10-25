@@ -43,6 +43,8 @@ This script targets the inspected running containers:
 
 All three must mount `/srv/Workspace/projects/itechorbit/src` as their source. The script verifies those mounts before updating files. `VPS_PATH` must equal the source mount itself. Synchronization excludes any earlier `test-deploy` and `test-deploy.deploy` directories, preserving those files and avoiding recursive backups; there is no test mode in the workflow. It preserves `.env` and `.env.*`, `public/uploads`, `public/storage`, `storage`, `bootstrap/cache`, `.git`, `.docker` and `logs`. Existing storage/cache named volumes remain attached. MariaDB, Redis, Caddy and access containers are not restarted or recreated. This workflow updates application code and dependencies using existing images; changes to PHP extensions, container configuration, Dockerfiles or Compose require a separate workspace image rebuild. Existing queue workers receive Laravel's `queue:restart` signal; the workflow does not provision workers or a scheduler.
 
+The exact PHP and Node image IDs referenced by the runtime containers must still exist locally. A container may keep running after its image is removed; in that case deployment fails before release extraction or maintenance, naming the affected container and missing image ID. Reconcile only that container with its intended image through the existing Compose configuration, retaining its mounts, networks and volumes, then retry. Retagging or rebuilding an image alone does not update a container's image ID; do not silently substitute a different image for the build.
+
 ### One-time VPS setup
 
 Keep the existing Docker stack, production `.env`, `APP_KEY`, database and uploads. There is no host PHP-FPM or Supervisor requirement. `PHP_FPM_SERVICE` is not used.
