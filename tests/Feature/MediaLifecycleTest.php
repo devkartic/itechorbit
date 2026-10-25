@@ -8,6 +8,7 @@ use App\Services\Shared\PublicContent;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -25,6 +26,7 @@ class MediaLifecycleTest extends TestCase
         $this->assertSame('sqlite', DB::connection()->getDriverName());
         $this->assertSame(':memory:', DB::connection()->getDatabaseName());
         $this->artisan('migrate')->assertExitCode(0);
+        Storage::fake('public');
         $this->directory = 'uploads/media-lifecycle-'.Str::uuid();
         mkdir(public_path($this->directory), 0755, true);
     }
@@ -38,6 +40,12 @@ class MediaLifecycleTest extends TestCase
         }
         rmdir(public_path($this->directory));
         parent::tearDown();
+    }
+
+    private function files(): array
+    {
+        return [...glob(public_path($this->directory).'/*'),
+            ...array_map(fn ($path) => Storage::disk('public')->path($path), Storage::disk('public')->files($this->directory))];
     }
 
     private function product(): WebsiteProduct
@@ -70,7 +78,7 @@ class MediaLifecycleTest extends TestCase
         }
         $this->assertSame('Product', $record->fresh()->title);
         $this->assertSame($this->directory.'/old.png', $record->fresh()->image_path);
-        $this->assertSame(['old.png'], array_map('basename', glob(public_path($this->directory).'/*')));
+        $this->assertSame(['old.png'], array_map('basename', $this->files()));
     }
 
     public function test_failed_creation_does_not_leave_an_orphan_upload(): void
@@ -83,7 +91,7 @@ class MediaLifecycleTest extends TestCase
             $this->assertSame('Synthetic creation failure', $exception->getMessage());
         }
         $this->assertDatabaseMissing('website_products', ['slug' => 'failed-create']);
-        $this->assertSame([], glob(public_path($this->directory).'/*'));
+        $this->assertSame([], $this->files());
     }
 
     public function test_successful_multiple_uploads_are_saved_together(): void
@@ -93,16 +101,16 @@ class MediaLifecycleTest extends TestCase
         $request->files->set('second', UploadedFile::fake()->image('second.png'));
         MediaFiles::save($record, [], $request, [...$this->bindings(),
             'second' => ['column' => 'short_title', 'directory' => $this->directory]]);
-        $this->assertFileExists(public_path($record->fresh()->image_path));
-        $this->assertFileExists(public_path($record->fresh()->short_title));
+        $this->assertFileExists(MediaFiles::resolve($record->fresh()->image_path));
+        $this->assertFileExists(MediaFiles::resolve($record->fresh()->short_title));
         $this->assertFileDoesNotExist(public_path($this->directory.'/old.png'));
-        $this->assertCount(2, glob(public_path($this->directory).'/*'));
+        $this->assertCount(2, $this->files());
     }
 
     public function test_second_upload_failure_cleans_staged_files_and_preserves_record(): void
     {
         $record = $this->product();
-        file_put_contents(public_path($this->directory.'/blocked'), 'not a directory');
+        Storage::disk('public')->put($this->directory.'/blocked', 'not a directory');
         $request = $this->request();
         $request->files->set('second', UploadedFile::fake()->image('second.png'));
         try {
@@ -113,8 +121,8 @@ class MediaLifecycleTest extends TestCase
             $this->assertArrayHasKey('second', $exception->errors());
         }
         $this->assertSame('Product', $record->fresh()->title);
-        $this->assertFileExists(public_path($record->fresh()->image_path));
-        $this->assertCount(2, glob(public_path($this->directory).'/*'));
+        $this->assertFileExists(MediaFiles::resolve($record->fresh()->image_path));
+        $this->assertCount(2, $this->files());
     }
 
     public function test_replacement_removal_and_record_deletion_cleanup_after_commit(): void
@@ -123,16 +131,16 @@ class MediaLifecycleTest extends TestCase
         $old = $record->image_path;
         MediaFiles::save($record, [], $this->request(), $this->bindings());
         $this->assertFileDoesNotExist(public_path($old));
-        $this->assertFileExists(public_path($record->fresh()->image_path));
-        $replacement = $record->image_path;
+        $this->assertFileExists(MediaFiles::resolve($record->fresh()->image_path));
+        $replacement = MediaFiles::resolve($record->image_path);
         MediaFiles::save($record, ['image_path' => null], new Request, $this->bindings());
         $this->assertNull($record->fresh()->image_path);
-        $this->assertFileDoesNotExist(public_path($replacement));
+        $this->assertFileDoesNotExist($replacement);
         MediaFiles::save($record, [], $this->request(), $this->bindings());
-        $replacement = $record->image_path;
+        $replacement = MediaFiles::resolve($record->image_path);
         MediaFiles::destroy($record, ['image_path']);
         $this->assertNull($record->fresh());
-        $this->assertFileDoesNotExist(public_path($replacement));
+        $this->assertFileDoesNotExist($replacement);
     }
 
     public function test_failed_removal_or_deletion_does_not_remove_existing_attachment(): void
@@ -144,7 +152,7 @@ class MediaLifecycleTest extends TestCase
             $this->fail('Expected cancelled save.');
         } catch (\RuntimeException) {
             $this->assertNotNull($record->fresh()->image_path);
-            $this->assertFileExists(public_path($record->fresh()->image_path));
+            $this->assertFileExists(MediaFiles::resolve($record->fresh()->image_path));
         }
         WebsiteProduct::deleting(fn () => false);
         try {
@@ -152,7 +160,7 @@ class MediaLifecycleTest extends TestCase
             $this->fail('Expected cancelled deletion.');
         } catch (\RuntimeException) {
             $this->assertNotNull($record->fresh());
-            $this->assertFileExists(public_path($record->fresh()->image_path));
+            $this->assertFileExists(MediaFiles::resolve($record->fresh()->image_path));
         }
     }
 

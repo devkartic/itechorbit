@@ -36,7 +36,8 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     @viteReactRefresh
     <link rel="preload" href="{{ Vite::asset('node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
-    @vite(['resources/js/app.tsx', ...(str_starts_with($page['component'], 'Admin/') ? [] : ["resources/js/pages/{$page['component']}.tsx"])])
+    {{-- Include the page chunk so its CSS is present before hydration, on every page. --}}
+    @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
     @inertiaHead
 </head>
 <body class="font-sans">

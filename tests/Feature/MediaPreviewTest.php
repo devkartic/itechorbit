@@ -13,6 +13,7 @@ use App\Models\Admin\WebsiteProduct;
 use App\Services\Shared\MediaFiles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
@@ -21,6 +22,12 @@ use Tests\TestCase;
 class MediaPreviewTest extends TestCase
 {
     use BuildsTestData, RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('public');
+    }
 
     private function basicData(): array
     {
@@ -52,7 +59,7 @@ class MediaPreviewTest extends TestCase
                 $this->put($url, [...$data, $upload => UploadedFile::fake()->create('renamed.png', 1, 'text/plain')], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors($upload);
                 $this->put($url, [...$data, $upload => UploadedFile::fake()->image('oversized.png')->size(2049)], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors($upload);
                 $this->put($url, [...$data, $upload => UploadedFile::fake()->image('valid.png')->size(1500)], ['Accept' => 'application/json'])->assertOk();
-                $paths[] = public_path($record->fresh()->{$storage});
+                $paths[] = MediaFiles::resolve($record->fresh()->{$storage});
                 $preview = '/workspace/media/'.$resource.'/'.$record->id.'/'.$storage;
                 $this->get($url.'/edit')->assertOk()->assertInertia(fn (Assert $page) => $page->where('attachments.'.$storage.'.type', 'image')->where('attachments.'.$storage.'.url', $preview));
                 $this->get($preview)->assertOk()->assertHeader('Content-Type', 'image/png')->assertHeader('Cache-Control', 'no-store, private');
@@ -71,7 +78,7 @@ class MediaPreviewTest extends TestCase
         $this->postJson('/basics', $this->basicData())->assertOk();
         $basic = Basic::firstOrFail();
         $this->put('/basics/'.$basic->id, [...$this->basicData(), 'uploaded_cv' => UploadedFile::fake()->createWithContent('resume.pdf', "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF")], ['Accept' => 'application/json'])->assertOk();
-        $path = public_path($basic->fresh()->cv_path);
+        $path = MediaFiles::resolve($basic->fresh()->cv_path);
         $preview = '/workspace/media/basics/'.$basic->id.'/cv_path';
         try {
             $this->get('/basics/'.$basic->id.'/edit')->assertOk()->assertInertia(fn (Assert $page) => $page->where('attachments.cv_path.type', 'pdf')->where('attachments.cv_path.url', $preview));
@@ -135,12 +142,12 @@ class MediaPreviewTest extends TestCase
         try {
             $this->get('/basics/'.$basic->id)->assertOk()->assertInertia(fn (Assert $page) => $page->where('action', 'show')->has('attachments', 3));
             foreach ($paths as $path) {
-                $this->assertFileExists(public_path($path));
+                $this->assertFileExists(Storage::disk('public')->path($path));
             }
             $this->deleteJson('/basics/'.$basic->id)->assertOk();
             $this->assertDatabaseMissing('basics', ['id' => $basic->id]);
             foreach ($paths as $path) {
-                $this->assertFileDoesNotExist(public_path($path));
+                $this->assertFileDoesNotExist(Storage::disk('public')->path($path));
             }
         } finally {
             foreach ($paths as $path) {

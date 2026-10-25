@@ -38,6 +38,24 @@ Docker group access gives the deployment user administrative control of the host
 
 The ACL command grants source access without changing existing ownership or application permissions. Back up the database and uploads separately before migrating. Code backups under this staging root exclude secrets, uploads and runtime storage; they are not database or media backups. The staging root needs enough space for the new build and the previous code, including dependencies.
 
+### Build assets and persistent uploads
+
+`npm run build` compiles client and SSR assets only. Vite's public-directory copying is disabled, and builds retain previous hashed chunks. Deployment publishes new `public/build` files without deleting old hashes, then updates the application source with `public/build` excluded from deletion. This lets open tabs continue loading the CSS, JavaScript and fonts referenced by their existing page. The previous manifest is included in the code backup. Old build assets need deliberate periodic cleanup after the support window for old tabs; do not wipe `public/build` as part of a release. Default Vite URLs are same-origin relative paths, avoiding incorrect backend HTTP/hostname URLs behind a TLS proxy; an explicit `ASSET_URL` CDN is still honored. HTML and Inertia responses revalidate, and every page's CSS is linked in its initial HTML rather than waiting for hydration.
+
+New images and PDFs are stored through Laravel's public filesystem disk at `storage/app/public/uploads` on the existing Docker storage volume. Their URLs use `/storage/uploads/...`. Deployment runs `media:preserve-uploads` to copy legacy `public/uploads` files into that volume with SHA-256 verification. It keeps original files, refuses to replace differing files with the same path, and can be rerun safely. Existing database paths remain unchanged and existing `/uploads/...` links continue working. Admin previews, replacement/deletion and public CV visibility retain their existing checks. Already-missing files require recovery from an existing backup; a build cannot restore them.
+
+The deployment user creates Laravel's standard `public/storage` symlink with `php artisan storage:link`. PHP and Nginx must share the same storage volume; the script checks this before deployment. The source sync excludes `public/uploads`, `public/storage`, `storage` and `bootstrap/cache` regardless of whether they are directories or symlinks. Never run rsync with `--delete-excluded`, wipe/recreate the storage volume, or copy build output over uploaded files. Docker image rebuilds must retain the same named volumes. A code rollback must retain storage-aware media handling so uploads created after this change remain readable.
+
+For a manual local setup after configuring `.env`, run:
+
+```sh
+php artisan storage:link
+php artisan media:preserve-uploads
+npm run build
+```
+
+The GitHub workflow performs these operations in the existing containers; PHP, Composer and npm do not need to be installed on the VPS host. Confirm `APP_URL` is the canonical HTTPS domain and that any `ASSET_URL` value points to a server that actually serves the same build. Leave `ASSET_URL` unset for same-origin assets. Do not run the Vite development server in production; deployment removes `public/hot`.
+
 ### GitHub configuration
 
 Create a GitHub environment named `production` under **Settings → Environments**. Add these environment secrets:

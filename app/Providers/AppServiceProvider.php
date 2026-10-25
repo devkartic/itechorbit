@@ -27,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Keep default build URLs on the browser's origin behind TLS proxies.
+        // An explicitly configured asset CDN still uses Laravel's URL generator.
+        Vite::createAssetPathsUsing(fn ($path, $secure) => config('app.asset_url')
+            ? asset($path, $secure)
+            : '/'.ltrim($path, '/'));
         if ($this->app->environment('local')) {
             // This Vite setup provides HMR, not an Inertia development SSR endpoint.
             // Keep the configured SSR policy when serving built assets.

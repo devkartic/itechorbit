@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, lstatSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { startTestSmtp } from './smtp.mjs';
@@ -21,6 +21,14 @@ for (const provider of ['GOOGLE', 'GITHUB', 'LINKEDIN']) {
 if (env.CACHE_PATH !== join(directory, 'cache') && (dirname(env.CACHE_PATH) !== tmpdir() || !basename(env.CACHE_PATH).startsWith('itechorbit-browser-cache-'))) throw new Error('Expected a disposable browser cache directory.');
 const result = spawnSync('php', ['tests/browser/prepare.php'], { env, stdio: 'inherit' });
 if (result.status !== 0) { rmSync(directory, { recursive: true }); process.exit(result.status ?? 1); }
+// Exercise Laravel's standard public disk URL through the real web server.
+const publicStorage = join(process.cwd(), 'public/storage');
+let createdStorageLink = false;
+try { lstatSync(publicStorage); } catch {
+  symlinkSync('../storage/app/public', publicStorage);
+  createdStorageLink = true;
+}
+if (!existsSync(publicStorage)) throw new Error('The Laravel public storage link must resolve before browser tests.');
 // Serve the external embed fixture from a real loopback origin so browser local
 // network protections classify both sides correctly; no API responses are mocked.
 const external = createServer((_req, response) => {
@@ -35,6 +43,6 @@ const ssr = spawn('node', ['bootstrap/ssr/ssr.js'], { env, stdio: 'inherit' });
 // Spawn servers directly so cleanup stops the actual listeners, not just Artisan parents.
 const server = spawn('php', ['-S', '127.0.0.1:8010', '../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php'], { cwd: join(process.cwd(), 'public'), env, stdio: ['ignore', 'ignore', 'pipe'] });
 server.stderr.on('data', chunk => { if (/fatal|error|failed/i.test(String(chunk))) process.stderr.write(chunk); });
-function stop() { external.close(); server.kill('SIGTERM'); ssr.kill('SIGTERM'); worker.kill('SIGTERM'); smtp.server.close(); rmSync(directory, { recursive: true, force: true }); if (env.CACHE_PATH !== join(directory, 'cache')) rmSync(env.CACHE_PATH, { recursive: true, force: true }); if (mailbox !== join(directory, 'messages.jsonl')) rmSync(dirname(mailbox), { recursive: true, force: true }); }
+function stop() { external.close(); server.kill('SIGTERM'); ssr.kill('SIGTERM'); worker.kill('SIGTERM'); smtp.server.close(); if (createdStorageLink) rmSync(publicStorage, { force: true }); rmSync(directory, { recursive: true, force: true }); if (env.CACHE_PATH !== join(directory, 'cache')) rmSync(env.CACHE_PATH, { recursive: true, force: true }); if (mailbox !== join(directory, 'messages.jsonl')) rmSync(dirname(mailbox), { recursive: true, force: true }); }
 process.on('SIGTERM', () => { stop(); process.exit(0); }); process.on('SIGINT', () => { stop(); process.exit(0); });
 server.on('exit', code => { stop(); process.exit(code ?? 0); });

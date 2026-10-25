@@ -128,7 +128,7 @@ class PublicContent
 
     public function media(?string $path): ?string
     {
-        return MediaFiles::resolve($path) ? '/'.$path : null;
+        return MediaFiles::url($path);
     }
 
     public function externalUrl(?string $url): ?string

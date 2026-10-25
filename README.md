@@ -9,6 +9,7 @@ PHP >=8.3 with PDO MySQL, mbstring, DOM/XML, fileinfo and GD; Composer 2; Node >
 ```sh
 composer install
 npm ci
+php artisan storage:link
 ```
 
 For a new local installation, copy `.env.example` to `.env`, configure a disposable development database, and generate a new application key. For an existing installation, preserve its `.env`, `APP_KEY`, database and uploaded media. Apply reviewed migrations without demonstration seeders.

@@ -9,6 +9,7 @@ use App\Models\Admin\WebsiteProduct;
 use App\Services\Shared\MediaFiles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\BuildsTestData;
 use Tests\TestCase;
@@ -105,7 +106,7 @@ class WebsiteProductsTest extends TestCase
         $service = WebsiteProduct::where('slug', 'application-launch')->firstOrFail();
         $first = $service->image_path;
         try {
-            $this->assertFileExists(public_path($first));
+            $this->assertFileExists(Storage::disk('public')->path($first));
             $this->get('/products/application-launch')->assertOk()->assertInertia(fn (Assert $page) => $page
                 ->where('product.imageWidth', 1)->where('product.imageHeight', 1));
             $this->get('/workspace/media/product-info/'.$service->id.'/image_path')->assertOk();
@@ -117,14 +118,14 @@ class WebsiteProductsTest extends TestCase
             $this->put('/product-info/'.$service->id, [...$this->payload(), 'uploaded_image' => $image()], ['Accept' => 'application/json'])->assertOk();
             $second = $service->fresh()->image_path;
             $this->assertNotSame($first, $second);
-            $this->assertFileDoesNotExist(public_path($first));
+            $this->assertFileDoesNotExist(Storage::disk('public')->path($first));
             $this->putJson('/product-info/'.$service->id, $this->payload(['remove_image' => true]))->assertOk();
             $this->assertNull($service->fresh()->image_path);
-            $this->assertFileDoesNotExist(public_path($second));
+            $this->assertFileDoesNotExist(Storage::disk('public')->path($second));
             $this->put('/product-info/'.$service->id, [...$this->payload(), 'uploaded_image' => $image()], ['Accept' => 'application/json'])->assertOk();
             $third = $service->fresh()->image_path;
             $this->deleteJson('/product-info/'.$service->id)->assertOk();
-            $this->assertFileDoesNotExist(public_path($third));
+            $this->assertFileDoesNotExist(Storage::disk('public')->path($third));
         } finally {
             foreach (array_filter([$first, $second ?? null, $third ?? null, $service->fresh()?->image_path]) as $path) {
                 MediaFiles::delete($path);

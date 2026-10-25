@@ -32,6 +32,11 @@ class SecurityHeaders
         if ($request->isSecure() && app()->environment('production')) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000');
         }
+        // HTML and Inertia page data must revalidate instead of keeping an old
+        // asset manifest after deployment. Static hashed assets cache separately.
+        if (str_contains($response->headers->get('Content-Type', ''), 'text/html') || $request->header('X-Inertia')) {
+            $response->headers->set('Cache-Control', 'private, no-cache');
+        }
         if ($request->user() || $request->is('login', 'register', 'password/*', 'email/*')) {
             $response->headers->set('Cache-Control', 'private, no-store');
             $response->headers->set('X-Robots-Tag', 'noindex, nofollow');

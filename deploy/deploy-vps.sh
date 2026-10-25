@@ -53,6 +53,12 @@ test -s "$source_path/.env" || {
     echo 'The live application .env file is missing or empty.' >&2; exit 1;
 }
 test -w "$source_path"
+# PHP and Nginx must serve the same persistent public-disk files.
+storage_mount=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/var/www/html/storage"}}{{.Source}}{{end}}{{end}}' "$php_container")
+nginx_storage_mount=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/var/www/html/storage"}}{{.Source}}{{end}}{{end}}' "$nginx_container")
+[[ -n "$storage_mount" && "$storage_mount" == "$nginx_storage_mount" ]] || {
+    echo 'PHP and Nginx must share the same persistent Laravel storage volume.' >&2; exit 1;
+}
 php_image=$(docker inspect --format '{{.Image}}' "$php_container")
 node_image=$(docker inspect --format '{{.Image}}' "$ssr_container")
 docker exec "$php_container" php --version
@@ -86,17 +92,37 @@ docker run --rm --user "$build_user" -e HOME=/tmp \
     npm run build
 test -s "$release/public/build/manifest.json"
 test -s "$release/bootstrap/ssr/ssr.js"
+# Reject an incomplete build before entering maintenance or replacing live code.
+docker run --rm --user "$build_user" --volume "$release:/var/www/html" \
+    --workdir /var/www/html "$php_image" php -r '
+        $manifest = json_decode(file_get_contents("public/build/manifest.json"), true, 512, JSON_THROW_ON_ERROR);
+        foreach ($manifest as $chunk) {
+            foreach ([$chunk["file"], ...($chunk["css"] ?? []), ...($chunk["assets"] ?? [])] as $asset) {
+                if (! is_file("public/build/".$asset)) {
+                    fwrite(STDERR, "Build asset is missing: ".$asset.PHP_EOL);
+                    exit(1);
+                }
+            }
+        }
+        echo "Verified all Vite manifest assets.".PHP_EOL;
+    '
 
 # Protect secrets, uploads, volume mountpoints and local tooling.
 # Never use --delete-excluded or copy into Docker's volume directories.
 # Keep existing ownership, modes and ACLs; the SSH user may have ACL access
 # to root-owned source directories without permission to chmod or timestamp them.
 sync_options=(-rlc --exclude='/.env' --exclude='/.env.*'
-    --exclude='/.git/' --exclude='/.docker/' --exclude='/storage/'
-    --exclude='/bootstrap/cache/' --exclude='/public/uploads/'
+    --exclude='/.git/' --exclude='/.docker/' --exclude='/storage'
+    --exclude='/bootstrap/cache' --exclude='/public/uploads'
     --exclude='/public/storage' --exclude='/logs/'
+    --exclude='/public/build'
     --exclude='/test-deploy/' --exclude='/test-deploy.deploy/')
 rsync "${sync_options[@]}" "$source_path/" "$backup/"
+# Old hashed files remain live; keep the previous manifest for code rollback.
+if [[ -f "$source_path/public/build/manifest.json" ]]; then
+    mkdir -p "$backup/public/build"
+    cp "$source_path/public/build/manifest.json" "$backup/public/build/manifest.json"
+fi
 echo "Previous code backed up at: $backup"
 
 artisan() { docker exec --user www-data "$php_container" php artisan "$@"; }
@@ -114,6 +140,10 @@ trap on_error ERR
 artisan down --retry=60
 maintenance=true
 docker stop "$ssr_container"
+# Publish new hashed assets without deleting older chunks used by open tabs.
+# The source sync excludes this directory so --delete cannot remove them later.
+mkdir -p "$source_path/public/build"
+rsync -rlc "$release/public/build/" "$source_path/public/build/"
 rsync "${sync_options[@]}" --delete "$release/" "$source_path/"
 rm -f "$source_path/public/hot"
 # Old discovery manifests can reference development packages absent in this build.
@@ -122,6 +152,12 @@ docker exec --user www-data "$php_container" php -r \
 artisan config:clear
 artisan route:clear
 artisan package:discover --ansi
+# Keep a checksum-verified copy of old uploads on the existing storage volume.
+# This command never overwrites conflicting files or deletes public/uploads.
+artisan media:preserve-uploads
+# Laravel serves new public-disk uploads through /storage. Create its standard
+# link as the deployment user, which owns/writes source, rather than www-data.
+docker exec --user "$build_user" "$php_container" php artisan storage:link
 if [[ "$run_migrations" == true ]]; then
     # Enabled only through the manual workflow checkbox; never reset or seed data.
     artisan migrate --force

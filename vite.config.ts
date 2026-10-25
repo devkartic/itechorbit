@@ -7,7 +7,10 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig(({ mode }) => ({
   plugins: [laravel({ input: ['resources/js/app.tsx'], ssr: 'resources/js/ssr.tsx', refresh: true }), react(), tailwind()],
   resolve: { alias: { '@': fileURLToPath(new URL('./resources/js', import.meta.url)) } },
-  build: { sourcemap: false },
+  // Uploaded files are Laravel runtime data, never Vite inputs or build output.
+  publicDir: false,
+  // Open tabs can still request chunks from the previous build after a release.
+  build: { sourcemap: false, emptyOutDir: false },
   server: {
     host: '127.0.0.1',
     port: 5173,
