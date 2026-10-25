@@ -15,10 +15,10 @@ class UserSeeder extends Seeder
     public function run()
     {
         User::factory()->create([
-            'name' => 'Kartic',
+            'name' => 'Example Owner',
             'role_id' => 1,
             'status' => 1,
-            'email' => 'dev.kartic@gmail.com',
+            'email' => 'owner@example.com',
         ]);
 
         User::factory(999)->create();

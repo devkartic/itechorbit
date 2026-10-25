@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 30
     environment: production
     # Configure these under Settings → Environments → production.
-    # VPS_PATH is the existing source mount, e.g. /srv/Workspace/projects/itechorbit/src.
+    # VPS_PATH is the existing source mount, e.g. /srv/example-project/src.
     env:
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER }}
