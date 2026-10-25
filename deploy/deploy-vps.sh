@@ -28,7 +28,9 @@ flock -n 9 || { echo 'Another deployment is running.' >&2; exit 1; }
 php_container=php-workspace-production-itechorbit-php-1
 nginx_container=php-workspace-production-itechorbit-nginx-1
 ssr_container=itechorbit-local-ssr-1
-for container in "$php_container" "$nginx_container" "$ssr_container"; do
+# SSR may be stopped by a previous failed deployment; its image and mounts can
+# still be inspected, and activation starts it again after rebuilding the bundle.
+for container in "$php_container" "$nginx_container"; do
     [[ $(docker inspect --format '{{.State.Running}}' "$container") == true ]] || {
         echo "Container is not running: $container" >&2; exit 1;
     }
@@ -59,6 +61,31 @@ nginx_storage_mount=$(docker inspect --format '{{range .Mounts}}{{if eq .Destina
 [[ -n "$storage_mount" && "$storage_mount" == "$nginx_storage_mount" ]] || {
     echo 'PHP and Nginx must share the same persistent Laravel storage volume.' >&2; exit 1;
 }
+# Check the real runtime user before entering maintenance. Do not boot Laravel:
+# its logger cannot explain a permission failure when the log itself is blocked.
+docker exec --user www-data "$php_container" php -r '
+    foreach (["storage/logs", "storage/app/public", "storage/framework/cache/data", "storage/framework/sessions", "storage/framework/views", "bootstrap/cache"] as $directory) {
+        if (! is_dir($directory) || ! is_writable($directory)) {
+            fwrite(STDERR, "Runtime directory must exist and be writable by www-data: ".$directory.PHP_EOL);
+            exit(1);
+        }
+        $probe = $directory."/.deploy-write-".bin2hex(random_bytes(8));
+        $handle = @fopen($probe, "x");
+        if ($handle === false) {
+            fwrite(STDERR, "Runtime write check failed for www-data: ".$directory.PHP_EOL);
+            exit(1);
+        }
+        fclose($handle);
+        if (! unlink($probe)) {
+            exit(1);
+        }
+    }
+    if (file_exists("storage/logs/laravel.log") && ! is_writable("storage/logs/laravel.log")) {
+        fwrite(STDERR, "storage/logs/laravel.log must be writable by www-data.".PHP_EOL);
+        exit(1);
+    }
+    echo "Runtime storage permissions verified for www-data.".PHP_EOL;
+    '
 php_image=$(docker inspect --format '{{.Image}}' "$php_container")
 node_image=$(docker inspect --format '{{.Image}}' "$ssr_container")
 docker exec "$php_container" php --version
@@ -105,6 +132,27 @@ docker run --rm --user "$build_user" --volume "$release:/var/www/html" \
             }
         }
         echo "Verified all Vite manifest assets.".PHP_EOL;
+    '
+
+# The application source is read-only INSIDE production containers. Create the
+# standard Laravel link on the writable VPS host instead of running storage:link
+# as a host UID inside PHP. The relative target resolves against the container's
+# persistent storage volume, not Docker's host-side volume directory.
+storage_link="$source_path/public/storage"
+if [[ ! -L "$storage_link" ]]; then
+    if [[ -e "$storage_link" ]]; then
+        echo 'public/storage exists but is not a symlink; preserve its files and resolve this manually before deploying.' >&2
+        exit 1
+    fi
+    ln -s ../storage/app/public "$storage_link"
+fi
+docker exec --user www-data "$php_container" php -r '
+    $target = realpath("storage/app/public");
+    if (! is_link("public/storage") || $target === false || realpath("public/storage") !== $target) {
+        fwrite(STDERR, "public/storage must link to the mounted storage/app/public directory.".PHP_EOL);
+        exit(1);
+    }
+    echo "Laravel public storage link verified.".PHP_EOL;
     '
 
 # Protect secrets, uploads, volume mountpoints and local tooling.
@@ -155,9 +203,6 @@ artisan package:discover --ansi
 # Keep a checksum-verified copy of old uploads on the existing storage volume.
 # This command never overwrites conflicting files or deletes public/uploads.
 artisan media:preserve-uploads
-# Laravel serves new public-disk uploads through /storage. Create its standard
-# link as the deployment user, which owns/writes source, rather than www-data.
-docker exec --user "$build_user" "$php_container" php artisan storage:link
 if [[ "$run_migrations" == true ]]; then
     # Enabled only through the manual workflow checkbox; never reset or seed data.
     artisan migrate --force

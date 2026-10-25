@@ -44,6 +44,10 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: package-lock.json
+      - name: Verify Docker deployment permissions and storage links
+        run: |
+          bash -n deploy/deploy-vps.sh
+          python3 tests/deploy/test_deploy_vps.py
       - run: composer install --no-interaction --prefer-dist
       - run: composer validate --strict
       - run: composer audit
