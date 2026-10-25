@@ -1,15 +1,9 @@
 name: Deploy to VPS
 
+# Deploy manually from Actions → Deploy to VPS → Run workflow.
 on:
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'Test uploads/builds only; live updates the running application'
-        type: choice
-        options:
-          - test
-          - live
-        default: test
       branch:
         description: 'Branch to build and deploy'
         type: string
@@ -20,18 +14,23 @@ on:
         type: boolean
         default: false
 
+# Checkout needs read access to repository contents only.
 permissions:
   contents: read
 
+# Finish an active deployment before starting the next one.
 concurrency:
   group: vps-production
   cancel-in-progress: false
 
 jobs:
   deploy:
+    # A temporary GitHub runner; Ubuntu is not installed on your VPS.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
+    # Configure these under Settings → Environments → production.
+    # VPS_PATH is the existing source mount, e.g. /srv/Workspace/projects/itechorbit/src.
     env:
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER }}
@@ -39,19 +38,21 @@ jobs:
       VPS_PATH: ${{ vars.VPS_PATH }}
       HEALTHCHECK_URL: ${{ vars.HEALTHCHECK_URL }}
       RUN_MIGRATIONS: ${{ inputs.run_migrations }}
-      DEPLOY_MODE: ${{ inputs.mode }}
     steps:
+      # Read the deployment script from "Use workflow from" (normally main).
       - name: Check out deployment tools
         uses: actions/checkout@v4
         with:
           path: deployment-tools
 
+      # Build the application branch selected in the manual run form.
       - name: Check out application branch
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
           path: application
 
+      # A unique ID keeps each build and its previous-code backup separate.
       - name: Identify deployment release
         run: echo "RELEASE_ID=$(git -C application rev-parse HEAD)-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
 
@@ -61,18 +62,14 @@ jobs:
           KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
+          # Stop before upload if required settings are missing or malformed.
           [[ "$VPS_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
           [[ "$VPS_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]]
           [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
           VPS_PATH=${VPS_PATH%/}
           [[ "$VPS_PATH" =~ ^/[a-zA-Z0-9/_-]+$ && "$VPS_PATH" != / ]]
           echo "VPS_PATH=$VPS_PATH" >> "$GITHUB_ENV"
-          if [[ "$DEPLOY_MODE" == live ]]; then
-            [[ "$HEALTHCHECK_URL" == https://* ]]
-          elif [[ "$DEPLOY_MODE" != test || "$RUN_MIGRATIONS" == true ]]; then
-            echo '::error::Choose test or live mode. Database migrations are available only in live mode.'
-            exit 1
-          fi
+          [[ "$HEALTHCHECK_URL" == https://* ]]
           test -n "$SSH_KEY"
           if [[ -z "$KNOWN_HOSTS" ]]; then
             echo '::error::Add the production environment secret VPS_KNOWN_HOSTS (check the spelling).'
@@ -113,6 +110,8 @@ jobs:
             StrictHostKeyChecking yes
           EOF
 
+      # Upload tracked source only. Local .env, node_modules and vendor are not uploaded.
+      # Build in the sibling VPS_PATH.deploy directory before updating the running app.
       - name: Upload the selected commit
         run: |
           set -euo pipefail
@@ -120,19 +119,21 @@ jobs:
           ssh production-vps "mkdir -p '$VPS_PATH.deploy/incoming'"
           scp "$RUNNER_TEMP/release.tar.gz" "production-vps:$VPS_PATH.deploy/incoming/$RELEASE_ID.tar.gz"
 
-      - name: Build and deploy selected mode
+      # The VPS script installs dependencies, runs npm run build (client + SSR),
+      # preserves .env/uploads, updates source, refreshes caches and restarts the app.
+      - name: Build assets and deploy application
         run: |
           set -euo pipefail
           ssh production-vps bash -s -- \
-            "$VPS_PATH" "$RELEASE_ID" "$RUN_MIGRATIONS" "$DEPLOY_MODE" \
+            "$VPS_PATH" "$RELEASE_ID" "$RUN_MIGRATIONS" \
             < deployment-tools/deploy/deploy-vps.sh
 
       - name: Check public application health
-        if: inputs.mode == 'live'
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 5 \
             --retry-all-errors --connect-timeout 10 --max-time 30 "$HEALTHCHECK_URL"
 
+      # Remove the private key even when an earlier step fails.
       - name: Remove runner SSH credentials
         if: always()
         run: rm -f ~/.ssh/id_ed25519 ~/.ssh/config ~/.ssh/known_hosts

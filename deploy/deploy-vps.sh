@@ -1,21 +1,17 @@
 #!/usr/bin/env bash
-# Build into a test directory, or update the existing Docker application in live mode.
+# Deploy source and fresh assets to the existing Docker application.
 set -euo pipefail
 umask 0022
 
+# Arguments from GitHub: VPS_PATH, unique release ID, migration checkbox.
 source_path=${1:?Existing application source path required}
 source_path=${source_path%/}
 root="$source_path.deploy"
 release_id=${2:?Release ID required}
 run_migrations=${3:-false}
-deploy_mode=${4:-test}
 [[ "$source_path" =~ ^/[a-zA-Z0-9/_-]+$ && "$source_path" != / ]] || exit 2
 [[ "$release_id" =~ ^[a-f0-9]{40}-[0-9]+-[0-9]+$ ]] || exit 2
 [[ "$run_migrations" == true || "$run_migrations" == false ]] || exit 2
-[[ "$deploy_mode" == test || "$deploy_mode" == live ]] || exit 2
-if [[ "$deploy_mode" == test && "$run_migrations" == true ]]; then
-    echo 'Test deployment does not run database migrations.' >&2; exit 2
-fi
 
 for executable in docker tar flock rsync realpath; do
     command -v "$executable" >/dev/null
@@ -26,6 +22,7 @@ source_path=$(realpath -m "$source_path")
     echo 'Staging must be outside the live source directory.' >&2; exit 1;
 }
 exec 9>"$root/.deploy.lock"
+# Also prevent deployments launched outside GitHub from running simultaneously.
 flock -n 9 || { echo 'Another deployment is running.' >&2; exit 1; }
 
 php_container=php-workspace-production-itechorbit-php-1
@@ -49,19 +46,12 @@ mount=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/app"}}{
 [[ "$mount" == "$live_source" ]] || {
     echo 'SSR source mount does not match the PHP source mount.' >&2; exit 1;
 }
-if [[ "$deploy_mode" == test ]]; then
-    [[ "$source_path" == "$live_source/test-deploy" ]] || {
-        echo 'Test mode requires VPS_PATH to be the live source directory followed by /test-deploy.' >&2; exit 1;
-    }
-    mkdir -p "$source_path"
-else
-    [[ "$source_path" == "$live_source" ]] || {
-        echo 'Live mode requires VPS_PATH to match the running containers source directory.' >&2; exit 1;
-    }
-    test -s "$source_path/.env" || {
-        echo 'The live application .env file is missing or empty.' >&2; exit 1;
-    }
-fi
+[[ "$source_path" == "$live_source" ]] || {
+    echo 'VPS_PATH must match the running containers source directory.' >&2; exit 1;
+}
+test -s "$source_path/.env" || {
+    echo 'The live application .env file is missing or empty.' >&2; exit 1;
+}
 test -w "$source_path"
 php_image=$(docker inspect --format '{{.Image}}' "$php_container")
 node_image=$(docker inspect --format '{{.Image}}' "$ssr_container")
@@ -84,9 +74,16 @@ docker run --rm --user "$build_user" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer
     composer install --no-dev --no-scripts --prefer-dist --no-interaction --optimize-autoloader
 docker run --rm --user "$build_user" --volume "$release:/var/www/html" \
     --workdir /var/www/html "$php_image" composer check-platform-reqs --no-dev
+# Install the locked frontend dependencies, including build tools.
 docker run --rm --user "$build_user" -e HOME=/tmp \
     --volume "$release:/app" --workdir /app "$node_image" \
-    sh -ec 'npm ci --include=dev && npm run build'
+    npm ci --include=dev
+# Refresh frontend assets AND the Inertia SSR bundle on every deployment.
+# Node runs inside Docker; npm does not need to be installed on Ubuntu.
+echo 'Refreshing application assets: npm run build'
+docker run --rm --user "$build_user" -e HOME=/tmp \
+    --volume "$release:/app" --workdir /app "$node_image" \
+    npm run build
 test -s "$release/public/build/manifest.json"
 test -s "$release/bootstrap/ssr/ssr.js"
 
@@ -99,14 +96,6 @@ sync_options=(-rlc --exclude='/.env' --exclude='/.env.*'
     --exclude='/bootstrap/cache/' --exclude='/public/uploads/'
     --exclude='/public/storage' --exclude='/logs/'
     --exclude='/test-deploy/' --exclude='/test-deploy.deploy/')
-if [[ "$deploy_mode" == test ]]; then
-    rsync "${sync_options[@]}" --delete "$release/" "$source_path/"
-    rm -f "$source_path/public/hot"
-    echo "Test deployment built and uploaded to: $source_path"
-    echo 'No live files, migrations, maintenance state or running containers were changed.'
-    echo 'This is a file/build test, not a separate running website.'
-    exit 0
-fi
 rsync "${sync_options[@]}" "$source_path/" "$backup/"
 echo "Previous code backed up at: $backup"
 
@@ -121,6 +110,7 @@ on_error() {
     exit "$status"
 }
 trap on_error ERR
+# Builds have finished. Briefly pause requests while replacing source and assets.
 artisan down --retry=60
 maintenance=true
 docker stop "$ssr_container"
@@ -133,8 +123,10 @@ artisan config:clear
 artisan route:clear
 artisan package:discover --ansi
 if [[ "$run_migrations" == true ]]; then
+    # Enabled only through the manual workflow checkbox; never reset or seed data.
     artisan migrate --force
 fi
+# Refresh Laravel caches so the new code and production settings take effect.
 artisan config:cache
 artisan route:cache
 artisan view:cache

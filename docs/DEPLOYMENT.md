@@ -2,9 +2,7 @@
 
 ## Deploy from GitHub Actions to a VPS
 
-The manual workflow defaults to **test** mode: it builds with the installed PHP/Node images and uploads the result to `/srv/Workspace/projects/itechorbit/src/test-deploy`, without activating it. It does not use the production `.env`, run migrations, change maintenance mode, restart containers, or check the production health URL. This is a file-transfer/build test, not a separate running website. A browser-accessible staging site needs its own containers, environment, database and routing.
-
-Choose **live** mode only when updating the running application. In live mode, the workflow runs `deploy/deploy-vps.sh` against the existing Docker containers. It builds with the exact PHP and Node images already installed on the VPS, backs up the previous code, enables maintenance mode, synchronizes the bind-mounted source, optionally migrates, rebuilds caches, and restarts PHP, Nginx and SSR. It checks SSR before reopening the application, then checks the public health URL. Run verification for the application commit before deploying.
+The manual workflow deploys the selected application's commit to the source directory configured in `VPS_PATH`. It builds with the exact PHP and Node images already installed on the VPS, backs up the previous code, enables maintenance mode, synchronizes source and fresh assets, optionally migrates, rebuilds caches, and restarts PHP, Nginx and SSR. It checks SSR before reopening the application, then checks the public health URL. Every deployment runs `npm ci --include=dev` followed by `npm run build` inside Docker, refreshing both the client assets and the SSR bundle before replacing live files. Run verification for the application commit before deploying.
 
 The **Branch to build and deploy** input defaults to `production-version`. **Use workflow from** chooses the workflow and deployment script; the branch input chooses application code. The deployment script comes from the workflow branch, so the application branch does not need to contain it.
 
@@ -18,33 +16,25 @@ This script targets the inspected running containers:
 | `php-workspace-production-itechorbit-nginx-1` | Web server |
 | `itechorbit-local-ssr-1` | Node 24 and Inertia SSR |
 
-All three must mount `/srv/Workspace/projects/itechorbit/src` as their source. The script verifies those mounts before updating files. In test mode, `VPS_PATH` must be that source path followed by `/test-deploy`. In live mode, it must equal the source mount itself. Live synchronization excludes `test-deploy` and `test-deploy.deploy`, preserving test files and avoiding recursive backups. It preserves `.env` and `.env.*`, `public/uploads`, `public/storage`, `storage`, `bootstrap/cache`, `.git`, `.docker` and `logs`. Existing storage/cache named volumes remain attached. MariaDB, Redis, Caddy and access containers are not restarted or recreated. This workflow updates application code and dependencies using existing images; changes to PHP extensions, container configuration, Dockerfiles or Compose require a separate workspace image rebuild. Existing queue workers receive Laravel's `queue:restart` signal; the workflow does not provision workers or a scheduler.
+All three must mount `/srv/Workspace/projects/itechorbit/src` as their source. The script verifies those mounts before updating files. `VPS_PATH` must equal the source mount itself. Synchronization excludes any earlier `test-deploy` and `test-deploy.deploy` directories, preserving those files and avoiding recursive backups; there is no test mode in the workflow. It preserves `.env` and `.env.*`, `public/uploads`, `public/storage`, `storage`, `bootstrap/cache`, `.git`, `.docker` and `logs`. Existing storage/cache named volumes remain attached. MariaDB, Redis, Caddy and access containers are not restarted or recreated. This workflow updates application code and dependencies using existing images; changes to PHP extensions, container configuration, Dockerfiles or Compose require a separate workspace image rebuild. Existing queue workers receive Laravel's `queue:restart` signal; the workflow does not provision workers or a scheduler.
 
 ### One-time VPS setup
 
 Keep the existing Docker stack, production `.env`, `APP_KEY`, database and uploads. There is no host PHP-FPM or Supervisor requirement. `PHP_FPM_SERVICE` is not used.
 
-For your test deployment, run these commands as root on the VPS:
+Run these commands as root on the VPS to prepare deployment permissions:
 
 ```sh
 apt update
 apt install -y rsync util-linux acl
 usermod -aG docker deploy
-install -d -o deploy -g deploy -m 755 \
-  /srv/Workspace/projects/itechorbit/src/test-deploy \
-  /srv/Workspace/projects/itechorbit/src/test-deploy.deploy
+install -d -o deploy -g deploy -m 755 /srv/Workspace/projects/itechorbit/src.deploy
+setfacl -R -m u:deploy:rwX /srv/Workspace/projects/itechorbit/src
 ```
 
 Docker group access gives the deployment user administrative control of the host. Reconnect SSH after adding group membership. Ensure the user can traverse every parent directory. Test `docker ps` and source access from that user's SSH session. PHP artisan commands run inside the existing PHP container as `www-data`, which must already have write access to the mounted storage and bootstrap-cache volumes.
 
-`VPS_PATH` is the destination source directory: use `/srv/Workspace/projects/itechorbit/src/test-deploy` for test mode. The workflow derives its temporary build directory automatically by appending `.deploy`. No additional path variable is needed.
-
-For live mode, change `VPS_PATH` to `/srv/Workspace/projects/itechorbit/src`. As root, prepare the corresponding staging directory and grant source-write access first:
-
-```sh
-install -d -o deploy -g deploy -m 755 /srv/Workspace/projects/itechorbit/src.deploy
-setfacl -R -m u:deploy:rwX /srv/Workspace/projects/itechorbit/src
-```
+`VPS_PATH` is `/srv/Workspace/projects/itechorbit/src`. The workflow derives its temporary build and code-backup directory automatically by appending `.deploy`. No additional path variable is needed.
 
 The ACL command grants source access without changing existing ownership or application permissions. Back up the database and uploads separately before migrating. Code backups under this staging root exclude secrets, uploads and runtime storage; they are not database or media backups. The staging root needs enough space for the new build and the previous code, including dependencies.
 
@@ -66,12 +56,12 @@ Add these environment **variables**:
 
 | Variable | Example |
 | --- | --- |
-| `VPS_PATH` | `/srv/Workspace/projects/itechorbit/src/test-deploy` for test mode; `/srv/Workspace/projects/itechorbit/src` for live mode |
-| `HEALTHCHECK_URL` | `https://itechorbit.com/healthz` (used only in live mode) |
+| `VPS_PATH` | `/srv/Workspace/projects/itechorbit/src` (the existing running containers source mount) |
+| `HEALTHCHECK_URL` | `https://itechorbit.com/healthz` |
 
-Commit and push the workflow, script and documentation. The workflow must exist on the repository's default branch to appear for manual runs. Open **Actions → Deploy to VPS → Run workflow**, select the branch containing the updated workflow under **Use workflow from**, leave **Branch to build and deploy** as `production-version` or enter another verified branch, choose **test** mode with migrations unchecked for your test-directory deployment. For **live** mode, use the live source path and enable migrations only after reviewing pending migrations and backing up the database. No deployment runs automatically on push. No credentials are stored in the repository.
+Commit and push the workflow, script and documentation. The workflow must exist on the repository's default branch to appear for manual runs. Open **Actions → Deploy to VPS → Run workflow**, select the branch containing the updated workflow under **Use workflow from**, leave **Branch to build and deploy** as `production-version` or enter another verified branch, and enable migrations only after reviewing pending migrations and backing up the database. No deployment runs automatically on push. No credentials are stored in the repository.
 
-In test mode, successful builds synchronize only into the test destination and skip live activation and health checks. In live mode, build failures leave live application code unchanged. Activation uses an in-place source sync during maintenance because the containers bind-mount a fixed directory; it is not an atomic symlink switch. An activation failure leaves maintenance enabled and may leave SSR stopped. Inspect the failure before recovery. The script prints the previous-code backup path. To restore code, use the same rsync exclusions from `deploy/deploy-vps.sh`, rebuild Laravel caches, restart the three application containers, verify SSR, then run `docker exec --user www-data php-workspace-production-itechorbit-php-1 php artisan up`. Never restore excluded paths from a code backup or automatically roll back migrations. A later public health failure leaves the new deployment active for inspection. Retained builds and code backups require periodic manual cleanup.
+Build failures leave live application code unchanged. Activation uses an in-place source sync during maintenance because the containers bind-mount a fixed directory; it is not an atomic symlink switch. An activation failure leaves maintenance enabled and may leave SSR stopped. Inspect the failure before recovery. The script prints the previous-code backup path. To restore code, use the same rsync exclusions from `deploy/deploy-vps.sh`, rebuild Laravel caches, restart the three application containers, verify SSR, then run `docker exec --user www-data php-workspace-production-itechorbit-php-1 php artisan up`. Never restore excluded paths from a code backup or automatically roll back migrations. A later public health failure leaves the new deployment active for inspection. Retained builds and code backups require periodic manual cleanup.
 
 The sections below describe application requirements and general deployment/rollback procedures. Native Nginx/Supervisor examples are for hosts without this Docker workspace. For this Docker setup, run application PHP commands inside the PHP container and use the existing Compose networking; the SSR URL in `.env` must resolve to the SSR service from PHP (for example `http://itechorbit-ssr:13714`), rather than host loopback.
 
