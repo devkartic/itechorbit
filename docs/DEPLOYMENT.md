@@ -1,5 +1,7 @@
 # Staging, deployment and rollback
 
+Example placeholders: IP addresses, private email addresses, SSH users, host paths and infrastructure names below are illustrative. Replace them with verified values from your private deployment configuration before running commands. These examples do not change production settings.
+
 No production deployment or migration has been performed. Local tests use synthetic isolated SQLite databases; production data preservation is a release gate, not an established result.
 
 ## Runtime and infrastructure
@@ -38,7 +40,7 @@ Switch to the prior release and its locked dependency/assets/SSR bundle, restart
 
 ## CI layout
 
-The application now has a standalone Git repository at `/Users/karticgharami/Workspace/projects/itechorbit`. Its `.github/workflows/modernization.yml` uses repository-root working-directory, dependency-cache and artifact paths. CI has no deployment credentials or deployment step; PHP 8.5 CI execution remains unverified until GitHub runs it.
+The application now has a standalone Git repository at `/path/to/example-project`. Its `.github/workflows/modernization.yml` uses repository-root working-directory, dependency-cache and artifact paths. CI has no deployment credentials or deployment step; PHP 8.5 CI execution remains unverified until GitHub runs it.
 
 ## Browser history encryption and local HTTP
 
