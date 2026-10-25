@@ -1,8 +1,10 @@
 # Application configuration and upgrade reference
 
+Example placeholders: IP addresses, private email addresses, SSH users, host paths and infrastructure names below are illustrative. Replace them with verified values from your private deployment configuration before running commands. These examples do not change production settings.
+
 [Production deployment](../DEPLOYMENT.md) · [Operations](SERVICES.md) · [Scheduler and queues](SCHEDULER.md)
 
-This reference preserves application-specific migration, content, OAuth, upload and editor requirements. It is not an instruction to rerun old migrations or seeders. Use the migration status of the exact release being deployed. All production Artisan commands below must run inside `php-workspace-production-itechorbit-php-1` as `www-data`, even where an inline command is abbreviated.
+This reference preserves application-specific migration, content, OAuth, upload and editor requirements. It is not an instruction to rerun old migrations or seeders. Use the migration status of the exact release being deployed. All production Artisan commands below must run inside `example-production-app-php-1` as `www-data`, even where an inline command is abbreviated.
 
 The verified canonical host is `https://www.itechorbit.com`; the bare domain redirects to it. Existing OAuth registrations must match the callback actually used by the application. Coordinate provider-console changes with application configuration; changing a documentation example does not migrate an existing OAuth registration.
 

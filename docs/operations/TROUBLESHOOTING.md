@@ -1,8 +1,10 @@
 # Production troubleshooting
 
+Example placeholders: IP addresses, private email addresses, SSH users, host paths and infrastructure names below are illustrative. Replace them with verified values from your private deployment configuration before running commands. These examples do not change production settings.
+
 [Deployment](../DEPLOYMENT.md) · [Services](SERVICES.md) · [Mail](MAIL.md) · [Scheduler](SCHEDULER.md) · [Recovery](BACKUP-RECOVERY.md)
 
-Start with the exact release ID, source commit, time, URL/job and failure message. Read-only commands below run on **VPS / deploy** unless stated otherwise. Read the complete error before restarting services. Keep secrets and message contents out of shared logs.
+Start with the exact release ID, source commit, time, URL/job and failure message. Read-only commands below run on **VPS / example-user** unless stated otherwise. Read the complete error before restarting services. Keep secrets and message contents out of shared logs.
 
 ## Quick decision table
 
@@ -26,9 +28,9 @@ Start with the exact release ID, source commit, time, URL/job and failure messag
 ## Missing runtime image
 
 ```sh
-php_image=$(docker inspect --format '{{.Image}}' php-workspace-production-itechorbit-php-1)
+php_image=$(docker inspect --format '{{.Image}}' example-production-app-php-1)
 docker image inspect "$php_image" >/dev/null
-node_image=$(docker inspect --format '{{.Image}}' itechorbit-local-ssr-1)
+node_image=$(docker inspect --format '{{.Image}}' example-local-ssr-1)
 docker image inspect "$node_image" >/dev/null
 ```
 
@@ -39,10 +41,10 @@ Expected: exit 0 for both. Containers may keep running after their original imag
 ## Diagnose 404 design and SSR errors
 
 ```sh
-docker exec php-workspace-production-itechorbit-php-1 grep -n 'Inertia::getShared' app/Exceptions/Handler.php
-docker exec php-workspace-production-itechorbit-php-1 grep -n 'error-page-art' resources/js/pages/Shared/Error.tsx
-docker logs --since 5m --tail 80 itechorbit-local-ssr-1
-docker exec php-workspace-production-itechorbit-nginx-1 nginx -T 2>&1 | grep -nE 'error_page|laravel_not_found|itechorbit_error_html|fastcgi_intercept_errors'
+docker exec example-production-app-php-1 grep -n 'Inertia::getShared' app/Exceptions/Handler.php
+docker exec example-production-app-php-1 grep -n 'error-page-art' resources/js/pages/Shared/Error.tsx
+docker logs --since 5m --tail 80 example-local-ssr-1
+docker exec example-production-app-nginx-1 nginx -T 2>&1 | grep -nE 'error_page|laravel_not_found|itechorbit_error_html|fastcgi_intercept_errors'
 ```
 
 Expected: fallback `site`, `auth`, `flash` props; illustrated error component; loaded HTML-aware error rules. Missing fallback props caused production `aiService` SSR failures; missing component/CSS in an older deployment branch caused the old design. A server-only patch is overwritten by source deployment, so fix the deployable branch permanently.
@@ -58,20 +60,20 @@ Expected: both 404; browser navigation has illustrated markup/styles and JSON st
 ## Diagnose SSR networking
 
 ```sh
-docker exec --user www-data php-workspace-production-itechorbit-php-1 php artisan inertia:check-ssr
-docker inspect --format '{{json .NetworkSettings.Networks}}' itechorbit-local-ssr-1
-docker inspect --format '{{json .NetworkSettings.Networks}}' php-workspace-production-itechorbit-php-1
-docker logs --since 10m --tail 100 itechorbit-local-ssr-1
+docker exec --user www-data example-production-app-php-1 php artisan inertia:check-ssr
+docker inspect --format '{{json .NetworkSettings.Networks}}' example-local-ssr-1
+docker inspect --format '{{json .NetworkSettings.Networks}}' example-production-app-php-1
+docker logs --since 10m --tail 100 example-local-ssr-1
 ```
 
-Expected: both share `php-workspace-production-itechorbit_backend`; PHP uses `http://itechorbit-ssr:13714`. SSR must listen on `0.0.0.0` inside its container. Its own health check can succeed on loopback while PHP cannot reach it. Environment-only fixes require config refresh, while listener-source changes require rebuilding SSR. Existing stopped SSR can be started; recreating it requires the correct reviewed parent Compose file and network.
+Expected: both share `example-production-app_backend`; PHP uses `http://example-ssr:13714`. SSR must listen on `0.0.0.0` inside its container. Its own health check can succeed on loopback while PHP cannot reach it. Environment-only fixes require config refresh, while listener-source changes require rebuilding SSR. Existing stopped SSR can be started; recreating it requires the correct reviewed parent Compose file and network.
 
 ## Repair runtime permissions narrowly
 
-**VPS / deploy; diagnostic:**
+**VPS / example-user; diagnostic:**
 
 ```sh
-docker exec --user www-data php-workspace-production-itechorbit-php-1 php -r '
+docker exec --user www-data example-production-app-php-1 php -r '
 foreach (["storage/logs", "storage/app/public", "storage/framework/cache/data", "storage/framework/sessions", "storage/framework/views", "bootstrap/cache"] as $path) {
     echo $path, ": ", is_dir($path) && is_writable($path) ? "writable" : "CHECK", PHP_EOL;
 }
@@ -81,7 +83,7 @@ foreach (["storage/logs", "storage/app/public", "storage/framework/cache/data", 
 If Laravel's existing log was created by another user, **VPS / Docker administrator; repairs only logs:**
 
 ```sh
-docker exec --user root php-workspace-production-itechorbit-php-1 sh -ec '
+docker exec --user root example-production-app-php-1 sh -ec '
 mkdir -p storage/logs
 chown www-data:www-data storage/logs
 chmod u+rwx storage/logs
@@ -98,11 +100,11 @@ Expected: failed paths become writable to `www-data`; repeat the diagnostic. Inv
 
 ## SSH and deployment access
 
-GitHub-to-VPS login and VPS-to-GitHub pulls use different key relationships. `VPS_SSH_KEY` authenticates the runner to the `deploy` account. A GitHub repository/deploy key authorizes Git operations on that repository. Workspace and application repositories require appropriate access individually.
+GitHub-to-VPS login and VPS-to-GitHub pulls use different key relationships. `VPS_SSH_KEY` authenticates the runner to the `example-user` account. A GitHub repository/deploy key authorizes Git operations on that repository. Workspace and application repositories require appropriate access individually.
 
 For a failing pull, inspect `git remote -v`, `whoami` and `ssh -T git@github.com` as the user running Git. A missing SSH agent alone does not mean key-file authentication cannot work. Verify GitHub host fingerprints through official documentation; never disable strict host checking to solve a key rejection.
 
-Root-only workspace `.env`/Compose files are intentionally unavailable to `deploy`. Use a root operator for infrastructure reconciliation; do not expose private settings or change permissions broadly. Source deployment as `deploy` should use its existing Docker access and staging ACLs.
+Root-only workspace `.env`/Compose files are intentionally unavailable to `example-user`. Use a root operator for infrastructure reconciliation; do not expose private settings or change permissions broadly. Source deployment as `example-user` should use its existing Docker access and staging ACLs.
 
 ## Queue, mail and scheduler failures
 

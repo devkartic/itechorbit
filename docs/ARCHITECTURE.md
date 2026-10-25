@@ -1,5 +1,7 @@
 # Project structure
 
+Example placeholders: IP addresses, private email addresses, SSH users, host paths and infrastructure names below are illustrative. Replace them with verified values from your private deployment configuration before running commands. These examples do not change production settings.
+
 The application has three areas: the public company website, public user portfolios, and the private administration workspace. Authentication and account screens are separate supporting areas. Laravel's standard bootstrap, configuration, migrations, middleware, providers, commands, jobs and mail conventions remain in place.
 
 ## Application code
@@ -42,4 +44,4 @@ Backend coverage lives in `tests/Feature/` and `tests/Unit/`; browser flows and 
 
 After deploying moved classes, rebuild Composer's autoloader, clear/rebuild Laravel caches, rebuild client/SSR assets, and restart PHP, SSR and queue workers together. Keep the existing application key, database and media. No schema change is introduced by this refactor.
 
-Production uses a fixed source mount at `/srv/Workspace/projects/itechorbit/src`, exposed read-only at `/var/www/html` in PHP/Nginx and `/app` in SSR. Storage and bootstrap cache use persistent writable volumes. The deployment script stages and builds a release separately, then synchronizes source in place during maintenance; it does not switch a `current` symlink. The single parent `../.docker/` directory contains project infrastructure and environment-specific overrides. Source deployment does not provision cron, queue consumers or mail services; see [services](operations/SERVICES.md) and [scheduler/queues](operations/SCHEDULER.md).
+Production uses a fixed source mount at `/srv/example-project/src`, exposed read-only at `/var/www/html` in PHP/Nginx and `/app` in SSR. Storage and bootstrap cache use persistent writable volumes. The deployment script stages and builds a release separately, then synchronizes source in place during maintenance; it does not switch a `current` symlink. The single parent `../.docker/` directory contains project infrastructure and environment-specific overrides. Source deployment does not provision cron, queue consumers or mail services; see [services](operations/SERVICES.md) and [scheduler/queues](operations/SCHEDULER.md).
