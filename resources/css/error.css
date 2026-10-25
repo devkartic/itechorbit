@@ -1,0 +1,42 @@
+.error-page { overflow:hidden; background:radial-gradient(ellipse at 95% 20%,#ede4ff,transparent 58%),#fcfbf8; border-bottom:1px solid var(--border); }
+.error-page-grid { display:grid; grid-template-columns:1.15fr 1fr; align-items:center; gap:64px; padding-top:88px; padding-bottom:88px; }
+.error-page-copy h1 { margin:24px 0; font-size:clamp(2.3rem,4vw,3.8rem); font-weight:600; line-height:1.1; letter-spacing:-.045em; }
+.error-page-copy h1>span { color:var(--primary); }
+.error-page-description { max-width:440px; font-size:16px; line-height:1.85; color:#625b73; }
+.error-page-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }
+.error-page-note { margin-top:24px; color:#71677e; font-size:12px; }
+.error-page-art { position:relative; display:flex; min-width:0; min-height:365px; flex-direction:column; align-items:center; justify-content:center; isolation:isolate; }
+.error-page-orbit { position:absolute; z-index:-1; width:355px; aspect-ratio:1; border:1px solid #d6c7ec; border-radius:50%; background:radial-gradient(circle,#f1e8ff88,transparent 70%); }
+.error-page-orbit-inner { width:270px; border-style:dashed; transform:rotate(-15deg); }
+.error-page-coordinate { display:flex; align-items:center; gap:9px; margin-bottom:18px; font-size:9px; font-weight:600; letter-spacing:.12em; color:#665580; }
+.error-page-coordinate>span { width:6px; height:6px; border-radius:50%; background:var(--primary); }
+.error-page-number { display:flex; align-items:center; gap:2px; font-size:clamp(100px,12vw,174px); font-weight:600; letter-spacing:-.09em; line-height:1; color:var(--primary); }
+.error-page-number>span { display:grid; place-items:center; width:.84em; height:.84em; margin-left:.05em; margin-right:.03em; border:1px solid #cbb6ea; border-radius:50%; background:linear-gradient(140deg,#fff,#e6d8fb); box-shadow:inset 0 0 0 10px #fcfbf888,0 18px 45px #7040cf12; }
+.error-page-number svg { width:65%; height:65%; stroke-width:.8; transform:rotate(-15deg); }
+.error-page-route { display:flex; align-items:center; gap:11px; margin-top:24px; padding:13px 16px; border:1px solid #e4d9f1; border-radius:14px; background:#fff9; color:#5b496f; font-size:10px; box-shadow:0 12px 30px #4e279708; }
+.error-page-route>svg { flex-shrink:0; color:var(--primary); }
+.error-page-star { position:absolute; top:48px; right:24px; font-size:36px; color:var(--primary); }
+.error-page-dot { position:absolute; bottom:38px; left:24px; width:12px; height:12px; border:3px solid #cbb6ea; border-radius:50%; }
+.error-page-explore { display:grid; grid-template-columns:1fr 1.8fr; align-items:center; gap:48px; padding-top:42px; padding-bottom:48px; }
+.error-page-explore h2 { margin-top:10px; font-size:18px; font-weight:600; letter-spacing:-.02em; }
+.error-page-explore nav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.error-page-explore nav>a { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 16px; border:1px solid var(--border); border-radius:16px; background:white; font-size:13px; font-weight:600; transition:border-color .2s,background .2s; }
+.error-page-explore nav>a:hover { border-color:#be9fff; background:#f4f1ff; }
+.error-page-explore small { display:block; margin-bottom:7px; font-size:8px; letter-spacing:.09em; font-weight:500; color:#71677e; }
+.error-page-explore nav>a>svg { flex-shrink:0; color:var(--primary); }
+@media(max-width:1023px) {
+  .error-page-grid { gap:28px; padding-top:64px; padding-bottom:64px; }
+  .error-page-orbit { width:290px; }.error-page-orbit-inner { width:220px; }
+  .error-page-explore { grid-template-columns:1fr; gap:24px; }
+}
+@media(max-width:639px) {
+  .error-page-grid { grid-template-columns:1fr; gap:12px; padding-top:40px; padding-bottom:36px; }
+  .error-page-copy h1 { margin-top:18px; }.error-page-description { font-size:14px; }
+  .error-page-art { min-height:280px; }.error-page-number { font-size:136px; }
+  .error-page-orbit { width:270px; }.error-page-orbit-inner { width:210px; }
+  .error-page-star { top:20px; right:24px; }.error-page-dot { bottom:20px; }
+  .error-page-explore { padding-top:30px; padding-bottom:32px; }
+  .error-page-explore nav { grid-template-columns:1fr; }
+  .error-page-explore nav>a { padding:16px 18px; }
+}
+@media(prefers-reduced-motion:reduce) { .error-page-explore nav>a { transition:none; } }

@@ -74,6 +74,25 @@ npm run build
 
 The GitHub workflow performs these operations in the existing containers; PHP, Composer and npm do not need to be installed on the VPS host. Confirm `APP_URL` is the canonical HTTPS domain and that any `ASSET_URL` value points to a server that actually serves the same build. Leave `ASSET_URL` unset for same-origin assets. Do not run the Vite development server in production; deployment removes `public/hot`.
 
+### Themed 404/403 pages and Nginx rollout
+
+Missing pages and browser navigations to missing files use the website's themed 404, with HTTP status 404, noindex metadata, the original URL and links back to Home and Contact. JSON errors stay JSON. Missing script/style/image/font subrequests remain failed resources rather than receiving an Inertia document. Protected paths keep HTTP 403 and show a themed “Access forbidden” page for browser requests. Nginx serves `public/errors/403.html` directly with matching navigation, footer, recovery links and error artwork, without PHP, JavaScript or built assets; non-HTML requests remain denied without the themed document. The error location is internal-only and carries a noindex header.
+
+The Nginx template uses `error_page 404 = @laravel_not_found` to send Nginx-generated browser 404s (including missing files under its storage alias) through Laravel's front controller. The fallback only accepts requests whose `Accept` header includes `text/html`; it preserves the original request URI and disables FastCGI error interception to prevent recursion. Existing files continue to be served directly.
+
+The running Docker workspace builds its Nginx image from the **parent project's** `.docker/nginx.conf.template` (on the VPS: `/srv/Workspace/projects/itechorbit/.docker/nginx.conf.template`). The repository's `.docker/nginx.conf.template` and `deploy/nginx.conf.example` contain matching rules, but the source-only GitHub deployment neither updates the parent configuration nor rebuilds its image. Copy the map, both `error_page` rules, the internal `/errors/403.html` location and the named-location rules into that parent template, retaining its existing security rules. Using the workspace's existing production configuration/environment, rebuild and recreate **only Nginx**, keeping the database, storage volumes and application containers intact. Restarting an old image alone does not install the new template.
+
+For a graceful rollout without container recreation, first build/tag the updated Nginx image and update the parent template. Back up and replace both `/etc/nginx/templates/default.conf.template` and the rendered `/etc/nginx/conf.d/default.conf` in the running Nginx container, validate with `nginx -t`, then reload with `nginx -s reload`. Updating only the rendered configuration is temporary: the entrypoint regenerates it from the template on restart. Retain the previous image tag and configuration for rollback. This only changes Nginx; it does not deploy the Laravel application.
+
+Before applying the changed image, validate the rendered configuration with `nginx -t`. After recreation, confirm the loaded rules with:
+
+```sh
+docker exec php-workspace-production-itechorbit-nginx-1 nginx -t
+docker exec php-workspace-production-itechorbit-nginx-1 nginx -T
+```
+
+Verify a browser request to `/storage/not-found.png` and an unknown page displays the themed page with status 404, a script/image request to the same missing file stays 404, existing assets/uploads still return 200, and `/.env`, other hidden files and forbidden upload scripts display the themed page with HTTP 403 and no protected contents. Publish `public/errors/403.html` with the application before activating the Nginx rules. The UI and Laravel exception handling are delivered by the normal application deployment; Nginx-generated file errors need the separate Nginx image rollout described above.
+
 ### GitHub configuration
 
 Create a GitHub environment named `production` under **Settings → Environments**. Add these environment secrets:

@@ -1,4 +1,8 @@
 # Replace host, release root and PHP socket for the verified staging environment.
+map $http_accept $itechorbit_error_html {
+    default 0;
+    ~*text/html 1;
+}
 server {
     listen 80;
     server_name staging.example.com;
@@ -6,15 +10,32 @@ server {
     index index.php;
     charset utf-8;
     client_max_body_size 12m;
+    error_page 404 = @laravel_not_found;
+    # Keep protected requests blocked; render the error without PHP or assets.
+    error_page 403 /errors/403.html;
+    location = /errors/403.html {
+        internal;
+        if ($itechorbit_error_html = 0) { return 403; }
+        add_header X-Robots-Tag "noindex, nofollow" always;
+    }
     location / { try_files $uri $uri/ /index.php?$query_string; }
     location = /favicon.ico { access_log off; log_not_found off; }
     include /srv/itechorbit/current/deploy/nginx-performance.conf;
     # Uploaded files must never execute PHP. Keep this before the PHP location.
     location ~* ^/(uploads|storage)/.*\.(php|phtml|phar)$ { deny all; }
+    location @laravel_not_found {
+        if ($itechorbit_error_html = 0) { return 404; }
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_intercept_errors off;
+        fastcgi_pass unix:/run/php/php8.5-fpm.sock;
+    }
     location ~ \.php$ {
         try_files $uri =404;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_intercept_errors off;
         fastcgi_pass unix:/run/php/php8.5-fpm.sock;
     }
     location ~ /\.(?!well-known).* { deny all; }

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light">
+  <title>Access forbidden | iTechOrbit</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fcfbf8; color: #21182f; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    a:focus-visible { outline: 3px solid #8955dc; outline-offset: 6px; }
+    .shell { width: min(1160px, calc(100% - 48px)); margin-inline: auto; }
+    header { background: #21182f; color: white; }
+    header .shell { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 88px; }
+    .brand { font-size: 24px; font-weight: 700; letter-spacing: -.05em; }
+    .brand span { color: #bf9beb; }
+    .skip-link { position: absolute; left: 16px; top: -100px; padding: 12px; background: white; color: #21182f; z-index: 2; }
+    .skip-link:focus { top: 12px; }
+    .header-nav { display: flex; gap: 22px; font-size: 13px; }
+    .mobile-menu { display: none; position: relative; }
+    .mobile-menu summary { cursor: pointer; padding: 12px; }
+    .mobile-menu nav { position: absolute; right: 0; top: 48px; z-index: 1; display: grid; gap: 18px; min-width: 200px; padding: 24px; border-radius: 12px; background: #21182f; box-shadow: 0 12px 30px #21182f30; }
+    .header-link { font-size: 13px; color: #e4d9f1; }
+    main { background: radial-gradient(ellipse at 95% 20%, #ede4ff, transparent 58%); border-bottom: 1px solid #e4d9f1; }
+    .grid { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 64px; min-height: 580px; padding-block: 80px; }
+    .eyebrow { display: flex; align-items: center; gap: 10px; color: #7040cf; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    h1 { margin: 24px 0; font-size: clamp(38px, 4.5vw, 60px); line-height: 1.1; letter-spacing: -.045em; font-weight: 600; }
+    h1 span { color: #7040cf; }
+    .description { max-width: 440px; color: #625b73; font-size: 16px; line-height: 1.85; }
+    .button { display: inline-flex; align-items: center; gap: 24px; margin-top: 24px; padding: 16px 24px; border-radius: 12px; background: #7040cf; color: white; font-size: 14px; font-weight: 600; }
+    .button:hover { background: #5b2db4; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .button.secondary { background: transparent; color: #21182f; border: 1px solid #d6c7ec; }
+    .button.secondary:hover { background: #ede4ff; }
+    .note { margin-top: 24px; color: #71677e; font-size: 12px; }
+    .art { position: relative; display: grid; place-content: center; min-width: 0; min-height: 355px; text-align: center; isolation: isolate; }
+    .art::before, .art::after { content: ''; position: absolute; z-index: -1; inset: 50% auto auto 50%; width: 340px; aspect-ratio: 1; border: 1px solid #d6c7ec; border-radius: 50%; transform: translate(-50%, -50%); }
+    .art::after { width: 270px; border-style: dashed; }
+    .code { color: #7040cf; font-size: clamp(120px, 14vw, 180px); font-weight: 600; line-height: 1; letter-spacing: -.07em; }
+    .label { margin-top: 24px; color: #665580; font-size: 10px; font-weight: 600; letter-spacing: .15em; }
+    .explore { display: grid; grid-template-columns: 1fr 1.8fr; align-items: center; gap: 48px; padding-block: 42px 48px; }
+    .explore h2 { font-size: 18px; font-weight: 600; letter-spacing: -.02em; }
+    .explore nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .explore nav a { display: flex; justify-content: space-between; gap: 12px; padding: 18px 16px; border: 1px solid #e4d9f1; border-radius: 16px; background: white; font-size: 13px; font-weight: 600; }
+    .explore nav a:hover { border-color: #be9fff; background: #f4f1ff; }
+    .explore small { display: block; margin-bottom: 7px; font-size: 8px; letter-spacing: .09em; font-weight: 500; color: #71677e; }
+    footer { background: #21182f; color: #e4d9f1; font-size: 13px; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; padding-block: 56px; }
+    .footer-grid p { line-height: 1.85; }
+    .footer-grid nav { display: grid; gap: 14px; }
+    .footer-grid h2 { margin: 0 0 20px; font-size: 14px; color: white; }
+    .footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-block: 24px; border-top: 1px solid #ffffff20; font-size: 12px; }
+    @media (max-width: 1050px) {
+      .header-nav { display: none; }
+      .mobile-menu { display: block; }
+      .explore { grid-template-columns: 1fr; gap: 20px; }
+    }
+    @media (max-width: 700px) {
+      .shell { width: calc(100% - 40px); }
+      header .shell { min-height: 76px; }
+      .grid { grid-template-columns: 1fr; gap: 20px; padding-block: 44px; }
+      .description { font-size: 14px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .button.secondary { background: transparent; color: #21182f; border: 1px solid #d6c7ec; }
+    .button.secondary:hover { background: #ede4ff; }
+    .note { margin-top: 24px; color: #71677e; font-size: 12px; }
+    .art { min-height: 280px; }
+      .art::before { width: 270px; }
+      .art::after { width: 210px; }
+      .code { font-size: 140px; }
+      .header-link { display: none; }
+      .explore nav, .footer-grid { grid-template-columns: 1fr; }
+      .explore { padding-block: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header"><div class="shell"><a class="brand" href="/" aria-label="iTechOrbit home">iTech<span>Orbit</span></a><nav class="header-nav" aria-label="Main navigation"><a href="/">Home</a><a href="/service/info">Services</a><a href="/products">Products</a><a href="/work">Work</a><a href="/blogs">Insights</a><a href="/about/info">About</a></nav><details class="mobile-menu"><summary aria-label="Open navigation">Menu</summary><nav aria-label="Mobile navigation"><a href="/">Home</a><a href="/service/info">Services</a><a href="/products">Products</a><a href="/work">Work</a><a href="/blogs">Insights</a><a href="/about/info">About</a><a href="/contact/info">Let’s talk</a></nav></details><a class="header-link" href="/contact/info">Get in touch <span aria-hidden="true">↗</span></a></div></header>
+  <main id="main"><div class="shell grid">
+    <section aria-labelledby="forbidden-title">
+      <p class="eyebrow">A protected space</p>
+      <h1 id="forbidden-title">Access forbidden.<br><span>Explore what’s ahead.</span></h1>
+      <p class="description">This area isn’t available for public access. Head back to the homepage to explore our services, work, and insights.</p>
+      <div class="actions"><a class="button" href="/">Back to home <span aria-hidden="true">→</span></a><a class="button secondary" href="/contact/info">Contact us <span aria-hidden="true">↗</span></a></div><p class="note">There’s still plenty to discover.</p>
+    </section>
+    <div class="art" aria-hidden="true"><div class="code">403</div><div class="label">ITECHORBIT / ACCESS FORBIDDEN</div></div>
+  </div></main>
+  <section class="shell explore" aria-labelledby="explore-title"><div><p class="eyebrow">Keep exploring</p><h2 id="explore-title">There’s more to discover.</h2></div><nav aria-label="Suggested destinations"><a href="/service/info"><span><small>WHAT WE DO</small>Explore services</span><span aria-hidden="true">↗</span></a><a href="/work"><span><small>WHAT WE BUILD</small>See our work</span><span aria-hidden="true">↗</span></a><a href="/blogs"><span><small>WHAT WE SHARE</small>Read insights</span><span aria-hidden="true">↗</span></a></nav></section>
+  <footer class="site-footer"><div class="shell footer-grid"><div><a class="brand" href="/">iTech<span>Orbit</span></a><p>Thoughtful software engineering.<br>Built for your business. Ready for what’s next.</p></div><div><h2>Explore</h2><nav aria-label="Footer navigation"><a href="/">Home</a><a href="/service/info">Services</a><a href="/products">Products</a><a href="/work">Work</a><a href="/blogs">Insights</a><a href="/about/info">About</a></nav></div><div><h2>Start a conversation</h2><nav aria-label="Contact and policies"><a href="/contact/info">Project inquiries ↗</a><a href="/contact/info?subject=Engineering%20opportunity">Engineering opportunities</a><a href="/privacy-n-policy">Privacy policy</a><a href="/login">Workspace sign in</a></nav></div></div><div class="shell footer-bottom"><span>iTechOrbit. All rights reserved.</span><span>Clarity in code. Confidence in delivery.</span></div></footer>
+</body>
+</html>
