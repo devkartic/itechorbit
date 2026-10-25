@@ -44,7 +44,25 @@ The ACL command grants source access without changing existing ownership or appl
 
 New images and PDFs are stored through Laravel's public filesystem disk at `storage/app/public/uploads` on the existing Docker storage volume. Their URLs use `/storage/uploads/...`. Deployment runs `media:preserve-uploads` to copy legacy `public/uploads` files into that volume with SHA-256 verification. It keeps original files, refuses to replace differing files with the same path, and can be rerun safely. Existing database paths remain unchanged and existing `/uploads/...` links continue working. Admin previews, replacement/deletion and public CV visibility retain their existing checks. Already-missing files require recovery from an existing backup; a build cannot restore them.
 
-The deployment user creates Laravel's standard `public/storage` symlink with `php artisan storage:link`. PHP and Nginx must share the same storage volume; the script checks this before deployment. The source sync excludes `public/uploads`, `public/storage`, `storage` and `bootstrap/cache` regardless of whether they are directories or symlinks. Never run rsync with `--delete-excluded`, wipe/recreate the storage volume, or copy build output over uploaded files. Docker image rebuilds must retain the same named volumes. A code rollback must retain storage-aware media handling so uploads created after this change remain readable.
+Production containers may mount application source read-only. The deployment script creates the standard `public/storage` symlink on the VPS host, with relative target `../storage/app/public`, then verifies its resolution inside PHP as `www-data` before entering maintenance. It never runs `storage:link` as the host deployment UID inside the container. Existing correct links are retained; conflicting files/directories or incorrect links stop deployment without replacement. PHP and Nginx must share the same storage volume; the script checks this before deployment. The source sync excludes `public/uploads`, `public/storage`, `storage` and `bootstrap/cache` regardless of whether they are directories or symlinks. Never run rsync with `--delete-excluded`, wipe/recreate the storage volume, or copy build output over uploaded files. Docker image rebuilds must retain the same named volumes. A code rollback must retain storage-aware media handling so uploads created after this change remain readable.
+
+Before building or entering maintenance, deployment probes runtime directories as `www-data` without booting Laravel. The existing `laravel.log`, if present, must also be writable by that user. Source remains read-only inside PHP; only persistent storage and bootstrap-cache mounts need write access. Run all runtime Artisan commands as `www-data` so deployment cannot create root- or host-UID-owned log/cache files. If existing files have incorrect ownership, repair only the affected runtime directories/files inside the container; do not make the entire source writable or use `chmod 777`.
+
+If a previous deployment created a log under the wrong user, this one-time command repairs only Laravel's log directory/file without deleting logs:
+
+```sh
+docker exec --user root php-workspace-production-itechorbit-php-1 sh -ec '
+  mkdir -p storage/logs
+  chown www-data:www-data storage/logs
+  chmod u+rwx storage/logs
+  if [ -f storage/logs/laravel.log ]; then
+    chown www-data:www-data storage/logs/laravel.log
+    chmod u+rw storage/logs/laravel.log
+  fi
+'
+```
+
+Retry a fresh deployment after correcting any reported runtime permissions. SSR may be stopped following an earlier failure; the workflow accepts an existing stopped SSR container, rebuilds its bundle and starts it during activation. It does not reopen an application left in maintenance until the SSR check passes.
 
 For a manual local setup after configuring `.env`, run:
 
