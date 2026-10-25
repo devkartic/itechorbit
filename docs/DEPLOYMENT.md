@@ -1,5 +1,30 @@
 # Deployment
 
+## One Docker directory for local development and VPS
+
+All application Docker definitions live in the parent project's `itechorbit/.docker/`, alongside `itechorbit/src/`. The application source has no `.docker/` directory. PHP and Nginx use the same base Compose file and Dockerfiles in both environments; the workspace selects the development or production build target and generates the source mounts. SSR uses `.docker/compose.ssr.yml`, mounting `../src` read-only. Run its npm commands from `src/`; the Compose project name remains `itechorbit-local`, preserving the existing SSR container identity.
+
+The parent `itechorbit/.env` contains workspace metadata, including `WORKSPACE_SOURCE_MODE=mounted` and `WORKSPACE_SOURCE_ROOT=src`. Laravel settings and credentials remain in `itechorbit/src/.env`. Private infrastructure credentials stay in `.docker/infra.development.env` or `.docker/infra.production.env`; keep each environment's existing values. Common overrides belong in `.docker/compose.override.yml`. Environment-specific overrides use `.docker/compose.override.development.yml` and `.docker/compose.override.production.yml`. Only development publishes MariaDB at `127.0.0.1:3306`; production does not load that override.
+
+From the workspace root (`Workspace/`), validate and reconcile local development with:
+
+```sh
+make validate NAME=itechorbit
+make project-up NAME=itechorbit
+```
+
+On the VPS, use the same layout at `/srv/Workspace/projects/itechorbit/` and append `ENV=production` to workspace commands. Before removing a legacy Docker directory under `src/`, inspect it for server-only customizations and preserve those in the parent configuration. Keep existing production credentials, stack names, networks and volume identities.
+
+The parent `.docker/` is outside this application's Git repository. Transfer its Dockerfiles, templates and Compose files separately to the matching parent directory on the VPS; preserve server-specific overrides and private `infra.*.env` files rather than overwriting them with local copies. Do not place another copy under `src/`. After reviewing configuration changes, validate, rebuild and reconcile through the workspace:
+
+```sh
+make validate ENV=production NAME=itechorbit
+make project-build ENV=production NAME=itechorbit
+make project-up ENV=production NAME=itechorbit
+```
+
+These commands retain the configured persistent volumes; do not remove volumes or regenerate credentials. Ordinary source-only deployments below do not transfer Docker configuration or rebuild images. Moving the SSR Compose file requires no container recreation by itself. When starting or recreating SSR, run `npm run ssr:docker` from `src/`, with `ITECHORBIT_DOCKER_NETWORK` set to the existing network shared with PHP if it differs from the default `php-workspace_app_network`. Use the VPS's actual network rather than creating or renaming one.
+
 ## Deploy from GitHub Actions to a VPS
 
 The manual workflow deploys the selected application's commit to the source directory configured in `VPS_PATH`. It builds with the exact PHP and Node images already installed on the VPS, backs up the previous code, enables maintenance mode, synchronizes source and fresh assets, optionally migrates, rebuilds caches, and restarts PHP, Nginx and SSR. It checks SSR before reopening the application, then checks the public health URL. Every deployment runs `npm ci --include=dev` followed by `npm run build` inside Docker, refreshing both the client assets and the SSR bundle before replacing live files. Run verification for the application commit before deploying.
@@ -80,7 +105,7 @@ Missing pages and browser navigations to missing files use the website's themed 
 
 The Nginx template uses `error_page 404 = @laravel_not_found` to send Nginx-generated browser 404s (including missing files under its storage alias) through Laravel's front controller. The fallback only accepts requests whose `Accept` header includes `text/html`; it preserves the original request URI and disables FastCGI error interception to prevent recursion. Existing files continue to be served directly.
 
-The running Docker workspace builds its Nginx image from the **parent project's** `.docker/nginx.conf.template` (on the VPS: `/srv/Workspace/projects/itechorbit/.docker/nginx.conf.template`). The repository's `.docker/nginx.conf.template` and `deploy/nginx.conf.example` contain matching rules, but the source-only GitHub deployment neither updates the parent configuration nor rebuilds its image. Copy the map, both `error_page` rules, the internal `/errors/403.html` location and the named-location rules into that parent template, retaining its existing security rules. Using the workspace's existing production configuration/environment, rebuild and recreate **only Nginx**, keeping the database, storage volumes and application containers intact. Restarting an old image alone does not install the new template.
+The Docker workspace builds its Nginx image from the single **parent project's** `.docker/nginx.conf.template` (on the VPS: `/srv/Workspace/projects/itechorbit/.docker/nginx.conf.template`). Edit that template for both local and VPS Docker use, retaining its existing security rules. Transfer the reviewed template to the VPS parent directory separately from source-only GitHub deployments, which neither update it nor rebuild its image. `deploy/nginx.conf.example` is an example for a separate host-Nginx deployment, not a Docker configuration source. Using the workspace's existing production configuration/environment, rebuild and recreate **only Nginx** for a Nginx-only change, keeping the database, storage volumes and application containers intact. Restarting an old image alone does not install the new template.
 
 For a graceful rollout without container recreation, first build/tag the updated Nginx image and update the parent template. Back up and replace both `/etc/nginx/templates/default.conf.template` and the rendered `/etc/nginx/conf.d/default.conf` in the running Nginx container, validate with `nginx -t`, then reload with `nginx -s reload`. Updating only the rendered configuration is temporary: the entrypoint regenerates it from the template on restart. Retain the previous image tag and configuration for rollback. This only changes Nginx; it does not deploy the Laravel application.
 

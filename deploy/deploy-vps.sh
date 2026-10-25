@@ -156,6 +156,8 @@ docker exec --user www-data "$php_container" php -r '
     '
 
 # Protect secrets, uploads, volume mountpoints and local tooling.
+# Keep the legacy source-level .docker exclusion until server-specific settings
+# have been reviewed and moved to the parent project's single .docker directory.
 # Never use --delete-excluded or copy into Docker's volume directories.
 # Keep existing ownership, modes and ACLs; the SSH user may have ACL access
 # to root-owned source directories without permission to chmod or timestamp them.
