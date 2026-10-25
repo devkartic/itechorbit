@@ -15,8 +15,10 @@ with open(os.environ['CALL_LOG'],'a') as f: f.write(json.dumps(args)+'\\n')
 if args[0]=='inspect':
     fmt=args[args.index('--format')+1]
     if '.State.Running' in fmt: print('false' if 'stopped-ssr' in os.environ['LIVE_SOURCE'] and args[-1]=='itechorbit-local-ssr-1' else 'true')
-    elif '.Image' in fmt: print('sha256:mock-image')
+    elif '.Image' in fmt: print('sha256:mock-node' if args[-1]=='itechorbit-local-ssr-1' else 'sha256:mock-php')
     else: print('/wrong/path' if 'wrong-mount' in os.environ['LIVE_SOURCE'] else os.environ['LIVE_SOURCE'])
+elif args[:2]==['image','inspect']:
+    sys.exit(1 if args[-1]==os.environ.get('MISSING_IMAGE') else 0)
 elif args[0]=='exec' and '-r' in args:
     code=args[args.index('-r')+1]
     if 'Runtime storage permissions' in code or 'Laravel public storage link verified' in code:
@@ -36,7 +38,7 @@ elif args[0]=='run':
     docker.chmod(0o755)
     for name,contents in {'flock':'#!/bin/sh\nexit 0\n','realpath':'#!/bin/sh\nfor arg; do :; done\nprintf "%s\\n" "$arg"\n'}.items():
         p=bins/name; p.write_text(contents); p.chmod(0o755)
-    for case in ['success','success-symlinks','success-existing-link','success-stopped-ssr','build-failure','wrong-mount','permission-failure','conflicting-directory','wrong-link']:
+    for case in ['success','success-symlinks','success-existing-link','success-stopped-ssr','build-failure','missing-php-image','missing-node-image','wrong-mount','permission-failure','conflicting-directory','wrong-link']:
         case_dir=base/case; case_dir.mkdir()
         live=case_dir/'source'; live.mkdir()
         target=live
@@ -66,6 +68,8 @@ elif args[0]=='run':
         log=case_dir/'calls.jsonl'
         env=dict(os.environ,PATH=str(bins)+':'+os.environ['PATH'],LIVE_SOURCE=str(live),CALL_LOG=str(log))
         if case=='permission-failure': env['FAIL_PREFLIGHT']='1'
+        if case=='missing-php-image': env['MISSING_IMAGE']='sha256:mock-php'
+        if case=='missing-node-image': env['MISSING_IMAGE']='sha256:mock-node'
         if 'build-failure' in case: env['FAIL_BUILD']='1'
         migrate='false'
         result=subprocess.run(['bash',str(script),str(target),rid,migrate],env=env,text=True,capture_output=True)
@@ -104,6 +108,14 @@ elif args[0]=='run':
             assert result.returncode!=0, (result.stdout,result.stderr,calls)
             assert (live/'index.php').read_text()=='old code'
             assert not any('down' in c for c in calls)
+        if case.startswith('missing-'):
+            container='itechorbit-local-ssr-1' if case=='missing-node-image' else 'php-workspace-production-itechorbit-php-1'
+            assert container in result.stderr and env['MISSING_IMAGE'] in result.stderr
+            assert 'Reconcile the affected container' in result.stderr
+            assert (stage/'incoming'/f'{rid}.tar.gz').is_file()
+            assert not (stage/'releases').exists()
+            assert not (stage/'backups').exists()
+            assert not any(c[0]=='run' or c[0] in ['stop','restart'] or 'artisan' in c for c in calls)
         assert not any('migrate' in c for c in calls)
         assert not any(any('mariadb' in arg or 'redis' in arg for arg in c) for c in calls)
         print(f'{case}: passed')

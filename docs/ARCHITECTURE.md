@@ -38,6 +38,8 @@ Models remain in `app/Models/` and `app/Models/Admin/` with their existing class
 
 ## Verification and deployment
 
-Backend coverage lives in `tests/Feature/` and `tests/Unit/`; browser flows and synthetic assets live in `tests/browser/`. Tests use disposable SQLite data and a non-relaying local SMTP sink. Deployment examples live in `deploy/`; operational instructions are in [DEPLOYMENT.md](DEPLOYMENT.md).
+Backend coverage lives in `tests/Feature/` and `tests/Unit/`; browser flows and synthetic assets live in `tests/browser/`. Tests use disposable SQLite data and a non-relaying local SMTP sink. Operational instructions are in [DEPLOYMENT.md](DEPLOYMENT.md). The Nginx and Supervisor examples in `deploy/` describe a separate native-host installation; they are not the active Docker VPS configuration.
 
 After deploying moved classes, rebuild Composer's autoloader, clear/rebuild Laravel caches, rebuild client/SSR assets, and restart PHP, SSR and queue workers together. Keep the existing application key, database and media. No schema change is introduced by this refactor.
+
+Production uses a fixed source mount at `/srv/Workspace/projects/itechorbit/src`, exposed read-only at `/var/www/html` in PHP/Nginx and `/app` in SSR. Storage and bootstrap cache use persistent writable volumes. The deployment script stages and builds a release separately, then synchronizes source in place during maintenance; it does not switch a `current` symlink. The single parent `../.docker/` directory contains project infrastructure and environment-specific overrides. Source deployment does not provision cron, queue consumers or mail services; see [services](operations/SERVICES.md) and [scheduler/queues](operations/SCHEDULER.md).

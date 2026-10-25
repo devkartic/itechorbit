@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "vite",
     "serve": "node dev/serve.mjs",
-    "ssr:docker": "docker compose -f dev/compose.ssr.yml up -d --force-recreate --wait --wait-timeout 30",
-    "ssr:docker:stop": "docker compose -f dev/compose.ssr.yml stop",
+    "ssr:docker": "docker compose -f ../.docker/compose.ssr.yml up -d --force-recreate --wait --wait-timeout 30",
+    "ssr:docker:stop": "docker compose -f ../.docker/compose.ssr.yml stop",
     "build": "vite build && vite build --ssr",
     "build:client": "vite build",
     "typecheck": "tsc --noEmit",

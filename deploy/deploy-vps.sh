@@ -88,6 +88,19 @@ docker exec --user www-data "$php_container" php -r '
     '
 php_image=$(docker inspect --format '{{.Image}}' "$php_container")
 node_image=$(docker inspect --format '{{.Image}}' "$ssr_container")
+# A container can keep running after its original image has been removed.
+# Build with the exact runtime images, and fail before extracting a release if
+# either image is unavailable. A mutable tag may refer to a different runtime.
+require_runtime_image() {
+    local container=$1 image=$2
+    if ! docker image inspect "$image" >/dev/null 2>&1; then
+        echo "Runtime image unavailable for container $container: $image" >&2
+        echo 'Reconcile the affected container using its existing Compose configuration and intended image, preserving mounts and volumes, then retry deployment.' >&2
+        exit 1
+    fi
+}
+require_runtime_image "$php_container" "$php_image"
+require_runtime_image "$ssr_container" "$node_image"
 docker exec "$php_container" php --version
 
 release="$root/releases/$release_id"
@@ -156,6 +169,8 @@ docker exec --user www-data "$php_container" php -r '
     '
 
 # Protect secrets, uploads, volume mountpoints and local tooling.
+# Keep the legacy source-level .docker exclusion until server-specific settings
+# have been reviewed and moved to the parent project's single .docker directory.
 # Never use --delete-excluded or copy into Docker's volume directories.
 # Keep existing ownership, modes and ACLs; the SSH user may have ACL access
 # to root-owned source directories without permission to chmod or timestamp them.
