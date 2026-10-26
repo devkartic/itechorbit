@@ -4,6 +4,7 @@ namespace App\Services\Shared;
 
 use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\WebsiteTechnology;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class WebsiteTechnologyImport
@@ -14,8 +15,9 @@ class WebsiteTechnologyImport
     // After consolidation, imports resolve admin-managed names/aliases and never create entries.
     public static function service(ServiceInfo $service): void
     {
-        if (! \Illuminate\Support\Facades\Schema::hasTable('website_technology_aliases')) {
+        if (! Schema::hasTable('website_technology_aliases')) {
             self::legacyService($service);
+
             return;
         }
         $ids = [];

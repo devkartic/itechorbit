@@ -17,8 +17,8 @@ export default function ErrorPage({ status, seo }: { status: number; seo: SeoTyp
       <div className="shell error-page-grid">
         <div className="error-page-copy">
           <p className="eyebrow"><span />{forbidden ? 'A protected space' : 'A little off the map'}</p>
-          <h1 id="error-title">{forbidden ? 'Access forbidden.' : 'Page not found.'}<br /><span>{forbidden ? 'Explore what’s ahead.' : 'Possibilities ahead.'}</span></h1>
-          <p className="error-page-description">{forbidden ? 'This area isn’t available for public access. Head back to the homepage to explore our services, work, and insights.' : 'The page or file you’re looking for may have moved, or no longer exists. Let’s get you somewhere useful.'}</p>
+          <h1 id="error-title">{forbidden ? 'Access not allowed.' : 'Page not found.'}<br /><span>{forbidden ? 'Explore what’s ahead.' : 'Possibilities ahead.'}</span></h1>
+          <p className="error-page-description">{forbidden ? 'You do not have permission to view this page. The account or portfolio may be disabled, or access may be restricted. Contact us if you need help.' : 'The page or file you’re looking for may have moved, or no longer exists. Let’s get you somewhere useful.'}</p>
           <div className="error-page-actions">
             <Button asChild size="lg"><Link href="/"><Home size={17} aria-hidden="true" />Back to home<ArrowRight size={17} aria-hidden="true" /></Link></Button>
             <Button asChild size="lg" variant="outline"><Link href="/contact/info">Contact us<ArrowUpRight size={17} aria-hidden="true" /></Link></Button>

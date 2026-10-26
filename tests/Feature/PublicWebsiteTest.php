@@ -95,8 +95,8 @@ class PublicWebsiteTest extends TestCase
         $this->assertDatabaseHas('contacts', ['user_id' => $recipient->id, 'subject' => 'Profile inquiry']);
         $this->assertDatabaseMissing('contacts', ['user_id' => $owner->id, 'subject' => 'Profile inquiry']);
         $recipient->update(['portfolio_status' => 0]);
-        $this->post('/inquiries', $data)->assertNotFound();
-        $this->get('/contact/info?portfolio_id=RECIPIENT')->assertNotFound();
+        $this->post('/inquiries', $data)->assertForbidden();
+        $this->get('/contact/info?portfolio_id=RECIPIENT')->assertForbidden();
     }
 
     public function test_sitemap_and_robots_exclude_private_content_and_protected_urls(): void

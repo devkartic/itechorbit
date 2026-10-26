@@ -79,10 +79,9 @@ class AdminTableTest extends TestCase
             $this->assertSame('/portfolios/INACTIVE', $rows[$inactive->id]['public_portfolio']);
             $this->assertNull($rows[$missing->id]['public_portfolio']);
             foreach ([$hidden, $inactive] as $user) {
-                $this->get('/portfolios/'.$user->portfolio_id)->assertOk()
-                    ->assertHeader('X-Robots-Tag', 'noindex, nofollow')
-                    ->assertHeader('Cache-Control', 'no-store, private')
-                    ->assertInertia(fn (Assert $page) => $page->where('adminPreview', true)->where('seo.noindex', true)->missing('profile.email'));
+                $this->get('/portfolios/'.$user->portfolio_id)->assertForbidden()
+                    ->assertInertia(fn (Assert $page) => $page->component('Shared/Error')->where('status', 403)->where('seo.noindex', true)->missing('profile'));
+                $this->get('/portfolios/'.$user->portfolio_id.'/contact')->assertForbidden();
             }
             foreach ($rows as $row) {
                 foreach (['password', 'remember_token', 'provider_id', 'portfolio_id'] as $private) {

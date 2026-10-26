@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\PortfolioMailerJob;
+use App\Mail\SendAccountStatusNotification;
 use App\Models\Admin\Role;
 use App\Models\User;
 use App\Services\Admin\AdminPresentation;
@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
@@ -110,9 +111,10 @@ class UserController extends Controller
             $user->password = bcrypt($request->input('password'));
         }
         if (User::verify_default_admin() && $user->id !== Auth::id()) {
-            $user->status = filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN);
+            $user->status = (int) filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN);
         }
         $user->save();
+        $this->notifyStatusChange($user, 'status');
 
         return response()->json(['success' => 'User updated successfully']);
     }
@@ -163,6 +165,7 @@ class UserController extends Controller
         if ($user) {
             $user->status = $status;
             $user->save();
+            $this->notifyStatusChange($user, 'status');
         }
 
         return response()->json(['success' => "User $status_name successfully"]);
@@ -189,16 +192,19 @@ class UserController extends Controller
             $user->save();
         }
 
-        User::create_portfolio_id($user->id);
-
-        if ($status_name == 'enabled') {
-            //          Mail send functionality with job, queue and work
-            dispatch(new PortfolioMailerJob($user))->delay(now()->addMinutes(1));
-            //            To dispatch the job run the following command
-            //            php artisan queue:work
+        if ($user->wasChanged('portfolio_status')) {
+            $user = User::create_portfolio_id($user->id);
+            Mail::to($user->email, $user->name)->queue(new SendAccountStatusNotification($user->name, 'portfolio', (bool) $status, $user->portfolio_id));
         }
 
         return response()->json(['success' => "User portfolio $status_name successfully"]);
+    }
+
+    private function notifyStatusChange(User $user, string $attribute): void
+    {
+        if ($user->wasChanged($attribute)) {
+            Mail::to($user->email, $user->name)->queue(new SendAccountStatusNotification($user->name, 'account', (bool) $user->status));
+        }
     }
 
     public function get_users_ajax(Request $request): object
