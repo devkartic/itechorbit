@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Socialite\Contracts\Provider;
@@ -73,6 +74,7 @@ class SocialLoginTest extends TestCase
 
     public function test_all_providers_register_regular_users_and_returning_identity_login_does_not_duplicate(): void
     {
+        Notification::fake();
         foreach (['google', 'linkedin', 'github'] as $provider) {
             $this->mockUser($provider, $this->remote($provider.'-id', $provider.'@example.test'));
             $this->withSession($this->context($provider))->get('/login/'.$provider.'/callback')->assertRedirect('/home');
@@ -81,6 +83,8 @@ class SocialLoginTest extends TestCase
             $this->assertSame(4, (int) $user->role_id);
             $this->assertSame(0, (int) $user->portfolio_status);
             $this->assertNotNull($user->email_verified_at);
+            $this->assertSame(1, (int) $user->status);
+            $this->assertFalse($user->pending_email_activation);
             $this->assertDatabaseHas('social_accounts', ['user_id' => $user->id, 'provider' => $provider, 'provider_user_id' => $provider.'-id']);
             $this->assertFalse(session()->has('social_login'));
             $session = session()->getId();
@@ -96,6 +100,7 @@ class SocialLoginTest extends TestCase
             Auth::logout();
             Socialite::swap($this->socialiteManager);
         }
+        Notification::assertNothingSent();
     }
 
     public function test_existing_email_is_not_automatically_linked_and_explicit_connection_preserves_account(): void

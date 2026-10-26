@@ -31,7 +31,17 @@ class LoginController extends Controller
 
     protected function credentials(Request $request)
     {
-        return array_merge($request->only($this->username(), 'password'), ['status' => 1]);
+        return array_merge($request->only($this->username(), 'password'), [
+            fn ($query) => $query->where(fn ($query) => $query->where('status', 1)
+                ->orWhere(fn ($query) => $query->where('pending_email_activation', true)->whereNull('email_verified_at'))),
+        ]);
+    }
+
+    protected function authenticated(Request $request, $user)
+    {
+        if (! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
     }
 
     public function showLoginForm()
