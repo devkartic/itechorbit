@@ -61,7 +61,7 @@ class SitemapController extends Controller
         $records = $query->orderBy('id')->offset(($page - 1) * 10000)->limit(10000)->get($type === 'portfolios' ? ['id', 'portfolio_id', 'updated_at'] : ['id', 'updated_at']);
 
         return $this->xml($records->map(fn ($item) => ['url' => match ($type) {
-            'articles' => '/blogs/'.$item->id, 'projects' => '/work/'.$item->id, 'portfolios' => '/portfolios/'.$item->portfolio_id
+            'articles' => '/blogs/'.$item->id, 'projects' => '/work/'.$item->id, 'portfolios' => '/portfolios/'.rawurlencode($item->portfolio_id)
         }, 'modified' => $item->updated_at?->toIso8601String()]));
     }
 
@@ -87,7 +87,7 @@ class SitemapController extends Controller
         foreach (ServiceInfo::published()->pluck('slug') as $slug) {
             $text .= 'Allow: /services/'.$slug."\n";
         }
-        $text .= "Disallow: /home\nDisallow: /account/\nDisallow: /permissions\nDisallow: /login\nDisallow: /register\nDisallow: /password/\nDisallow: /email/\nDisallow: /blogs/search\nDisallow: /*?key=\nDisallow: /get-\nDisallow: /healthz\nSitemap: ".rtrim(config('app.url'), '/')."/sitemap.xml\n";
+        $text .= "Disallow: /home\nDisallow: /workspace/\nDisallow: /account/\nDisallow: /permissions\nDisallow: /login\nDisallow: /register\nDisallow: /password/\nDisallow: /email/\nDisallow: /blogs/search\nDisallow: /*?key=\nDisallow: /*?*&key=\nDisallow: /get-\nDisallow: /healthz\nSitemap: ".rtrim(config('app.url'), '/')."/sitemap.xml\n";
 
         return response($text)->header('Content-Type', 'text/plain; charset=UTF-8');
     }
