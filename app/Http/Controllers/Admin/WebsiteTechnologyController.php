@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WebsiteTechnologyRequest;
+use App\Models\Admin\Link;
+use App\Models\Admin\Permission;
 use App\Models\Admin\WebsiteTechnology;
 use App\Services\Admin\AdminPresentation;
 use App\Services\Shared\TechnologyCatalog;
@@ -65,7 +67,7 @@ class WebsiteTechnologyController extends Controller
 
     public function merge(Request $request, WebsiteTechnology $websiteTechnology)
     {
-        abort_unless(\App\Models\Admin\Permission::has_permission(\App\Models\Admin\Link::where('url', 'website-technologies')->value('id'), 'destroy'), 403);
+        abort_unless(Permission::has_permission(Link::where('url', 'website-technologies')->value('id'), 'destroy'), 403);
         $input = $request->validate(['target_id' => ['required', 'integer', 'exists:website_technologies,id']]);
         app(TechnologyCatalog::class)->merge($websiteTechnology, WebsiteTechnology::findOrFail($input['target_id']));
 

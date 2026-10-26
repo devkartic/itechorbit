@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Shared\MediaFiles;
 use App\Services\Shared\PublicContent;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AdminPresentation
@@ -104,7 +105,7 @@ class AdminPresentation
             if ($record) {
                 $options['merge_target'] = WebsiteTechnology::where('id', '!=', $record->id)->orderBy('name')->get()
                     ->map(fn ($technology) => ['value' => (string) $technology->id, 'label' => $technology->name.($technology->status ? '' : ' (inactive)')])->all();
-                $values['previous_names_and_links'] = \Illuminate\Support\Facades\DB::table('website_technology_aliases')
+                $values['previous_names_and_links'] = DB::table('website_technology_aliases')
                     ->where('website_technology_id', $record->id)->orderBy('type')->orderBy('value')->get()
                     ->map(fn ($alias) => $alias->type.': '.$alias->value)->all();
             }
