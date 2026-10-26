@@ -30,8 +30,8 @@ class PortfolioContactTest extends TestCase
         $this->assertDatabaseMissing('contacts', ['user_id' => $business->id]);
         Queue::assertPushed(ContactMailerJob::class, fn ($job) => $job->personal && $job->user->is($owner));
         $owner->update(['portfolio_status' => 0]);
-        $this->get('/portfolios/PERSONAL/contact')->assertNotFound();
-        $this->post('/portfolios/PERSONAL/inquiries', $data)->assertNotFound();
+        $this->get('/portfolios/PERSONAL/contact')->assertForbidden();
+        $this->post('/portfolios/PERSONAL/inquiries', $data)->assertForbidden();
         Queue::assertPushed(ContactMailerJob::class, 1);
     }
 

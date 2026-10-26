@@ -36,7 +36,7 @@ foreach ([1 => 'Administrator', 4 => 'Member'] as $id => $name) {
 $user = User::create(['name' => 'Test Engineer', 'email' => 'admin@example.test', 'password' => Hash::make('Browser-test-password-42'), 'role_id' => 1, 'status' => 1, 'portfolio_status' => 1, 'portfolio_id' => 'TESTPROFILE']);
 $user->forceFill(['email_verified_at' => now()])->save();
 foreach (['studio', 'blueprint'] as $recipient) {
-    $noticeUser = User::create(['name' => 'Notice recipient '.ucfirst($recipient), 'email' => 'notice-'.$recipient.'@example.test', 'password' => Hash::make('Synthetic-only-password-42'), 'role_id' => 4, 'status' => 1]);
+    $noticeUser = User::create(['name' => 'Notice recipient '.ucfirst($recipient), 'email' => 'notice-'.$recipient.'@example.test', 'portfolio_id' => 'PRIVATE-'.strtoupper($recipient), 'portfolio_status' => 0, 'password' => Hash::make('Synthetic-only-password-42'), 'role_id' => 4, 'status' => 1]);
     $noticeUser->forceFill(['email_verified_at' => now()])->save();
 }
 SocialAccount::create(['user_id' => $user->id, 'provider' => 'google', 'provider_user_id' => 'browser-google-identity']);

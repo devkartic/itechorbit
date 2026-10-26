@@ -13,11 +13,7 @@ class InquiryController extends Controller
     public function store(ContactRequest $request)
     {
 
-        $user = User::where('portfolio_id', $request->input('portfolio_id'))->where('portfolio_status', 1)->where('status', 1)->first();
-
-        if (! $user) {
-            abort(404);
-        }
+        $user = User::publicPortfolio($request->input('portfolio_id') ?? '');
 
         $contact = Contact::create([
             'user_id' => $user->id,

@@ -12,7 +12,6 @@ use App\Models\Admin\PrivacyPolicy;
 use App\Models\Admin\Project;
 use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\WebsiteProduct;
-use App\Models\Admin\WebsiteTechnology;
 use App\Models\Comment;
 use App\Models\User;
 use App\Services\Shared\TechnologyCatalog;
@@ -167,7 +166,7 @@ class SiteController extends PublicPageController
     public function contact(Request $request)
     {
         $input = $request->validate(['portfolio_id' => ['nullable', 'string', 'max:100']]);
-        $recipient = ! empty($input['portfolio_id']) ? User::where('portfolio_id', $input['portfolio_id'])->where('status', 1)->where('portfolio_status', 1)->firstOrFail() : null;
+        $recipient = ! empty($input['portfolio_id']) ? User::publicPortfolio($input['portfolio_id']) : null;
         if ($recipient) {
             $query = $request->validate(['subject' => ['nullable', 'string', 'max:255']]);
 
@@ -181,7 +180,7 @@ class SiteController extends PublicPageController
     public function inquiry(ContactRequest $request)
     {
         $owner = $request->filled('portfolio_id')
-            ? User::where('portfolio_id', $request->validated('portfolio_id'))->where('status', 1)->where('portfolio_status', 1)->firstOrFail()
+            ? User::publicPortfolio($request->validated('portfolio_id'))
             : User::where('status', 1)->findOrFail(config('site.owner_id'));
 
         return $this->saveInquiry($request, $owner, $request->filled('portfolio_id'));
