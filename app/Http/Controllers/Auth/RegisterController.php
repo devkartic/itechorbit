@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use App\Services\Auth\SocialProviders;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
@@ -69,10 +70,20 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
+        $user = new User;
+        $user->forceFill([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-        ]);
+            'role_id' => 4, 'status' => 0, 'portfolio_status' => 0,
+            'email_verified_at' => null, 'pending_email_activation' => true,
+        ])->saveOrFail();
+
+        return $user;
+    }
+
+    protected function registered(Request $request, $user)
+    {
+        return redirect()->route('verification.notice');
     }
 }

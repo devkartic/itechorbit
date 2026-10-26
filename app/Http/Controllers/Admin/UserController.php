@@ -112,6 +112,7 @@ class UserController extends Controller
         }
         if (User::verify_default_admin() && $user->id !== Auth::id()) {
             $user->status = (int) filter_var($request->input('is_checked'), FILTER_VALIDATE_BOOLEAN);
+            $user->pending_email_activation = false;
         }
         $user->save();
         $this->notifyStatusChange($user, 'status');
@@ -164,6 +165,7 @@ class UserController extends Controller
 
         if ($user) {
             $user->status = $status;
+            $user->pending_email_activation = false;
             $user->save();
             $this->notifyStatusChange($user, 'status');
         }

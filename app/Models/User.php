@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -37,6 +38,27 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
     ];
+
+    public function markEmailAsVerified()
+    {
+        return DB::transaction(function () {
+            $user = static::whereKey($this->getKey())->lockForUpdate()->firstOrFail();
+            if ($user->hasVerifiedEmail()) {
+                $this->setRawAttributes($user->getAttributes(), true);
+
+                return false;
+            }
+            $user->email_verified_at = $user->freshTimestamp();
+            if ($user->pending_email_activation) {
+                $user->status = 1;
+                $user->pending_email_activation = false;
+            }
+            $saved = $user->save();
+            $this->setRawAttributes($user->getAttributes(), true);
+
+            return $saved;
+        });
+    }
 
     /**
      * Retrieve active collection unique id for the Users.
@@ -254,5 +276,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'pending_email_activation' => 'boolean',
     ];
 }
