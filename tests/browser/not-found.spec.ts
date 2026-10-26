@@ -40,3 +40,25 @@ test('404 is styled and usable before JavaScript hydration', async ({ browser, b
     await context.close();
   }
 });
+
+
+test('disabled portfolios return the themed 403 for guests and administrators', async ({ page }, testInfo) => {
+  for (const admin of [false, true]) {
+    if (admin) {
+      await page.goto('/login');
+      await page.getByLabel('Email address').fill('admin@example.test');
+      await page.getByLabel('Password', { exact: true }).fill('Browser-test-password-42');
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await expect(page).toHaveURL(/\/home$/);
+    }
+    for (const path of ['/portfolios/PRIVATE-STUDIO', '/portfolios/PRIVATE-STUDIO/contact', '/contact/info?portfolio_id=PRIVATE-STUDIO']) {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(403);
+      await expect(page.getByRole('heading', { name: 'Access not allowed. Explore what’s ahead.' })).toBeVisible();
+      await expect(page.locator('.error-page-description')).toContainText('You do not have permission');
+      await expect(page.locator('.error-page-art')).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    }
+  }
+  await page.screenshot({ path: testInfo.outputPath('themed-403.png'), fullPage: true });
+});

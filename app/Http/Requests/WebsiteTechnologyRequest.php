@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Admin\WebsiteTechnology;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class WebsiteTechnologyRequest extends FormRequest
@@ -29,7 +30,7 @@ class WebsiteTechnologyRequest extends FormRequest
 
         $aliasRule = fn ($type) => function ($attribute, $value, $fail) use ($id, $type) {
             $value = $type === 'name' ? mb_strtolower($value) : $value;
-            if (\Illuminate\Support\Facades\DB::table('website_technology_aliases')->where('type', $type)->where('value', $value)
+            if (DB::table('website_technology_aliases')->where('type', $type)->where('value', $value)
                 ->when($id, fn ($query) => $query->where('website_technology_id', '!=', $id))->exists()) {
                 $fail('This value is reserved by another technology.');
             }

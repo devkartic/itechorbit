@@ -3,6 +3,7 @@
 use App\AiPro\Models\Site;
 use App\Models\Admin\Basic;
 use App\Models\Admin\Category;
+use App\Models\Admin\ContactInfo;
 use App\Models\Admin\Experience;
 use App\Models\Admin\Link;
 use App\Models\Admin\Menu;
@@ -29,14 +30,14 @@ if (getenv('APP_ENV') !== 'testing' || getenv('DB_CONNECTION') !== 'sqlite' || b
 $app = require __DIR__.'/../../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 Artisan::call('migrate', ['--force' => true]);
-\App\Models\Admin\ContactInfo::create(['title' => 'What are you working on?', 'subtitle' => 'Share your idea, challenge, or next opportunity.', 'descriptions' => '', 'website_url' => 'https://example.test', 'email' => 'hello@example.test', 'phone' => '+880 (2) 123-456', 'mobile' => '+880 1712 345678', 'address' => "Example office\nDhaka, Bangladesh", 'status' => true]);
+ContactInfo::create(['title' => 'What are you working on?', 'subtitle' => 'Share your idea, challenge, or next opportunity.', 'descriptions' => '', 'website_url' => 'https://example.test', 'email' => 'hello@example.test', 'phone' => '+880 (2) 123-456', 'mobile' => '+880 1712 345678', 'address' => "Example office\nDhaka, Bangladesh", 'status' => true]);
 foreach ([1 => 'Administrator', 4 => 'Member'] as $id => $name) {
     (new Role)->forceFill(['id' => $id, 'name' => $name, 'status' => 1])->save();
 }
 $user = User::create(['name' => 'Test Engineer', 'email' => 'admin@example.test', 'password' => Hash::make('Browser-test-password-42'), 'role_id' => 1, 'status' => 1, 'portfolio_status' => 1, 'portfolio_id' => 'TESTPROFILE']);
 $user->forceFill(['email_verified_at' => now()])->save();
 foreach (['studio', 'blueprint'] as $recipient) {
-    $noticeUser = User::create(['name' => 'Notice recipient '.ucfirst($recipient), 'email' => 'notice-'.$recipient.'@example.test', 'password' => Hash::make('Synthetic-only-password-42'), 'role_id' => 4, 'status' => 1]);
+    $noticeUser = User::create(['name' => 'Notice recipient '.ucfirst($recipient), 'email' => 'notice-'.$recipient.'@example.test', 'portfolio_id' => 'PRIVATE-'.strtoupper($recipient), 'portfolio_status' => 0, 'password' => Hash::make('Synthetic-only-password-42'), 'role_id' => 4, 'status' => 1]);
     $noticeUser->forceFill(['email_verified_at' => now()])->save();
 }
 SocialAccount::create(['user_id' => $user->id, 'provider' => 'google', 'provider_user_id' => 'browser-google-identity']);

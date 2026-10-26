@@ -1,0 +1,2 @@
+<table role="presentation" cellspacing="0" cellpadding="0" style="max-width:100%;margin:24px 0"><tr><td style="background:#6942d4;border-radius:8px"><a href="{{ $actionUrl }}" style="display:inline-block;padding:13px 22px;color:#fff;font-size:14px;font-weight:bold;text-decoration:none;overflow-wrap:anywhere">{{ $actionLabel }}</a></td></tr></table>
+<p style="font-size:12px;overflow-wrap:anywhere">If the button does not work, copy this link into your browser:<br><a href="{{ $actionUrl }}" style="color:#6942d4">{{ $actionUrl }}</a></p>

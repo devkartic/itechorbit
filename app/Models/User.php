@@ -93,6 +93,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return in_array((int) Auth::user()?->role_id, [Role::$default_admin, Role::$admin], true);
     }
 
+    public function ensurePortfolioAccessible(): static
+    {
+        abort_unless($this->status && $this->portfolio_status, 403, 'Access not allowed. This portfolio is disabled.');
+
+        return $this;
+    }
+
+    public static function publicPortfolio(string $key): static
+    {
+        return static::where('portfolio_id', $key)->firstOrFail()->ensurePortfolioAccessible();
+    }
+
     public static function verify_ownership($created_by): bool
     {
         if (! Auth::check()) {
