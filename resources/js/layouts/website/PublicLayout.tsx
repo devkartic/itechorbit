@@ -1,3 +1,4 @@
+import { PointerGlow } from '@/components/website/PointerGlow';
 import { ITechOrbitAiLauncher } from '@/components/ai-pro/ITechOrbitAiLauncher';
 import { BrandLogo } from '@/components/shared/BrandLogo';
 import { usePage } from '@inertiajs/react';
@@ -20,11 +21,11 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
-  const { url, props } = usePage<Shared>();
+  const { url, props, component } = usePage<Shared>();
   const aiService = props.site.aiService;
   const navigation = [['Home', '/'], ['Services', '/service/info'], ['Products', '/products'], ...(aiService ? [['AI solutions', `/services/${aiService.slug}`]] : []), ['Work', '/work'], ['Insights', '/blogs'], ['About', '/about/info']];
   useEffect(() => { document.querySelector('details.mobile-menu')?.removeAttribute('open'); }, [url]);
-  return <><a className="skip-link" href="#main">Skip to content</a>
+  return <>{component.startsWith('Website/') && <PointerGlow key={url} />}<a className="skip-link" href="#main">Skip to content</a>
     <header className={`site-header ${scrolled ? 'is-scrolled' : ''}`}><div className="shell header-inner">
       <Link href="/" className="brand" aria-label="iTechOrbit home"><BrandLogo dark /></Link>
       <nav className="header-navigation hidden items-center gap-1 lg:flex" aria-label="Main navigation">{navigation.map(([label, path]) => <Link key={path} href={path} className={`nav-link ${label === 'AI solutions' ? 'nav-ai' : ''}`} aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
