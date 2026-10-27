@@ -27,7 +27,12 @@ class SecurityHeaders
         $analytics = $publicPage && trim((string) config('site.analytics_id')) !== '';
         $googleScripts = $tagManager || $analytics ? ' https://*.googletagmanager.com' : '';
         $googleConnections = $tagManager || $analytics ? ' https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com' : '';
-        $googleFrames = $tagManager ? "; frame-src 'self' https://www.googletagmanager.com" : '';
+        $captcha = (bool) config('recaptcha.enabled');
+        if ($captcha) {
+            $googleScripts .= ' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/';
+            $googleConnections .= ' https://www.google.com/recaptcha/';
+        }
+        $googleFrames = ($tagManager || $captcha) ? "; frame-src 'self'".($tagManager ? ' https://www.googletagmanager.com' : '').($captcha ? ' https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/' : '') : '';
         $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'nonce-".Vite::cspNonce()."'".$dev.$googleScripts."; style-src 'self' 'unsafe-inline'".$dev."; img-src 'self' data: blob: https:; font-src 'self' data:".$devFonts."; connect-src 'self'".$dev.$googleConnections.$googleFrames."; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
         if ($request->isSecure() && app()->environment('production')) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000');

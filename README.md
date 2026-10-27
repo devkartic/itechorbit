@@ -50,6 +50,42 @@ The Content Security Policy permits the configured Google integrations on public
 
 After changing environment values in a deployment using cached configuration, run `php artisan config:cache`. Restart long-running application workers if applicable. Environment configuration requires no frontend rebuild. Installation references: [Tag Manager](https://developers.google.com/tag-platform/tag-manager/web), [Search Console verification](https://support.google.com/webmasters/answer/9008080), and [GA4 single-page applications](https://developers.google.com/analytics/devguides/collection/ga4/single-page-applications).
 
+## Public pages, SEO and spam protection
+
+Website Control → Public pages edits the homepage and the Services, Products, Work and Insights collection headings, introductions, end-of-page call to action, SEO titles/descriptions and optional absolute share-image URL. Existing About, Contact, privacy, service, product, article and portfolio editors remain their content sources. The new editor uses existing link permissions; administrators can grant its index/edit permissions to editorial roles. Page identities are fixed and cannot be created or deleted through this editor. Disabling an override uses the built-in page defaults.
+
+The public-page migration creates the editable defaults and navigation without replacing existing About, Contact, privacy or article records. Preview the separate reviewed legacy-copy corrections, then apply them on the intended database:
+
+```sh
+php artisan website:correct-public-content --dry-run
+php artisan website:correct-public-content --apply
+```
+
+Apply checks the original field fingerprints, preserves later editorial changes, and writes a private JSON backup under `storage/app/private/public-content-backups/` before a transaction changes any content. It corrects business copy and article title grammar; it does not overwrite tutorial bodies, merge duplicate articles or change public article URLs. Migration rollback requires restoring the pre-upgrade backup so edited page content is preserved.
+
+Google reCAPTCHA reads its configuration from `.env`:
+
+```dotenv
+RECAPTCHA_ENABLED=true
+RECAPTCHA_VERSION=v3
+RECAPTCHA_SITE_KEY=your-public-site-key
+RECAPTCHA_SECRET_KEY=your-private-secret
+RECAPTCHA_MINIMUM_SCORE=0.5
+RECAPTCHA_ALLOWED_HOSTNAMES=www.itechorbit.com
+```
+
+Use the key type registered in Google's console: `v3` for score-based keys, or `v2` for checkbox keys. Enterprise keys require a separate integration and are not supported. Register each intended hostname in Google's console and list the same exact hostnames, without schemes or paths, in `RECAPTCHA_ALLOWED_HOSTNAMES`; separate multiple hosts with commas. A blank hostname setting falls back to the hostname in `APP_URL`. The local environment uses `itechorbit.local`; production needs its own verified hostnames and suitable keys. Never commit `.env` or put the secret in a frontend/Vite variable.
+
+Protection covers business and portfolio inquiries (including the legacy `/contacts` endpoint), newsletter subscriptions, password login, registration, reset-link requests and password-reset completion. Search, OAuth callbacks, signed-in comments and account/admin forms retain their existing behavior. v3 obtains a fresh token at submission and validates its action, hostname and score on the server; v2 validates the checkbox token and hostname. Existing throttles, CSRF checks and inquiry honeypots remain active. Verification failures and outages reject the submission before writes, login or email dispatch. Explicitly disabled protection does not contact Google; enabled protection with missing keys fails closed. Refresh cached configuration after changing values with `php artisan config:cache`.
+
+See [the public-page audit](docs/PUBLIC_PAGE_AUDIT.md) for coverage, remaining editorial work and ranking recommendations. Re-run the HTML and internal-link crawl against a running deployment:
+
+```sh
+python3 dev/audit-public-pages.py https://www.itechorbit.com > /tmp/itechorbit-public-audit.json
+```
+
+The crawler reads public pages only; normal access logs and article view counters still record its requests. It uses verified TLS and standard Python libraries. For the current local Docker layout, PHP and SSR must share the backend network; refresh SSR with `ITECHORBIT_DOCKER_NETWORK=php-workspace-development-itechorbit_backend npm run ssr:docker`, then check `php artisan inertia:check-ssr` inside the PHP container. The network name is environment-specific.
+
 ## Technology catalog
 
 Website Control → Technologies manages the shared catalog used by homepage features, service filters, and service-card labels. Assign entries through the Technologies selector in each service editor. The data flow is `website_technologies → website_service_technology → TechnologyCatalog → public pages`; public filtering does not depend on a hardcoded grouping list.

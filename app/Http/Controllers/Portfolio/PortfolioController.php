@@ -13,9 +13,12 @@ class PortfolioController extends PublicPageController
     {
         $user = $key ? User::publicPortfolio($key) : User::findOrFail(config('site.owner_id'))->ensurePortfolioAccessible();
 
-        return $this->page('Portfolio/Show', $user->name.' — Engineering portfolio', 'Published engineering work and professional experience.', [
-            ...app(PortfolioPresentation::class)->data($user),
-        ]);
+        $data = app(PortfolioPresentation::class)->data($user);
+        $designation = $data['profile']['designation'];
+        $description = $data['profile']['introduction'] ?: $data['profile']['objective'] ?: 'Published work and professional experience shared by '.$user->name.'.';
+        $canonical = $user->portfolio_id ? '/portfolios/'.rawurlencode($user->portfolio_id) : '/portfolios';
+
+        return $this->page('Portfolio/Show', $user->name.' — '.($designation ?: 'Professional portfolio'), $description, $data, $canonical);
     }
 
     public function portfolioContact(string $key)

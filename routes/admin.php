@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\TableController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WebsitePageController;
 use App\Http\Controllers\Admin\WebsiteProductController;
 use App\Http\Controllers\Admin\WebsiteTechnologyController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +61,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::resource('public-pages', WebsitePageController::class)->only(['index', 'show', 'edit', 'update']);
     Route::post('website-technologies/{website_technology}/merge', [WebsiteTechnologyController::class, 'merge'])->name('website-technologies.merge');
     Route::resources([
         //    Security section
