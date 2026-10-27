@@ -54,6 +54,9 @@ test('website products support independent CRUD with responsive public pages', a
     await expect(page).toHaveURL(new RegExp(`/products/${slug}$`));
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Launch package');
     await expect(page.getByText('USD 1250.50', { exact: true })).toBeVisible();
+    const renderedSchemas = async (html: string) => page.evaluate(markup => [...new DOMParser().parseFromString(markup, 'text/html').querySelectorAll('script[type="application/ld+json"]')].map(node => JSON.parse(node.textContent ?? '{}')), html);
+    const pricedSchemas = await renderedSchemas(await (await page.request.get(`/products/${slug}`)).text());
+    expect(pricedSchemas.find(schema => schema['@type'] === 'Product')).toMatchObject({ offers: { '@type': 'Offer', price: '1250.50', priceCurrency: 'USD' } });
     await expect(page.getByText('Estimated delivery: Two weeks')).toBeVisible();
     await expect(page.getByRole('img', { name: 'Launch package', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -72,6 +75,20 @@ test('website products support independent CRUD with responsive public pages', a
     expect(oldUrl.headers().location).toMatch(new RegExp(`/products/${slug}$`));
     await page.getByRole('link', { name: 'Request a demo or quote' }).click();
     await expect(page.getByLabel('What can we help with?', { exact: true })).toHaveValue('Launch package');
+    await page.goto(editUrl!);
+    await page.getByLabel('Package price (optional)').fill('');
+    await page.getByLabel('Currency (3 uppercase letters, e.g. USD)').fill('');
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(page).toHaveURL(/\/product-info$/);
+    // Verify quote-based markup after editing and navigating through Inertia.
+    await page.goto(`/products/${slug}`);
+    await expect(page.getByText('USD 1250.50', { exact: true })).toHaveCount(0);
+    const quoteSchemas = await renderedSchemas(await (await page.request.get(`/products/${slug}`)).text());
+    expect(quoteSchemas.some(schema => schema['@type'] === 'Product')).toBeFalsy();
+    expect(quoteSchemas.find(schema => schema['@type'] === 'WebPage')).toMatchObject({ name: 'Launch package' });
+    await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Products', exact: true }).click();
+    await page.getByRole('link', { name: /Launch package/ }).click();
+    await expect.poll(async () => page.locator('head script[type="application/ld+json"]').evaluateAll(nodes => nodes.map(node => JSON.parse(node.textContent ?? '{}')['@type']))).toEqual(['WebPage', 'BreadcrumbList']);
     await page.goto(editUrl!);
     await page.getByRole('switch', { name: 'Published / active' }).uncheck();
     await page.getByRole('button', { name: 'Save changes', exact: true }).click();
