@@ -1,0 +1,56 @@
+<?php
+
+// Fingerprints of the reviewed legacy public copy, not universal defaults.
+return [
+    'website_about' => [
+        'title' => ['before' => hash('sha256', 'About Us'), 'after' => 'About iTechOrbit'],
+        'subtitle' => ['before' => hash('sha256', 'Thanks for being here...'), 'after' => 'Software engineering with clear scope, practical decisions and maintainable delivery.'],
+        'descriptions' => ['before' => '68cd96818e9479ec88ff617662625bb8c76d23a831a4cfba0c0678661bfc17bc',
+            'after' => '<h2>Software built around your business</h2><p>iTechOrbit provides software engineering services for businesses building, modernizing and maintaining web applications. Our published services cover Laravel development, custom applications, REST APIs, database and application performance, maintenance, and AI integration.</p><h2>Clear requirements and a practical handover</h2><p>Work begins with your users, operating needs and constraints. Scope, delivery stages and acceptance checks are agreed around the project. Relevant tests, documentation and communication help your team understand and maintain the result.</p><h2>Products and engineering knowledge</h2><p>Our website products include the iTechOrbit AI Assistant. We also publish technical articles and engineering projects. Personal portfolios describe the work and experience of their individual owners.</p><p>Explore our services or contact us to discuss your requirements and practical next steps.</p>'],
+    ],
+    'website_contact' => [
+        'descriptions' => ['before' => '561cf5cc014099869bae54f421c30a633ba0aa16eda297fc56f183e2649f4d25',
+            'after' => '<p>Have a project in mind or need technical guidance? Share your goals, current application and constraints using the contact form or email us directly.</p><p>Whether you are building something new or improving an existing system, we can discuss the requirements, a suitable scope and practical next steps.</p>'],
+    ],
+    'privacy_policies' => [
+        'title' => ['before' => hash('sha256', 'Privacy & Policy'), 'after' => 'Privacy policy'],
+        'subtitle' => ['before' => hash('sha256', 'Term & Conditions'), 'after' => 'How iTechOrbit collects and uses information across its website, accounts and public forms.'],
+        'descriptions' => ['before' => '9bdb2433ac299db9486bb2d14fb003308f89cb3e42d5166ae8ab187050dc4f69', 'transform' => 'privacy'],
+    ],
+    'posts' => [
+        'title' => ['replacements' => collect([
+            'What is Laravel ?' => 'What is Laravel?',
+            'What is javascript?' => 'What is JavaScript?',
+            'What is ReactJs?' => 'What is React?',
+            'What is Prop' => 'What are props in React?',
+            'What is Facade and how it is used in Laravel?' => 'What are facades and how are they used in Laravel?',
+            'How can we configure a mail-in laravel?' => 'How to configure mail in Laravel',
+            'How to enable query log in laravel?' => 'How to enable the query log in Laravel',
+            'What is Dependency injection in Laravel?' => 'What is dependency injection in Laravel?',
+            'What is Queue ? Advantages of Queue?' => 'What are queues and their advantages in Laravel?',
+            'Use updateOrInsert() in Laravel Query?' => 'How to use updateOrInsert() in Laravel',
+            'Is Laravel support caching? Explain' => 'Does Laravel support caching?',
+            'What is service providers in Laravel?' => 'What are service providers in Laravel?',
+            'What are all the life cycle hooks in Vue instance?' => 'What are the lifecycle hooks of a Vue instance?',
+            'Session and Cookies in laravel' => 'Sessions and cookies in Laravel',
+            'Explain Closures in laravel?' => 'What are closures in Laravel?',
+            "What is the difference between PHP's get & post method" => 'What is the difference between GET and POST in PHP?',
+            'Function overloading VS Overriding in PHP' => 'Function overloading vs. overriding in PHP',
+            'Different types of componet in react js' => 'Different types of components in React',
+            'List some Features of jQuery.' => 'Key features of jQuery',
+            'What are accessors and mutators in laravel?' => 'What are accessors and mutators in Laravel?',
+            'What is ChatGPT ?' => 'What is ChatGPT?',
+            'How to work ChatGPT ?' => 'How does ChatGPT work?',
+            'Introducing to ES6' => 'An introduction to ES6',
+            'How create a header with background for a website ?' => 'How to create a website header with a background',
+            'A short introduction to a few essential Linux/Server commands you need to must know !' => 'Essential Linux and server commands: a short introduction',
+            'What is recursion in PHP' => 'What is recursion in PHP?',
+            'How can I use Google Analytics 4 to add e-commerce purchase tracking by javascript?' => 'How to add e-commerce purchase tracking in Google Analytics 4 with JavaScript',
+            'In ReactJS, What is hook and how do you create a react hook?' => 'What are React hooks and how do you create a custom hook?',
+            'Difference between ReactJs and Next Js' => 'What is the difference between React and Next.js?',
+            'List of Docker Commands with Examples' => 'Docker commands with examples',
+            'Mail service integration in ubuntu VPS server' => 'Mail service integration on an Ubuntu VPS',
+            'PHP and Mysql environment with Docker' => 'A PHP and MySQL environment with Docker',
+        ])->mapWithKeys(fn ($after, $before) => [hash('sha256', $before) => ['before' => hash('sha256', $before), 'after' => $after]])->all()],
+    ],
+];

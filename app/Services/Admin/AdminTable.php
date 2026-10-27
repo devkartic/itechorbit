@@ -16,6 +16,7 @@ class AdminTable
     {
         $fields = config('admin.'.$resource.'.fields', []);
         $columns = match ($resource) {
+            'public-pages' => ['page_key', 'heading', 'status'],
             'service-info', 'product-info' => ['title', 'display_order', 'status'],
             'website-technologies' => ['name', 'slug', 'services_count', 'display_order', 'show_on_homepage', 'show_in_filters', 'status'],
             'contacts' => ['name', 'email', 'subject', 'read_status'],
@@ -62,7 +63,7 @@ class AdminTable
     {
         $query = $this->query($resource);
         if (filled($filters['key'] ?? null)) {
-            $search = array_intersect($query->getModel()->getFillable(), ['name', 'title', 'subject', 'email', 'designation', 'organization', 'first_name', 'last_name']);
+            $search = array_intersect($query->getModel()->getFillable(), ['name', 'title', 'subject', 'email', 'designation', 'organization', 'first_name', 'last_name', 'heading', 'page_key']);
             $query->where(function ($q) use ($search, $filters) {
                 foreach ($search as $field) {
                     $q->orWhere($field, 'like', '%'.$filters['key'].'%');

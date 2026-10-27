@@ -18,6 +18,7 @@ use App\Models\Admin\Skill;
 use App\Models\Admin\SocialLink;
 use App\Models\Admin\Tag;
 use App\Models\Admin\Testimonial;
+use App\Models\Admin\WebsitePage;
 use App\Models\Admin\WebsiteProduct;
 use App\Models\Admin\WebsiteTechnology;
 use App\Models\Contact;
@@ -25,6 +26,19 @@ use App\Models\User;
 
 // Presentation configuration only. Existing server validation, permissions and write actions are authoritative.
 return [
+    'public-pages' => [
+        'model' => WebsitePage::class, 'title' => 'Public pages', 'owner' => false,
+        'fields' => [
+            ['name' => 'heading', 'label' => 'Page heading', 'type' => 'text', 'required' => true],
+            ['name' => 'introduction', 'label' => 'Introduction', 'type' => 'textarea', 'required' => true],
+            ['name' => 'cta_label', 'label' => 'Call to action label', 'type' => 'text', 'required' => false],
+            ['name' => 'cta_url', 'label' => 'Call to action path (starts with /)', 'type' => 'text', 'required' => false],
+            ['name' => 'meta_title', 'label' => 'SEO title (brand added automatically)', 'type' => 'text', 'required' => false],
+            ['name' => 'meta_description', 'label' => 'SEO description', 'type' => 'textarea', 'required' => false],
+            ['name' => 'share_image', 'label' => 'Share image HTTPS URL', 'type' => 'text', 'required' => false],
+            ['name' => 'is_checked', 'label' => 'Use edited page content', 'type' => 'checkbox', 'required' => false],
+        ],
+    ],
     'posts' => [
         'model' => Post::class, 'title' => 'Articles', 'owner' => true,
         'fields' => [

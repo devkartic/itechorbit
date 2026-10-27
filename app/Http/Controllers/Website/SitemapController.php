@@ -44,7 +44,7 @@ class SitemapController extends Controller
             $urls[] = '/blogs/category/'.$id;
         }
         $owner = User::find(config('site.owner_id'));
-        if ($owner?->status && $owner?->portfolio_status) {
+        if ($owner?->status && $owner?->portfolio_status && ! $owner?->portfolio_id) {
             $urls[] = '/portfolios';
         }
 

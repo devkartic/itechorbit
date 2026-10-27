@@ -30,6 +30,10 @@ class AdminPresentation
         if (in_array($resource, ['contacts', 'users'])) {
             $actions['create'] = false;
         }
+        if ($resource === 'public-pages') {
+            $actions['create'] = false;
+            $actions['destroy'] = false;
+        }
         if ($resource === 'basics') {
             $actions['destroy'] = false;
         }

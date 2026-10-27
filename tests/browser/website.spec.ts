@@ -1,14 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { basename, dirname, join } from 'node:path';
+import { clearBrowserRateLimits } from './isolated-cache';
 
-test.beforeEach(() => {
-  // Each test gets independent rate limits; production middleware stays enabled.
-  const cache = process.env.ITECHORBIT_BROWSER_CACHE_PATH;
-  if (!cache || dirname(cache) !== tmpdir() || !basename(cache).startsWith('itechorbit-browser-cache-')) throw new Error('Expected an isolated browser cache directory.');
-  for (const entry of readdirSync(cache)) rmSync(join(cache, entry), { recursive: true, force: true });
-});
+test.beforeEach(clearBrowserRateLimits);
 test('public pages render crawlable HTML and responsive navigation', async ({ page, request, isMobile }, testInfo) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   const response = await request.get('/'); const html = await response.text();
@@ -25,7 +18,7 @@ test('public pages render crawlable HTML and responsive navigation', async ({ pa
   await page.locator('.architecture-preview').screenshot({ path: testInfo.outputPath('architecture-typography.png') });
   if (isMobile) { await page.getByRole('button', { name: 'Open navigation', exact: true }).click(); await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toBeVisible(); await page.getByRole('navigation', { name: 'Mobile navigation' }).getByRole('link', { name: 'Services' }).click(); }
   else await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Services' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('A stronger website');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Software engineering for your business.');
   await page.getByRole('link', { name: /Modernization & upgrades/ }).click(); await expect(page.getByRole('heading', { level: 1 })).toContainText('Laravel modernization');
   for (const url of ['/work', '/about/info', '/contact/info', '/portfolios/TESTPROFILE', '/privacy-n-policy']) { await page.goto(url); await expect(page.getByRole('heading', { level: 1 })).toBeVisible(); expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy(); }
   expect(errors).toEqual([]);
@@ -65,7 +58,7 @@ test('logo stays loaded and aligned between the homepage and authentication page
       const alignment = await page.locator('main').evaluate(main => {
         const card = main.querySelector('form')!.parentElement!.getBoundingClientRect();
         const back = main.querySelector('a[href="/"]')!.getBoundingClientRect();
-        return { cardCenter: card.left + card.width / 2, linkCenter: back.left + back.width / 2, viewportCenter: innerWidth / 2, cardWidth: card.width, overflow: document.documentElement.scrollWidth > innerWidth };
+        return { cardCenter: card.left + card.width / 2, linkCenter: back.left + back.width / 2, viewportCenter: document.documentElement.getBoundingClientRect().width / 2, cardWidth: card.width, overflow: document.documentElement.scrollWidth > innerWidth };
       });
       expect(Math.abs(alignment.cardCenter - alignment.viewportCenter)).toBeLessThan(1);
       expect(Math.abs(alignment.linkCenter - alignment.cardCenter)).toBeLessThan(1);
@@ -86,7 +79,7 @@ test('blog search, article TOC, code and pagination preserve existing URLs', asy
   await expect(page).toHaveURL(/\/blogs\/1$/); await expect(page.getByRole('navigation', { name: 'Table of contents' })).toBeVisible(); await expect(page.locator('pre code')).toContainText('echo');
   const html = await (await request.get('/blogs/1')).text(); expect(html).toContain('Start with the domain'); expect(html).toContain('application/ld+json');
   await page.goto('/blogs?page=2'); await expect(page.getByRole('navigation', { name: 'Pagination' }).getByRole('link', { name: '2', exact: true })).toHaveAttribute('aria-current', 'page');
-  await page.goto('/blogs/14'); await expect(page.getByRole('heading', { level: 1 })).toContainText('couldn’t be found');
+  await page.goto('/blogs/14'); await expect(page.getByRole('heading', { level: 1 })).toContainText('Page not found.');
 });
 test('contact validation and successful inquiry', async ({ page }) => {
   await page.goto('/contact/info'); await page.getByLabel('Your name', { exact: true }).fill('Browser client'); await page.getByLabel('Email address', { exact: true }).fill('client@example.test'); await page.getByLabel('What can we help with?').fill('Browser smoke inquiry'); await page.getByLabel('Tell us a little about it').fill('Synthetic browser test inquiry.'); await page.getByRole('button', { name: 'Send inquiry' }).click(); await expect(page.getByRole('status')).toContainText('Your inquiry has been received');
@@ -115,7 +108,7 @@ test('public navigation and calls to action work without JavaScript', async ({ b
     await expect(page).toHaveURL(new RegExp(destination + '$'));
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   }
-  await page.goto('/'); await page.getByRole('link', { name: 'Let’s build something' }).click();
+  await page.goto('/'); await page.getByRole('link', { name: 'Let’s build something' }).first().click();
   await expect(page).toHaveURL(/\/contact\/info$/);
   await page.goto('/'); await page.getByRole('link', { name: 'Laravel development', exact: false }).first().click();
   await expect(page).toHaveURL(/\/services\/laravel-development$/);
@@ -393,7 +386,7 @@ test('portfolio template studio previews five layouts and persists the public se
       expect(skillColumns).toBe(viewport.width <= 680 ? 2 : viewport.width <= 1023 ? 3 : 6);
       const masthead = await page.locator('.pf-masthead').boundingBox();
       expect(Math.abs(masthead!.x)).toBeLessThan(1);
-      expect(Math.abs(masthead!.width - viewport.width)).toBeLessThan(1);
+      expect(Math.abs(masthead!.width - await page.evaluate(() => document.documentElement.getBoundingClientRect().width))).toBeLessThan(1);
       const edges = await page.evaluate(() => {
         const contentEdges = (selector: string) => {
           const element = document.querySelector<HTMLElement>(selector)!;
@@ -897,7 +890,7 @@ test('social sign-in buttons and connected accounts support provider redirects a
     await page.goto(path);
     for (const name of ['Google', 'LinkedIn', 'GitHub']) await expect(page.getByRole('link', { name: `Continue with ${name}`, exact: true })).toHaveAttribute('href', `/login/${name.toLowerCase()}`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-    const center = await page.locator('main form').evaluate(form => { const box = form.parentElement!.getBoundingClientRect(); return box.left + box.width / 2 - innerWidth / 2; });
+    const center = await page.locator('main form').evaluate(form => { const box = form.parentElement!.getBoundingClientRect(); return box.left + box.width / 2 - document.documentElement.getBoundingClientRect().width / 2; });
     expect(Math.abs(center)).toBeLessThan(1);
     expect(await page.content()).not.toContain('browser-test-secret');
     await page.screenshot({ path: testInfo.outputPath(`social-${path.slice(1)}.png`), fullPage: true });
