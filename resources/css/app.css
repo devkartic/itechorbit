@@ -454,3 +454,10 @@ span[data-text-font="sans"] { font-family:Inter,sans-serif; } span[data-text-fon
 
 .technology-strip button { border-bottom: 2px solid transparent; padding-block: .25rem; }
 .technology-strip button:hover, .technology-strip button[aria-pressed="true"] { color: #7040cf; border-bottom-color: #7040cf; }
+
+/* Pointer decoration stays out of hit testing and never replaces the native cursor. */
+.pointer-glow { display: none; position: fixed; inset: 0; z-index: 35; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 60ms ease-out; }
+.pointer-glow[data-moving="true"] { opacity: 1; transition-duration: 35ms; }
+.pointer-glow-canvas { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 2px #a27af538); }
+.pointer-glow-line { vector-effect: non-scaling-stroke; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) { .pointer-glow { display: block; } }
