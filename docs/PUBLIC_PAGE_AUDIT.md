@@ -30,6 +30,12 @@ Evidence comes from the local database, route/controllers, a standard-library HT
 
 Home and collection page headings, introductions, end-of-page CTA, SEO title/description and optional share image can now be edited at **Website Control → Public pages** using existing permission controls. About, Contact, privacy, catalog entries and portfolios continue to use their existing editors. Body HTML is sanitized before public rendering.
 
+## Product snippet follow-up — local fix
+
+Search Console reported that Product markup lacked `offers`, `review` or `aggregateRating`. The product template previously emitted Product even for quote-based entries. The local fix now emits ordinary WebPage markup when a product has no valid published price/currency; priced products retain Product plus Offer. A shared pricing check controls both the visible price and the Offer, including genuine zero prices and rejecting blank or non-finite values. No prices, ratings or reviews were invented, and no database content or environment settings were changed for this fix.
+
+The local AI Assistant page returns WebPage and BreadcrumbList JSON-LD. Quote-based pages remain eligible for normal indexing but do not target Product rich results. This follow-up is local only: after deployment, check the affected URL using Google’s [Rich Results Test](https://search.google.com/test/rich-results), then request Search Console validation. Google must recrawl the page before its report changes. See [Product snippet requirements](https://developers.google.com/search/docs/appearance/structured-data/product-snippet).
+
 ## Remaining SEO and content work
 
 | Priority | Pages | Recommended action and acceptance |
