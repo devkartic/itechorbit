@@ -23,7 +23,7 @@ class WebsiteGrowthServicesTest extends TestCase
         $this->assertSame($existing, ServiceInfo::whereIn('id', array_column($existing, 'id'))->orderBy('id')->get()->toArray());
         $this->get('/service/info')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('services', count($existing) + 5)->where('services.0.slug', 'website-speed-optimization')
-            ->where('seo.title', 'Website & software engineering services | iTechOrbit'));
+            ->where('seo.title', 'Software Engineering Services | iTechOrbit'));
 
         foreach ($services as $slug => $expected) {
             $service = ServiceInfo::where('slug', $slug)->firstOrFail();

@@ -1,3 +1,5 @@
+import { usePage } from '@inertiajs/react';
+import type { Shared } from '@/lib/types';
 import { useState } from 'react';
 import { ArrowRight, ArrowUpRight, Check } from 'lucide-react';
 import { SiteLink as Link } from '@/components/shared/SiteLink';
@@ -9,14 +11,15 @@ import { ArticleCard, ProjectCard, ServiceCard, ProductCard, ContactCta, EmptySt
 import { Button } from '@/components/ui/button';
 import type { ProductSummary, Article, Project, ServiceSummary, Technology, Seo as SeoType } from '@/lib/types';
 export default function Home({ seo, articles, projects, services, products, toolkit }: { seo: SeoType; articles: Article[]; projects: Project[]; services: ServiceSummary[]; products: ProductSummary[]; toolkit: Technology[] }) {
+  const { publicPage } = usePage<Shared>().props;
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const selected = toolkit.find(technology => technology.id === selectedId);
   const matches = selected ? services.filter(service => service.technologyIds?.includes(selected.id)) : services;
   return <PublicLayout><Seo seo={seo} schema={{ '@context': 'https://schema.org', '@type': 'Organization', name: 'iTechOrbit', url: seo.canonical, description: seo.description }} />
     <section className="hero"><div className="hero-ambient" aria-hidden="true"><span /><span /></div><div className="shell hero-grid">
       <div className="hero-copy"><Eyebrow>Beyond the ordinary. Built for what’s next.</Eyebrow>
-        <h1>Build, Modernize<br />&amp; Scale Your<br /><span className="hero-highlight">Software</span><br /><span className="hero-closing">with Confidence.</span></h1>
-        <p className="hero-description">Your ideas deserve exceptional engineering. Laravel, APIs and full-stack applications built with clarity, care, and room to grow.</p>
+        <h1>{publicPage?.heading && publicPage.heading !== 'Build, Modernize & Scale Your Software with Confidence.' ? publicPage.heading : <>Build, Modernize<br />&amp; Scale Your<br /><span className="hero-highlight">Software</span><br /><span className="hero-closing">with Confidence.</span></>}</h1>
+        <p className="hero-description">{publicPage?.introduction ?? <>Your ideas deserve exceptional engineering. Laravel, APIs and full-stack applications built with clarity, care, and room to grow.</>}</p>
         <div className="hero-actions"><Button asChild size="lg" className="hero-primary-action"><Link href="/contact/info">Let’s build something <ArrowUpRight size={18} /></Link></Button><Link href="/work" className="text-link">Explore our work <ArrowRight size={18} /></Link></div>
         <div className="hero-assurances">{['Clear communication', 'Maintainable code', 'Tested delivery'].map(text => <span key={text}><Check size={14} />{text}</span>)}</div>
       </div>

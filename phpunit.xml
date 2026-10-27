@@ -16,6 +16,8 @@
         <include><directory suffix=".php">./app</directory></include>
     </source>
     <php>
+        <env name="RECAPTCHA_ENABLED" value="false" force="true"/>
+        <env name="RECAPTCHA_VERSION" value="v2" force="true"/>
         <env name="AI_PRO_PROVIDER" value="openai" force="true"/>
         <env name="AI_PRO_ENABLED" value="false" force="true"/>
         <env name="AI_PRO_EMBEDDING_PROVIDER" value="openai" force="true"/>

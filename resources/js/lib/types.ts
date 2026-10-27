@@ -1,5 +1,5 @@
-export type Seo = { title: string; description: string; canonical: string; noindex?: boolean; type?: string };
-export type Shared = { site: { name: string; url: string; aiService?: { title: string; slug: string } | null }; auth: { user: { id: number; name: string; publicProfileUrl?: string | null } | null; csrfToken?: string }; flash: { success?: string; status?: string }; [key: string]: unknown };
+export type Seo = { title: string; description: string; canonical: string; noindex?: boolean; type?: string; image?: string | null; imageAlt?: string };
+export type Shared = { recaptcha?: { enabled: boolean; siteKey: string; version?: 'v2' | 'v3' }; publicPage?: PublicPageContent | null; site: { name: string; url: string; aiService?: { title: string; slug: string } | null }; auth: { user: { id: number; name: string; publicProfileUrl?: string | null } | null; csrfToken?: string }; flash: { success?: string; status?: string }; [key: string]: unknown };
 export type Article = { id: number; title: string; url: string; excerpt: string; image: string | null; category: { id: number; name: string } | null; author: { name: string }; tags: string[]; date: string; readingMinutes: number; body?: string; codebase?: string; toc?: { id: string; title: string; level: number }[]; updatedAt?: string };
 export type Project = { id: number; name: string; category: string | null; role: string | null; technologies: string[]; image: string | null; url: string; excerpt: string; description?: string; contributions?: string; liveUrl?: string | null };
 export type Technology = { id: number; name: string; slug: string; url: string };
@@ -10,3 +10,5 @@ export type Product = Service & { price: string | null; currency: string | null;
 
 export type ServiceSummary = Omit<Service, 'description' | 'problem' | 'solution' | 'approach' | 'imageWidth' | 'imageHeight'>;
 export type ProductSummary = Omit<Product, 'description' | 'problem' | 'solution' | 'approach' | 'imageWidth' | 'imageHeight'>;
+
+export type PublicPageContent = { heading: string; introduction: string; cta_label: string | null; cta_url: string | null };

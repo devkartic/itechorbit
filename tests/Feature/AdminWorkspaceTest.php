@@ -31,7 +31,7 @@ class AdminWorkspaceTest extends TestCase
         $this->get('/home')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Admin/Dashboard'));
         foreach (array_keys(config('admin')) as $resource) {
             $this->get('/'.$resource)->assertOk()->assertInertia(fn (Assert $page) => $page->component('Admin/Resource')->where('resource', $resource));
-            if (! in_array($resource, ['contacts', 'users'])) {
+            if (! in_array($resource, ['contacts', 'users', 'public-pages'])) {
                 $this->get('/'.$resource.'/create')->assertOk();
             }
         }

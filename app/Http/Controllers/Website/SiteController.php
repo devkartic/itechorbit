@@ -54,8 +54,9 @@ class SiteController extends PublicPageController
         if ($key !== '') {
             $query->where(fn ($q) => $q->where('title', 'like', '%'.$key.'%')->orWhere('body', 'like', '%'.$key.'%'));
         }
-        if ($category_id) {
-            $query->where('category_id', Category::findOrFail($category_id)->id);
+        $category = $category_id ? Category::where('status', 1)->findOrFail($category_id) : null;
+        if ($category) {
+            $query->where('category_id', $category->id);
         }
         if (! empty($filters['tag'])) {
             $query->whereJsonContains('tags', $filters['tag']);
@@ -63,11 +64,12 @@ class SiteController extends PublicPageController
         $posts = $query->latest('id')->paginate(12)->withQueryString();
         abort_if($posts->currentPage() > $posts->lastPage(), 404);
         $posts->through(fn ($post) => $this->content->article($post));
-        $page = $this->page('Website/Blog', 'Engineering notes'.($posts->currentPage() > 1 ? ' — Page '.$posts->currentPage() : ''),
-            'Technical articles on Laravel, PHP, APIs and practical software engineering.', [
+        $page = $this->page('Website/Blog', ($category ? $category->name.' articles' : 'Engineering notes').($posts->currentPage() > 1 ? ' — Page '.$posts->currentPage() : ''),
+            ($category ? 'Technical articles and practical engineering notes about '.$category->name.'.' : 'Technical articles on Laravel, PHP, APIs and practical software engineering.'), [
+                'category' => $category?->only(['name', 'title']),
                 'articles' => $posts, 'filters' => ['key' => $key, 'tag' => $filters['tag'] ?? '', 'category' => $category_id],
-                'categories' => Category::where('status', 1)->orderBy('order_number')->get(['id', 'name']),
-            ], $request->getPathInfo().($posts->currentPage() > 1 ? '?page='.$posts->currentPage() : ''), $key !== '' || ! empty($filters['tag']));
+                'categories' => Category::where('status', 1)->whereHas('posts', fn ($q) => $q->where('status', 1)->where('is_private', 0))->orderBy('order_number')->get(['id', 'name']),
+            ], $request->getPathInfo().($posts->currentPage() > 1 ? '?page='.$posts->currentPage() : ''), $request->is('blogs/search') || $key !== '' || ! empty($filters['tag']));
 
         return $page;
     }
@@ -75,7 +77,7 @@ class SiteController extends PublicPageController
     public function article(string $id)
     {
         $post = Post::public_posts()->with(['category', 'user'])->findOrFail($id);
-        $post->increment('view_times');
+        Post::withoutTimestamps(fn () => $post->increment('view_times'));
         $article = $this->content->article($post, true);
         $comments = Comment::with('user:id,name')->where('commentable_type', Post::class)->where('commentable_id', $post->id)->orderBy('id')->paginate(30);
         $comments->through(fn ($comment) => ['id' => $comment->id, 'parentId' => $comment->parent_id, 'comment' => $comment->comment,
@@ -96,7 +98,7 @@ class SiteController extends PublicPageController
 
         return $this->page('Website/Work', 'Selected work', 'Explore published projects, engineering contributions and the technologies behind them.', [
             'projects' => $projects, 'categories' => $this->projects()->whereNotNull('project_category')->distinct()->pluck('project_category'), 'category' => $filters['category'] ?? '',
-        ], '/work'.($projects->currentPage() > 1 ? '?page='.$projects->currentPage() : ''));
+        ], '/work'.($projects->currentPage() > 1 ? '?page='.$projects->currentPage() : ''), ! empty($filters['category']));
     }
 
     public function project(string $id)
@@ -123,7 +125,7 @@ class SiteController extends PublicPageController
             ->when($selected, fn ($query) => $query->whereHas('websiteTechnologies', fn ($q) => $q->where('website_technologies.id', $selected->id)))
             ->get()->map(fn ($service) => $this->content->service($service, false))->all();
 
-        return $this->page('Website/Services', 'Website & software engineering services', 'Website speed optimization, AI-generated code review, technical SEO, analytics, security audits and custom software engineering. Explore our services and discuss your project.', [
+        return $this->page('Website/Services', 'Software engineering services', 'Explore our published software engineering services and discuss your application, integration or modernization requirements.', [
             'services' => $services,
             'technologies' => $catalog->visible('filters')->map(fn ($technology) => $this->content->technology($technology))->all(),
             'selectedTechnology' => $selected ? $this->content->technology($selected) : null,
@@ -160,7 +162,7 @@ class SiteController extends PublicPageController
     {
         $about = AboutInfo::where('status', 1)->first();
 
-        return $this->page('Website/About', 'Engineering with clarity', config('site.description'), ['existingContent' => $this->content->html($about?->descriptions), 'subtitle' => $about?->subtitle]);
+        return $this->page('Website/About', $about?->title ?? 'About iTechOrbit', $about?->subtitle ?? config('site.description'), ['aboutTitle' => $about?->title ?? 'Engineering with clarity.', 'existingContent' => $this->content->html($about?->descriptions), 'subtitle' => $about?->subtitle]);
     }
 
     public function contact(Request $request)

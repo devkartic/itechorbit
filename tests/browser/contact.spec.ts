@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { clearBrowserRateLimits } from './isolated-cache';
+
+test.beforeEach(clearBrowserRateLimits);
 
 test('business contact has a unified panel with a wider form and compact details', async ({ page }, testInfo) => {
   for (const width of [320, 390, 1024, 1280, 1440]) {
