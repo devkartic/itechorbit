@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Services\Admin\SidebarNavigation;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Inertia\Inertia;
 use Psr\Log\LogLevel;
@@ -57,6 +58,14 @@ class Handler extends ExceptionHandler
             return response('', 404)->header('X-Robots-Tag', 'noindex');
         }
         if (! $request->expectsJson() && (in_array($status, [403, 404, 503]) || ($status === 500 && ! config('app.debug')))) {
+            if (in_array($status, [403, 404]) && $request->user() && $this->isAdminRequest($request)) {
+                return Inertia::render('Admin/Error', [
+                    'status' => $status,
+                    'auth' => ['user' => $request->user()->only(['id', 'name'])],
+                    'navigation' => app(SidebarNavigation::class)->items(),
+                ])->toResponse($request)->setStatusCode($status);
+            }
+
             // Unknown routes can fail before the web middleware shares layout
             // props. Supply safe defaults so SSR can render the header/footer.
             return Inertia::render('Shared/Error', [
@@ -76,6 +85,21 @@ class Handler extends ExceptionHandler
         }
 
         return $response;
+    }
+
+    private function isAdminRequest($request): bool
+    {
+        $controller = $request->route()?->getAction('controller');
+        if ($controller) {
+            return str_starts_with($controller, 'App\\Http\\Controllers\\Admin\\')
+                || str_starts_with($controller, 'App\\Http\\Controllers\\Account\\')
+                || str_starts_with($controller, 'App\\AiPro\\Http\\AdminController@');
+        }
+
+        // Unknown URLs under workspace modules still belong to the admin panel.
+        $root = $request->segment(1);
+
+        return in_array($root, ['workspace', 'home', 'account', 'permissions', ...array_keys(config('admin'))], true);
     }
 
     public function register()
