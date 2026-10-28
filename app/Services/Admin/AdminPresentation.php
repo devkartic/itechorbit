@@ -158,6 +158,7 @@ class AdminPresentation
             'attachments' => $record ? $this->attachments($resource, $record, $fields) : [],
             'previews' => $action === 'show' ? collect($fields)->where('type', 'richtext')->mapWithKeys(fn ($field) => [$field['name'] => app(PublicContent::class)->html($values[$field['name']] ?? '')])->all() : [],
             'records' => $records, 'filters' => $filters, 'columns' => $table->columns($resource),
+            'filterUsers' => $action === 'index' ? $table->userOptions($resource) : [],
             'abilities' => $this->abilities($resource), 'navigation' => $this->navigation(),
             'isAdmin' => User::verify_default_admin(),
         ]);
