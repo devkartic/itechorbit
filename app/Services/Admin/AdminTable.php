@@ -12,6 +12,18 @@ use Illuminate\Validation\Rule;
 
 class AdminTable
 {
+    public function canFilterByUser(string $resource): bool
+    {
+        return (bool) config('admin.'.$resource.'.owner') && User::verify_default_admin();
+    }
+
+    public function userOptions(string $resource): array
+    {
+        return $this->canFilterByUser($resource)
+            ? User::orderBy('name')->orderBy('id')->get(['id', 'name'])->toArray()
+            : [];
+    }
+
     public function columns(string $resource): array
     {
         $fields = config('admin.'.$resource.'.fields', []);
@@ -29,6 +41,7 @@ class AdminTable
 
     public function filters(Request $request, string $resource): array
     {
+        $canFilterByUser = $this->canFilterByUser($resource);
         $validated = $request->validate([
             'key' => ['nullable', 'string', 'max:200'],
             'page' => ['nullable', 'integer', 'min:1', 'max:100000'],
@@ -36,10 +49,21 @@ class AdminTable
             'sort' => ['nullable', Rule::in([...$this->columns($resource), 'id'])],
             'direction' => ['nullable', Rule::in(['asc', 'desc'])],
             'status' => ['nullable', Rule::in(['', '0', '1'])],
+            'user_id' => $canFilterByUser ? ['nullable', function ($attribute, $value, $fail) {
+                if (in_array($value, ['mine', 'all'], true)) {
+                    return;
+                }
+                if (! filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) || ! User::whereKey($value)->exists()) {
+                    $fail('Select your records, all users, or an existing user.');
+                }
+            }] : ['prohibited'],
         ]);
-        $filters = array_replace(['key' => '', 'page' => 1, 'per_page' => 20, 'sort' => 'id', 'direction' => 'desc', 'status' => ''], array_filter($validated, fn ($value) => $value !== null));
+        $filters = array_replace(['key' => '', 'page' => 1, 'per_page' => 20, 'sort' => 'id', 'direction' => 'desc', 'status' => '', ...($canFilterByUser ? ['user_id' => 'mine'] : [])], array_filter($validated, fn ($value) => $value !== null));
         $filters['page'] = (int) $filters['page'];
         $filters['per_page'] = (int) $filters['per_page'];
+        if ($canFilterByUser) {
+            $filters['user_id'] = (string) $filters['user_id'];
+        }
 
         return $filters;
     }
@@ -62,6 +86,10 @@ class AdminTable
     public function records(string $resource, array $filters)
     {
         $query = $this->query($resource);
+        if ($this->canFilterByUser($resource) && ($filters['user_id'] ?? 'mine') !== 'all') {
+            $owner = $filters['user_id'] ?? 'mine';
+            $query->where('user_id', $owner === 'mine' ? request()->user()->id : $owner);
+        }
         if (filled($filters['key'] ?? null)) {
             $search = array_intersect($query->getModel()->getFillable(), ['name', 'title', 'subject', 'email', 'designation', 'organization', 'first_name', 'last_name', 'heading', 'page_key']);
             $query->where(function ($q) use ($search, $filters) {
