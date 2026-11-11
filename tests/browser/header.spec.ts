@@ -1,5 +1,64 @@
 import { test, expect } from '@playwright/test';
 
+test('portfolio service follows shared navigation and starts a relevant inquiry', async ({ page }, testInfo) => {
+  await page.goto('/');
+  const mobile = testInfo.project.name === 'mobile';
+  if (mobile) await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
+  const navigation = page.getByRole('navigation', { name: mobile ? 'Mobile navigation' : 'Main navigation', exact: true });
+  await navigation.getByRole('link', { name: 'Portfolio', exact: true }).click();
+  await expect(page).toHaveURL(/\/portfolio_service$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your expertise. Professionally presented.');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'http://127.0.0.1:8010/portfolio_service');
+  if (mobile) {
+    await expect(navigation).toBeHidden();
+    await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
+  }
+  await expect(navigation.getByRole('link', { name: 'Portfolio', exact: true })).toHaveAttribute('aria-current', 'page');
+  if (mobile) await page.keyboard.press('Escape');
+  for (const name of ['Studio', 'Executive', 'Blueprint', 'Editorial', 'Spotlight']) {
+    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+  }
+  if (!mobile) {
+    const originalViewport = page.viewportSize()!;
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 960 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+      const headingLines = await page.locator('#portfolio-title > span').evaluateAll(elements => elements.map(element => {
+        const style = getComputedStyle(element);
+        return element.getBoundingClientRect().height / parseFloat(style.lineHeight);
+      }));
+      if (width >= 1024) {
+        expect(headingLines).toHaveLength(2);
+        headingLines.forEach(lines => expect(lines).toBeCloseTo(1, 1));
+        const copy = (await page.locator('.ps-hero-copy').boundingBox())!;
+        const preview = (await page.locator('.portfolio-service-preview').boundingBox())!;
+        expect(preview.x).toBeGreaterThanOrEqual(copy.x + copy.width);
+      }
+      if (width !== 320) await page.screenshot({ path: testInfo.outputPath(`portfolio-service-${width}.png`), fullPage: true, animations: 'disabled' });
+    }
+    await page.setViewportSize(originalViewport);
+  }
+  await page.screenshot({ path: testInfo.outputPath('portfolio-service.png'), fullPage: true, animations: 'disabled' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  const sampleLink = page.getByRole('link', { name: 'View sample portfolio (opens in a new tab)', exact: true });
+  await expect(sampleLink).toHaveAttribute('href', '/portfolios');
+  await expect(sampleLink).toHaveAttribute('target', '_blank');
+  await expect(sampleLink).toHaveAttribute('rel', 'noopener noreferrer');
+  const popupPromise = page.waitForEvent('popup');
+  await sampleLink.click();
+  const sample = await popupPromise;
+  await expect(sample).toHaveURL(/\/portfolios$/);
+  await expect(sample.getByRole('heading', { level: 1 })).toContainText('Test Engineer');
+  await sample.close();
+  await expect(page).toHaveURL(/\/portfolio_service$/);
+  await page.getByRole('link', { name: 'Request a portfolio', exact: true }).first().click();
+  await expect(page).toHaveURL(/\/contact\/info\?subject=Professional%20portfolio%20service$/);
+  await expect(page.locator('#inquiry-subject')).toHaveValue('Professional portfolio service');
+  const historicalImage = await page.request.get('/portfolio/img/portfolio/portfolio-1.jpg');
+  expect(historicalImage.ok()).toBe(true);
+  expect(historicalImage.headers()['content-type']).toContain('image/jpeg');
+});
+
 test('header compacts on scroll without shifting the logo and menus fit all screens', async ({ page }, testInfo) => {
   for (const width of [320, 390, 768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 960 });

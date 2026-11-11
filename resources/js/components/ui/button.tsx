@@ -8,5 +8,5 @@ const buttonVariants = cva('inline-flex items-center justify-center gap-2 whites
 });
 export function Button({ className, variant, size, asChild = false, ...props }: ComponentProps<'button'> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
   const Component = asChild ? Slot : 'button';
-  return <Component className={cn(buttonVariants({ variant, size }), className)} {...props} />;
+  return <Component data-slot="button" data-variant={variant ?? 'default'} data-size={size ?? 'default'} className={cn(buttonVariants({ variant, size }), className)} {...props} />;
 }

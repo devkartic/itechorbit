@@ -11,14 +11,14 @@ import type { Product as ProductType, Seo as SeoType } from '@/lib/types';
 export default function Product({ seo, product }: { seo: SeoType; product: ProductType }) {
   const offer = publishedOffer(product, seo.canonical);
   return <PublicLayout><Seo seo={seo} schema={productSchema(product, seo, offer)} /><PageIntro eyebrow={'Product'} title={product.title}>{product.summary}</PageIntro>
-    <section className="section shell"><Breadcrumbs items={[{ label: 'Products', url: '/products' }, { label: product.short }]} /><div className="grid gap-14 lg:grid-cols-[1.5fr_1fr]"><div>
+    <section className="section shell"><Breadcrumbs items={[{ label: 'Products', url: '/products' }, { label: product.short }]} /><div className="grid gap-14 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"><div>
       {product.image && <MediaImage src={product.image} alt={product.title} width={product.imageWidth ?? undefined} height={product.imageHeight ?? undefined} fetchPriority="high" className="mb-10 h-auto w-full rounded-2xl" />}
       <div className="prose-content" dangerouslySetInnerHTML={{ __html: product.description }} />
-      {product.problem && <><h2 className="mt-10 text-2xl font-semibold">The challenge</h2><p className="mt-5 text-lg leading-8 text-slate-600">{product.problem}</p></>}
-      {product.solution && <><h2 className="mt-12 text-2xl font-semibold">A considered solution</h2><p className="mt-5 leading-8 text-slate-600">{product.solution}</p></>}
-      {!!product.approach?.length && <><h2 className="mt-12 text-2xl font-semibold">How we work</h2><ol className="mt-6 grid gap-5">{product.approach.map((text, i) => <li key={i} className="flex gap-4 text-sm leading-7 text-slate-600"><span className="font-mono text-blue-600">{String(i + 1).padStart(2, '0')}</span>{text}</li>)}</ol></>}
-      {!!product.useCases?.length && <section className="mt-12"><h2 className="text-2xl font-semibold">{product.icon === 'sparkles' ? 'How website owners can use it' : 'Use cases'}</h2><div className="mt-6 grid gap-4">{product.useCases.map((useCase, i) => <article key={i} className="rounded-xl border border-blue-100 bg-blue-50/50 p-6"><h3 className="text-lg font-semibold">{useCase.title}</h3><p className="mt-3 text-sm leading-7 text-slate-600">{useCase.description}</p></article>)}</div></section>}
-    </div><aside className="h-fit rounded-2xl border border-slate-200 bg-slate-50 p-8">
+      {product.problem && <><h2 className="public-content-heading mt-10 text-2xl font-semibold">The challenge</h2><p className="mt-5 text-lg leading-8 text-slate-600">{product.problem}</p></>}
+      {product.solution && <><h2 className="public-content-heading mt-12 text-2xl font-semibold">A considered solution</h2><p className="mt-5 leading-8 text-slate-600">{product.solution}</p></>}
+      {!!product.approach?.length && <><h2 className="public-content-heading mt-12 text-2xl font-semibold">How we work</h2><ol className="mt-6 grid gap-5">{product.approach.map((text, i) => <li key={i} className="flex gap-4 text-sm leading-7 text-slate-600"><span className="font-mono text-blue-600">{String(i + 1).padStart(2, '0')}</span>{text}</li>)}</ol></>}
+      {!!product.useCases?.length && <section className="mt-12"><h2 className="public-content-heading text-2xl font-semibold">{product.icon === 'sparkles' ? 'How website owners can use it' : 'Use cases'}</h2><div className="mt-6 grid gap-4">{product.useCases.map((useCase, i) => <article key={i} className="rounded-xl border border-blue-100 bg-blue-50/50 p-6"><h3 className="text-lg font-semibold">{useCase.title}</h3><p className="mt-3 text-sm leading-7 text-slate-600">{useCase.description}</p></article>)}</div></section>}
+    </div><aside className="public-detail-panel h-fit rounded-2xl border border-slate-200 bg-slate-50 p-8">
       <h2 className="text-lg font-semibold">{'Product details'}</h2>
       {offer && <p className="mt-5 text-2xl font-semibold">{offer.priceCurrency} {offer.price}</p>}
       {product.deliveryTime && <p className="mt-4 text-sm text-slate-600">Estimated delivery: {product.deliveryTime}</p>}
