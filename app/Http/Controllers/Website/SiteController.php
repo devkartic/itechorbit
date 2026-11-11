@@ -14,6 +14,7 @@ use App\Models\Admin\ServiceInfo;
 use App\Models\Admin\WebsiteProduct;
 use App\Models\Comment;
 use App\Models\User;
+use App\Services\Portfolio\PortfolioPresentation;
 use App\Services\Shared\TechnologyCatalog;
 use Illuminate\Http\Request;
 
@@ -148,6 +149,13 @@ class SiteController extends PublicPageController
     {
         return $this->page('Website/Products', 'Website products', 'Purpose-built products to help your website serve visitors and support your business.', [
             'products' => WebsiteProduct::published()->get()->map(fn ($product) => $this->content->product($product, false))->all(),
+        ]);
+    }
+
+    public function portfolioService()
+    {
+        return $this->page('Website/PortfolioService', 'Professional Portfolio Service', 'Showcase your skills, experience and projects with a professional portfolio from iTechOrbit. Explore five templates, manage your content and receive professional inquiries.', [
+            'templates' => array_map(fn ($key, $template) => ['key' => $key, ...$template], array_keys(PortfolioPresentation::TEMPLATES), array_values(PortfolioPresentation::TEMPLATES)),
         ]);
     }
 

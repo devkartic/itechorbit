@@ -14,6 +14,7 @@ use App\Models\Admin\Role;
 use App\Models\Admin\Route;
 use App\Models\Admin\Service;
 use App\Models\Admin\Skill;
+use App\Models\Admin\WebsiteProduct;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Services\Portfolio\PortfolioPresentation;
@@ -62,6 +63,7 @@ foreach (['PHP', 'React', 'TypeScript', 'MySQL', 'Redis'] as $technology) {
 }
 $skill = Skill::create(['name' => 'Laravel', 'user_id' => $user->id, 'status' => 1]);
 Project::create(['user_id' => $user->id, 'skill_id' => $skill->id, 'name' => 'Synthetic project for testing', 'client_name' => 'Synthetic client', 'project_category' => 'Web application', 'about_project' => 'A synthetic project used only for automated UI verification.', 'played_role' => 'Engineering', 'technology_used' => json_encode(['Laravel', 'React']), 'status' => 1]);
+WebsiteProduct::create(['title' => 'Professional application delivery and integration package', 'short_title' => 'Application delivery', 'slug' => 'design-audit-product', 'subtitle' => 'A synthetic product used to verify readable public cards and detail pages.', 'descriptions' => '<h2>Product overview</h2><p>A synthetic product for responsive design verification.</p>', 'deliverables' => ['Application implementation', 'Documented handover'], 'technologies' => ['Laravel', 'React'], 'status' => true]);
 echo "Isolated synthetic fixtures prepared.\n";
 
 foreach ([['Synthetic API platform', 'API platform', 'API architecture'], ['Synthetic developer workspace', 'Developer tooling', 'Full-stack engineering'], ['Synthetic data integration', 'Data integration', 'Integration engineering']] as [$name, $category, $role]) {

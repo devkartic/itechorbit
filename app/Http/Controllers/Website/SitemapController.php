@@ -33,7 +33,7 @@ class SitemapController extends Controller
 
     public function pages()
     {
-        $urls = ['/', '/blogs', '/work', '/about/info', '/service/info', '/products', '/contact/info', '/privacy-n-policy'];
+        $urls = ['/', '/blogs', '/work', '/about/info', '/service/info', '/products', '/portfolio_service', '/contact/info', '/privacy-n-policy'];
         foreach (ServiceInfo::published()->pluck('slug') as $slug) {
             $urls[] = '/services/'.$slug;
         }
