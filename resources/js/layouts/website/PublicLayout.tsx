@@ -1,3 +1,4 @@
+import '../../../css/public-site.css';
 import { PointerGlow } from '@/components/website/PointerGlow';
 import { ITechOrbitAiLauncher } from '@/components/ai-pro/ITechOrbitAiLauncher';
 import { BrandLogo } from '@/components/shared/BrandLogo';
@@ -23,19 +24,21 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   }, []);
   const { url, props, component } = usePage<Shared>();
   const aiService = props.site.aiService;
-  const navigation = [['Home', '/'], ['Services', '/service/info'], ['Products', '/products'], ...(aiService ? [['AI solutions', `/services/${aiService.slug}`]] : []), ['Work', '/work'], ['Insights', '/blogs'], ['About', '/about/info']];
+  const navigation = [['Home', '/'], ['Services', '/service/info'], ['Products', '/products'], ['Portfolio', '/portfolio_service'], ...(aiService ? [['AI solutions', `/services/${aiService.slug}`]] : []), ['Work', '/work'], ['Insights', '/blogs'], ['About', '/about/info']];
+  const currentPath = url.split('?')[0];
+  const isCurrent = (path: string) => currentPath === path || (path !== '/' && currentPath.startsWith(`${path}/`));
   useEffect(() => { document.querySelector('details.mobile-menu')?.removeAttribute('open'); }, [url]);
   return <>{component.startsWith('Website/') && <PointerGlow key={url} />}<a className="skip-link" href="#main">Skip to content</a>
     <header className={`site-header ${scrolled ? 'is-scrolled' : ''}`}><div className="shell header-inner">
       <Link href="/" className="brand" aria-label="iTechOrbit home"><BrandLogo dark /></Link>
-      <nav className="header-navigation hidden items-center gap-1 lg:flex" aria-label="Main navigation">{navigation.map(([label, path]) => <Link key={path} href={path} className={`nav-link ${label === 'AI solutions' ? 'nav-ai' : ''}`} aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
+      <nav className="header-navigation hidden items-center gap-1 lg:flex" aria-label="Main navigation">{navigation.map(([label, path]) => <Link key={path} href={path} className={`nav-link ${label === 'AI solutions' ? 'nav-ai' : ''}`} aria-current={isCurrent(path) ? 'page' : undefined}>{label}</Link>)}</nav>
       <div className="header-actions"><Button asChild className="header-project-cta hidden xl:inline-flex"><Link href="/contact/info">Let’s talk <ArrowUpRight size={16} /></Link></Button><HeaderAccount />
       <details className="mobile-menu lg:hidden" onToggle={event => { if (event.currentTarget.open) document.querySelector('details.account-menu')?.removeAttribute('open'); }}>
         <summary role="button" aria-label="Open navigation" className="flex size-11 cursor-pointer list-none items-center justify-center rounded-full"><Menu className="menu-open-icon" size={21} /><X className="menu-close-icon" size={21} /></summary>
-        <nav id="mobile-navigation" aria-label="Mobile navigation" className="shell grid gap-1 py-4">{[...navigation, ['Let’s talk', '/contact/info']].map(([label, path]) => <Link key={path} href={path} className="rounded-xl p-3 font-medium" aria-current={(path === '/' ? url === '/' : url.startsWith(path)) ? 'page' : undefined}>{label}</Link>)}</nav>
+        <nav id="mobile-navigation" aria-label="Mobile navigation" className="shell grid gap-1 py-4">{[...navigation, ['Let’s talk', '/contact/info']].map(([label, path]) => <Link key={path} href={path} className="rounded-xl p-3 font-medium" aria-current={isCurrent(path) ? 'page' : undefined}>{label}</Link>)}</nav>
       </details>
     </div></div></header>
-    <main id="main">{children}</main><ITechOrbitAiLauncher />
+    <main id="main" className={component.startsWith('Website/') ? 'public-site' : undefined}>{children}</main><ITechOrbitAiLauncher />
     <footer className="site-footer"><div className="shell grid gap-10 py-14 md:grid-cols-[2fr_1fr_1fr]">
       <div><Link href="/" className="brand"><BrandLogo dark /></Link><p className="mt-4 footer-copy max-w-sm text-sm leading-7">Thoughtful software engineering.<br />Built for your business. Ready for what’s next.</p></div>
       <div><p className="mb-4 text-sm font-semibold">Explore</p><nav aria-label="Footer navigation" className="footer-links grid gap-3 text-sm">{navigation.map(([label, path]) => <Link key={path} href={path}>{label}</Link>)}</nav></div>
