@@ -16,9 +16,9 @@ const features = [
   { icon: MessagesSquare, title: 'Professional inquiries', description: 'Provide a direct channel for project inquiries and professional opportunities.' },
 ];
 const steps = [
-  { title: 'Initial consultation', description: 'Discuss your objectives, intended audience and the experience you want to present.' },
-  { title: 'Content and design', description: 'Organize your profile, projects and career experience, and select an appropriate portfolio template.' },
-  { title: 'Publication and updates', description: 'Publish your portfolio, share its public link and update your content as your career progresses.' },
+  { title: 'Create your account', description: 'Sign up on iTechOrbit to get started with your professional portfolio.' },
+  { title: 'Build your portfolio', description: 'Choose a template and add your profile, skills, experience and projects.' },
+  { title: 'Share with hiring teams', description: 'Publish your portfolio and share its public link with hiring teams. Keep your content up to date as your career progresses.' },
 ];
 
 const templateDescriptions: Record<string, string> = {
@@ -60,9 +60,9 @@ export default function PortfolioService({ seo, templates }: { seo: SeoType; tem
         <div className="ps-hero-grid"><div className="ps-hero-copy">
           <Eyebrow>Professional portfolio service</Eyebrow>
           <h1 id="portfolio-title"><span>Your expertise.</span>{' '}<span>Professionally presented.</span></h1>
-          <p className="ps-hero-description">Bring your experience, skills and projects together in a portfolio that reflects your professional identity.</p>
-          <p className="ps-hero-detail">Choose a design, keep your content current and make it easy for clients and employers to connect with you.</p>
-          <div className="ps-hero-actions"><Button asChild><Link href={inquiryUrl}>Request a portfolio <ArrowUpRight size={16} aria-hidden="true" /></Link></Button><Button asChild variant="outline"><Link href="/portfolios" target="_blank" rel="noopener noreferrer">View sample portfolio <ArrowUpRight size={16} aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></Link></Button></div>
+          <p className="ps-hero-description">Sign up on iTechOrbit to create a professional portfolio that showcases your skills, experience and projects.</p>
+          <p className="ps-hero-detail">Explore our portfolio templates, build your professional presence and share your portfolio link with hiring teams.</p>
+          <div className="ps-hero-actions"><Button asChild><Link href="/login">Create your portfolio <ArrowUpRight size={16} aria-hidden="true" /></Link></Button><Button asChild variant="outline"><Link href="/portfolios" target="_blank" rel="noopener noreferrer">View sample portfolio <ArrowUpRight size={16} aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></Link></Button></div>
           <div className="ps-hero-notes"><span>Five design options</span><span>Editable content</span><span>Your public portfolio link</span></div>
         </div><PortfolioPreview /></div>
       </div></section>
@@ -75,10 +75,10 @@ export default function PortfolioService({ seo, templates }: { seo: SeoType; tem
         <div className="ps-templates">{templates.map(template => <article key={template.key}><TemplateIllustration templateKey={template.key} /><div className="ps-template-content"><h3>{template.name}</h3><p>{templateDescriptions[template.key] ?? template.description}</p></div></article>)}</div>
       </div></section>
       <section className="ps-section shell" aria-labelledby="portfolio-process"><div className="ps-process-panel">
-        <div className="ps-section-heading"><div><Eyebrow>Our process</Eyebrow><h2 id="portfolio-process">A clear path to publication.</h2></div><p>From the initial discussion to a portfolio you can share and maintain.</p></div>
+        <div className="ps-section-heading"><div><Eyebrow>How it works</Eyebrow><h2 id="portfolio-process">A clear path to publication.</h2></div><p>From creating your account to sharing your portfolio with hiring teams.</p></div>
         <ol className="ps-process">{steps.map((step, index) => <li key={step.title}><span>0{index + 1}</span><h3>{step.title}</h3><p>{step.description}</p></li>)}</ol>
       </div></section>
-      <section className="shell contact-cta-section"><div className="cta-panel"><div><Eyebrow>Discuss your requirements</Eyebrow><h2 className="mt-5 max-w-xl text-3xl font-semibold tracking-tight md:text-4xl">Create your professional portfolio.</h2><p className="mt-5 max-w-xl leading-7 text-slate-600">Discuss your objectives, content and design preferences with us.</p></div><Button asChild size="lg"><Link href={inquiryUrl}>Request a portfolio <ArrowUpRight size={18} aria-hidden="true" /></Link></Button></div></section>
+      <section className="shell contact-cta-section"><div className="cta-panel"><div><Eyebrow>Get started</Eyebrow><h2 className="mt-5 max-w-xl text-3xl font-semibold tracking-tight md:text-4xl">Ready to create your portfolio?</h2><p className="mt-5 max-w-xl leading-7 text-slate-600">Sign up to get started. For questions or assistance, contact our team.</p><Link href={inquiryUrl} className="mt-3 inline-flex min-h-11 items-center font-medium underline underline-offset-4">Contact us</Link></div><Button asChild size="lg"><Link href="/login">Create your portfolio <ArrowUpRight size={18} aria-hidden="true" /></Link></Button></div></section>
     </div>
   </PublicLayout>;
 }
