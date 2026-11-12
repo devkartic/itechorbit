@@ -56,7 +56,7 @@ test('public typography supports keyboard focus and keeps reading content within
     expect(description.y).toBeGreaterThan(heading.y + heading.height);
   }
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.getByRole('link', { name: 'Request a portfolio', exact: true }).first()).toHaveCSS('transition-property', 'none');
+  await expect(page.getByRole('link', { name: 'Create your portfolio', exact: true }).first()).toHaveCSS('transition-property', 'none');
 });
 
 test('website design scope does not apply to authentication and personal portfolios', async ({ page }) => {

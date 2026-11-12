@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('portfolio service follows shared navigation and starts a relevant inquiry', async ({ page }, testInfo) => {
+test('portfolio service follows shared navigation and offers sign-in and relevant inquiries', async ({ page }, testInfo) => {
   await page.goto('/');
   const mobile = testInfo.project.name === 'mobile';
   if (mobile) await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
@@ -51,7 +51,14 @@ test('portfolio service follows shared navigation and starts a relevant inquiry'
   await expect(sample.getByRole('heading', { level: 1 })).toContainText('Test Engineer');
   await sample.close();
   await expect(page).toHaveURL(/\/portfolio_service$/);
-  await page.getByRole('link', { name: 'Request a portfolio', exact: true }).first().click();
+  const signInLinks = page.getByRole('link', { name: 'Create your portfolio', exact: true });
+  await expect(signInLinks).toHaveCount(2);
+  for (const link of await signInLinks.all()) await expect(link).toHaveAttribute('href', '/login');
+  await signInLinks.first().click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('heading', { name: 'Welcome back.', exact: true })).toBeVisible();
+  await page.goto('/portfolio_service');
+  await page.getByRole('link', { name: 'Contact us', exact: true }).click();
   await expect(page).toHaveURL(/\/contact\/info\?subject=Professional%20portfolio%20service$/);
   await expect(page.locator('#inquiry-subject')).toHaveValue('Professional portfolio service');
   const historicalImage = await page.request.get('/portfolio/img/portfolio/portfolio-1.jpg');
